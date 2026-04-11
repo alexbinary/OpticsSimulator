@@ -3,10 +3,12 @@ import SwiftUI
 
 struct ContentView: View {
     
-    @State private var focalLength: CGFloat = 0.25
     @State private var objectPosition: CGFloat = 0.25
+    @State private var objectSize: CGFloat = 1
+    
     @State private var lensePosition: CGFloat = 0.5
     @State private var lenseType: LenseType = .convergent
+    @State private var focalLength: CGFloat = 0.25
 
     var body: some View {
         
@@ -16,17 +18,66 @@ struct ContentView: View {
                 
                 let engine = DrawEngine(context: context, size: size)
                 
+                let objectPos = CGPoint(x: size.width*objectPosition, y: size.height/2)
+                let objectSize = size.height/2*0.9*objectSize
+                
+                let lensePos = CGPoint(x: size.width*lensePosition, y: size.height/2)
+                let lenseF = size.width*focalLength/2
+                
+                let lense1 = Lense(type: lenseType, focalLength: lenseF)
+                
                 engine.drawAxis()
+                engine.drawObject(at: objectPos, size: objectSize, color: .blue)
+                engine.draw(lense1, at: lensePos)
                 
-                engine.drawObject(at: CGPoint(x: size.width*objectPosition, y: size.height/2))
+                // compute image
                 
-                let lense1 = Lense(type: lenseType, focalLength: size.width*focalLength/2)
+                let distO = lensePos.x - objectPos.x
+                let gamma = lenseF / (distO - lenseF)
                 
-                engine.draw(_: lense1, at: CGPoint(x: size.width*lensePosition, y: size.height/2))
+                let distI = distO * gamma
+                
+                let imagePos = CGPoint(x: lensePos.x+distI, y: size.height/2)
+                let imageSize = -objectSize * gamma
+                
+                // draw image
+                
+                engine.drawObject(at: imagePos, size: imageSize, color: .green)
+                
+                // simulated rays
+                
+                var path = Path()
+                
+                let parallelRayY = size.height/2-objectSize
+                
+                // parallel ray object > lense
+                path.move(to: CGPoint(x: objectPos.x, y: parallelRayY))
+                path.addLine(to: CGPoint(x: lensePos.x, y: parallelRayY))
+                
+                // parallel ray lense > F
+                path.move(to: CGPoint(x: lensePos.x, y: parallelRayY))
+                path.addLine(to: CGPoint(x: lensePos.x+lenseF, y: lensePos.y))
+                
+                // parallel ray F > image
+                path.move(to: CGPoint(x: lensePos.x+lenseF, y: lensePos.y))
+                path.addLine(to: CGPoint(x: imagePos.x, y: lensePos.y-imageSize))
+                
+                // center ray object > O
+                path.move(to: CGPoint(x: objectPos.x, y: parallelRayY))
+                path.addLine(to: CGPoint(x: lensePos.x, y: lensePos.y))
+                
+                // center ray O > image
+                path.move(to: CGPoint(x: lensePos.x, y: lensePos.y))
+                path.addLine(to: CGPoint(x: imagePos.x, y: lensePos.y-imageSize))
+                
+                context.stroke(path, with: .color(.yellow), lineWidth: 1)
             }
             Form {
                 Slider(value: $objectPosition, in: 0...1) {
                     Text("Object position")
+                }
+                Slider(value: $objectSize, in: 0...1) {
+                    Text("Object size")
                 }
                 Slider(value: $lensePosition, in: 0...1) {
                     Text("Lense position")
@@ -64,26 +115,27 @@ struct DrawEngine {
         context.stroke(path, with: .color(.gray), lineWidth: 1)
     }
     
-    func drawObject(at position: CGPoint) {
+    func drawObject(at position: CGPoint, size: CGFloat, color: Color) {
         
         var path = Path()
         
         let x = position.x
         let y = position.y
-        let h = size.height/2*0.9
+        let h = size
         let a: CGFloat = 5
+        let d: CGFloat = size > 0 ? 1 : -1
         
         //main body
         path.move(to: CGPoint(x: x, y: y))
         path.addLine(to: CGPoint(x: x, y: y-h))
         
-        // top arrow
+        // arrow
         path.move(to: CGPoint(x: x, y: y-h))
-        path.addLine(to: CGPoint(x: x+a, y: y-h+a))
+        path.addLine(to: CGPoint(x: x+a, y: y-h+d*a))
         path.move(to: CGPoint(x: x, y: y-h))
-        path.addLine(to: CGPoint(x: x-a, y: y-h+a))
+        path.addLine(to: CGPoint(x: x-a, y: y-h+d*a))
         
-        context.stroke(path, with: .color(.blue), lineWidth: 2)
+        context.stroke(path, with: .color(color), lineWidth: 2)
     }
     
     func draw(_ lense: Lense, at position: CGPoint) {
