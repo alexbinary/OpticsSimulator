@@ -30,8 +30,7 @@ struct ContentView: View {
                 let lenseF = size.width*focalLength/2
                 
                 let lense = Lense(type: lenseType, focalLength: lenseF)
-                
-                let scene = Scene(objectPos: objectPos, objectSize: objectSize, lensePos: lensePos, lense: lense)
+                let scene = OpticsScene(objectPos: objectPos, objectSize: objectSize, lensePos: lensePos, lense: lense)
                 
                 // render
                 
@@ -47,20 +46,29 @@ struct ContentView: View {
                 path.addLine(to: CGPoint(x: scene.lensePos, y: scene.objectSize))
                 
                 // parallel ray lense > F
-                path.move(to: CGPoint(x: scene.lensePos, y: scene.objectSize))
-                path.addLine(to: CGPoint(x: scene.lensePos+scene.lense.focalLength, y: 0))
+                if lense.type == .convergent {
+                    path.move(to: CGPoint(x: scene.lensePos, y: scene.objectSize))
+                    path.addLine(to: CGPoint(x: scene.lensePos+scene.lense.focalLength, y: 0))
+                } else {
+                    path.move(to: CGPoint(x: scene.lensePos, y: scene.objectSize))
+                    path.addLine(to: CGPoint(x: scene.lensePos-scene.lense.focalLength, y: 0))
+                }
                 
                 // parallel ray F > image
-                path.move(to: CGPoint(x: scene.lensePos+scene.lense.focalLength, y: 0))
-                path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
+                if lense.type == .convergent {
+                    path.move(to: CGPoint(x: scene.lensePos+scene.lense.focalLength, y: 0))
+                    path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
+                }
                 
                 // center ray object > O
                 path.move(to: CGPoint(x: scene.objectPos, y: scene.objectSize))
                 path.addLine(to: CGPoint(x: scene.lensePos, y: 0))
                 
                 // center ray O > image
-                path.move(to: CGPoint(x: scene.lensePos, y: 0))
-                path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
+                if lense.type == .convergent {
+                    path.move(to: CGPoint(x: scene.lensePos, y: 0))
+                    path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
+                }
                 
                 context.stroke(path, with: .color(.yellow), lineWidth: 1)
             }
@@ -92,7 +100,7 @@ struct ContentView: View {
 }
 
 
-struct Scene {
+struct OpticsScene {
     
     let objectPos: CGFloat
     let objectSize: CGFloat
@@ -112,8 +120,9 @@ struct Scene {
         self.lense = lense
         
         // compute image
+        let f = lense.focalLength * (lense.type == .convergent ? +1 : -1)
         let distO = lensePos - objectPos
-        let gamma = lense.focalLength / (distO - lense.focalLength)
+        let gamma = f / (distO - f)
         let distI = distO * gamma
         
         self.imagePos = lensePos + distI
@@ -216,7 +225,7 @@ struct DrawEngine {
         context.stroke(path, with: .color(.red), lineWidth: 2)
     }
     
-    func render(_ scene: Scene) {
+    func render(_ scene: OpticsScene) {
         
         drawAxis()
         drawObject(at: scene.objectPos, size: scene.objectSize)
