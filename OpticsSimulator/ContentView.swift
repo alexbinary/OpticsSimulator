@@ -16,59 +16,61 @@ struct ContentView: View {
             
             Canvas { context, size in
                 
+                // center at middle height, positive up
+                context.translateBy(x: 0, y: size.height/2)
+                context.scaleBy(x: 1, y: -1)
+                
                 let engine = DrawEngine(context: context, size: size)
                 
-                let objectPos = CGPoint(x: size.width*objectPosition, y: size.height/2)
+                let objectPos = size.width*objectPosition
                 let objectSize = size.height/2*0.9*objectSize
                 
-                let lensePos = CGPoint(x: size.width*lensePosition, y: size.height/2)
+                let lensePos = size.width*lensePosition
                 let lenseF = size.width*focalLength/2
                 
                 let lense1 = Lense(type: lenseType, focalLength: lenseF)
                 
                 engine.drawAxis()
-                engine.drawObject(at: objectPos, size: objectSize, color: .blue)
+                engine.drawObject(at: objectPos, size: objectSize)
                 engine.draw(lense1, at: lensePos)
                 
                 // compute image
                 
-                let distO = lensePos.x - objectPos.x
+                let distO = lensePos - objectPos
                 let gamma = lenseF / (distO - lenseF)
                 
                 let distI = distO * gamma
                 
-                let imagePos = CGPoint(x: lensePos.x+distI, y: size.height/2)
+                let imagePos = lensePos + distI
                 let imageSize = -objectSize * gamma
                 
                 // draw image
                 
-                engine.drawObject(at: imagePos, size: imageSize, color: .green)
+                engine.drawImage(at: imagePos, size: imageSize)
                 
                 // simulated rays
                 
                 var path = Path()
                 
-                let parallelRayY = size.height/2-objectSize
-                
                 // parallel ray object > lense
-                path.move(to: CGPoint(x: objectPos.x, y: parallelRayY))
-                path.addLine(to: CGPoint(x: lensePos.x, y: parallelRayY))
+                path.move(to: CGPoint(x: objectPos, y: objectSize))
+                path.addLine(to: CGPoint(x: lensePos, y: objectSize))
                 
                 // parallel ray lense > F
-                path.move(to: CGPoint(x: lensePos.x, y: parallelRayY))
-                path.addLine(to: CGPoint(x: lensePos.x+lenseF, y: lensePos.y))
+                path.move(to: CGPoint(x: lensePos, y: objectSize))
+                path.addLine(to: CGPoint(x: lensePos+lenseF, y: 0))
                 
                 // parallel ray F > image
-                path.move(to: CGPoint(x: lensePos.x+lenseF, y: lensePos.y))
-                path.addLine(to: CGPoint(x: imagePos.x, y: lensePos.y-imageSize))
+                path.move(to: CGPoint(x: lensePos+lenseF, y: 0))
+                path.addLine(to: CGPoint(x: imagePos, y: imageSize))
                 
                 // center ray object > O
-                path.move(to: CGPoint(x: objectPos.x, y: parallelRayY))
-                path.addLine(to: CGPoint(x: lensePos.x, y: lensePos.y))
+                path.move(to: CGPoint(x: objectPos, y: objectSize))
+                path.addLine(to: CGPoint(x: lensePos, y: 0))
                 
                 // center ray O > image
-                path.move(to: CGPoint(x: lensePos.x, y: lensePos.y))
-                path.addLine(to: CGPoint(x: imagePos.x, y: lensePos.y-imageSize))
+                path.move(to: CGPoint(x: lensePos, y: 0))
+                path.addLine(to: CGPoint(x: imagePos, y: imageSize))
                 
                 context.stroke(path, with: .color(.yellow), lineWidth: 1)
             }
@@ -104,80 +106,101 @@ struct DrawEngine {
     
     let context: GraphicsContext
     let size: CGSize
-    
+
     func drawAxis() {
         
         var path = Path()
         
-        path.move(to: CGPoint(x: 0, y: size.height/2))
-        path.addLine(to: CGPoint(x: size.width, y: size.height/2))
+        path.move(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: size.width, y: 0))
         
         context.stroke(path, with: .color(.gray), lineWidth: 1)
     }
     
-    func drawObject(at position: CGPoint, size: CGFloat, color: Color) {
+    func pathForArrow(at h: CGFloat, pointing direction: ArrowDirection) -> Path {
+        
+        let a: CGFloat = 5
+        let d: CGFloat = direction == .towardAxis ? +1 : -1
         
         var path = Path()
         
-        let x = position.x
-        let y = position.y
-        let h = size
-        let a: CGFloat = 5
-        let d: CGFloat = size > 0 ? 1 : -1
+        path.move(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: a, y: a))
+        path.move(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: -a, y: a))
         
-        //main body
-        path.move(to: CGPoint(x: x, y: y))
-        path.addLine(to: CGPoint(x: x, y: y-h))
-        
-        // arrow
-        path.move(to: CGPoint(x: x, y: y-h))
-        path.addLine(to: CGPoint(x: x+a, y: y-h+d*a))
-        path.move(to: CGPoint(x: x, y: y-h))
-        path.addLine(to: CGPoint(x: x-a, y: y-h+d*a))
-        
-        context.stroke(path, with: .color(color), lineWidth: 2)
+        return path.applying(
+            .init(scaleX: 1, y: h > 0 ? -d : +d)
+            .concatenating(.init(translationX: 0, y: h))
+        )
     }
     
-    func draw(_ lense: Lense, at position: CGPoint) {
+    func drawObject(at position: CGFloat, size: CGFloat) {
         
-        let x = position.x
-        let y = position.y
+        drawObjectOrImage(at: position, size: size, color: .blue)
+    }
+    
+    func drawImage(at position: CGFloat, size: CGFloat) {
+        
+        drawObjectOrImage(at: position, size: size, color: .green)
+    }
+        
+    func drawObjectOrImage(at position: CGFloat, size: CGFloat, color: Color) {
+        
+        let x = position
+        let h = size
+        
+        let lineWidth: CGFloat = 2
+        
+        var path = Path()
+        
+        path.move(to: CGPoint(x: x, y: 0))
+        path.addLine(to: CGPoint(x: x, y: h))
+        
+        path.addPath(pathForArrow(at: h, pointing: .towardAxis),
+                     transform: .init(translationX: position, y: 0))
+        
+        context.stroke(path, with: .color(color), lineWidth: lineWidth)
+    }
+    
+    func draw(_ lense: Lense, at position: CGFloat) {
+        
+        let x = position
         let h = size.height/2*0.9
-        
-        let a: CGFloat = 5
-        let d: CGFloat = lense.type == .convergent ? -1 : 1
         
         let f = lense.focalLength
         let m: CGFloat = 5
         
+        let arrowDir: ArrowDirection = lense.type == .convergent ? .towardAxis : .awayFromAxis
+        
         var path = Path()
         
         // lense body
-        path.move(to: CGPoint(x: x, y: y+h))
-        path.addLine(to: CGPoint(x: x, y: y-h))
+        path.move(to: CGPoint(x: x, y: h))
+        path.addLine(to: CGPoint(x: x, y: -h))
         
-        // top arrow
-        path.move(to: CGPoint(x: x, y: y+h))
-        path.addLine(to: CGPoint(x: x+a, y: y+h+d*a))
-        path.move(to: CGPoint(x: x, y: y+h))
-        path.addLine(to: CGPoint(x: x-a, y: y+h+d*a))
-        
-        // bottom arrow
-        path.move(to: CGPoint(x: x, y: y-h))
-        path.addLine(to: CGPoint(x: x+a, y: y-h-d*a))
-        path.move(to: CGPoint(x: x, y: y-h))
-        path.addLine(to: CGPoint(x: x-a, y: y-h-d*a))
+        // arrows
+        path.addPath(pathForArrow(at: h, pointing: arrowDir),
+                     transform: .init(translationX: x, y: 0))
+        path.addPath(pathForArrow(at: -h, pointing: arrowDir),
+                     transform: .init(translationX: x, y: 0))
         
         // focal indicator before
-        path.move(to: CGPoint(x: x-f, y: y-m))
-        path.addLine(to: CGPoint(x: x-f, y: y+m))
+        path.move(to: CGPoint(x: x-f, y: -m))
+        path.addLine(to: CGPoint(x: x-f, y: +m))
         
         // focal indicator after
-        path.move(to: CGPoint(x: x+f, y: y-m))
-        path.addLine(to: CGPoint(x: x+f, y: y+m))
+        path.move(to: CGPoint(x: x+f, y: -m))
+        path.addLine(to: CGPoint(x: x+f, y: +m))
         
         context.stroke(path, with: .color(.red), lineWidth: 2)
     }
+}
+
+
+enum ArrowDirection {
+    
+    case towardAxis, awayFromAxis
 }
 
 
