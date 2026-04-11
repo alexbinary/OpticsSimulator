@@ -17,10 +17,11 @@ struct ContentView: View {
             Canvas { context, size in
                 
                 // center at middle height, positive up
+                
                 context.translateBy(x: 0, y: size.height/2)
                 context.scaleBy(x: 1, y: -1)
                 
-                let engine = DrawEngine(context: context, size: size)
+                // setup scene
                 
                 let objectPos = size.width*objectPosition
                 let objectSize = size.height/2*0.9*objectSize
@@ -28,49 +29,38 @@ struct ContentView: View {
                 let lensePos = size.width*lensePosition
                 let lenseF = size.width*focalLength/2
                 
-                let lense1 = Lense(type: lenseType, focalLength: lenseF)
+                let lense = Lense(type: lenseType, focalLength: lenseF)
                 
-                engine.drawAxis()
-                engine.drawObject(at: objectPos, size: objectSize)
-                engine.draw(lense1, at: lensePos)
+                let scene = Scene(objectPos: objectPos, objectSize: objectSize, lensePos: lensePos, lense: lense)
                 
-                // compute image
+                // render
                 
-                let distO = lensePos - objectPos
-                let gamma = lenseF / (distO - lenseF)
-                
-                let distI = distO * gamma
-                
-                let imagePos = lensePos + distI
-                let imageSize = -objectSize * gamma
-                
-                // draw image
-                
-                engine.drawImage(at: imagePos, size: imageSize)
+                let engine = DrawEngine(context: context, size: size)
+                engine.render(scene)
                 
                 // simulated rays
                 
                 var path = Path()
                 
                 // parallel ray object > lense
-                path.move(to: CGPoint(x: objectPos, y: objectSize))
-                path.addLine(to: CGPoint(x: lensePos, y: objectSize))
+                path.move(to: CGPoint(x: scene.objectPos, y: scene.objectSize))
+                path.addLine(to: CGPoint(x: scene.lensePos, y: scene.objectSize))
                 
                 // parallel ray lense > F
-                path.move(to: CGPoint(x: lensePos, y: objectSize))
-                path.addLine(to: CGPoint(x: lensePos+lenseF, y: 0))
+                path.move(to: CGPoint(x: scene.lensePos, y: scene.objectSize))
+                path.addLine(to: CGPoint(x: scene.lensePos+scene.lense.focalLength, y: 0))
                 
                 // parallel ray F > image
-                path.move(to: CGPoint(x: lensePos+lenseF, y: 0))
-                path.addLine(to: CGPoint(x: imagePos, y: imageSize))
+                path.move(to: CGPoint(x: scene.lensePos+scene.lense.focalLength, y: 0))
+                path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
                 
                 // center ray object > O
-                path.move(to: CGPoint(x: objectPos, y: objectSize))
-                path.addLine(to: CGPoint(x: lensePos, y: 0))
+                path.move(to: CGPoint(x: scene.objectPos, y: scene.objectSize))
+                path.addLine(to: CGPoint(x: scene.lensePos, y: 0))
                 
                 // center ray O > image
-                path.move(to: CGPoint(x: lensePos, y: 0))
-                path.addLine(to: CGPoint(x: imagePos, y: imageSize))
+                path.move(to: CGPoint(x: scene.lensePos, y: 0))
+                path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
                 
                 context.stroke(path, with: .color(.yellow), lineWidth: 1)
             }
@@ -98,6 +88,36 @@ struct ContentView: View {
         .padding([.horizontal])
         .frame(minWidth: 200, minHeight: 200)
         .padding()
+    }
+}
+
+
+struct Scene {
+    
+    let objectPos: CGFloat
+    let objectSize: CGFloat
+    
+    let lensePos: CGFloat
+    let lense: Lense
+    
+    let imagePos: CGFloat
+    let imageSize: CGFloat
+    
+    
+    init(objectPos: CGFloat, objectSize: CGFloat, lensePos: CGFloat, lense: Lense) {
+        
+        self.objectPos = objectPos
+        self.objectSize = objectSize
+        self.lensePos = lensePos
+        self.lense = lense
+        
+        // compute image
+        let distO = lensePos - objectPos
+        let gamma = lense.focalLength / (distO - lense.focalLength)
+        let distI = distO * gamma
+        
+        self.imagePos = lensePos + distI
+        self.imageSize = -objectSize * gamma
     }
 }
 
@@ -194,6 +214,14 @@ struct DrawEngine {
         path.addLine(to: CGPoint(x: x+f, y: +m))
         
         context.stroke(path, with: .color(.red), lineWidth: 2)
+    }
+    
+    func render(_ scene: Scene) {
+        
+        drawAxis()
+        drawObject(at: scene.objectPos, size: scene.objectSize)
+        draw(scene.lense, at: scene.lensePos)
+        drawImage(at: scene.imagePos, size: scene.imageSize)
     }
 }
 
