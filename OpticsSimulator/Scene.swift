@@ -26,7 +26,20 @@ class OpticsScene {
     }
     
     
-    func computeImage() {
+    func delete(_ object: Object) {
+        self.objects.removeAll(where: { $0.id == object.id })
+    }
+    
+    func delete(_ lense: Lense) {
+        self.lenses.removeAll(where: { $0.id == lense.id })
+    }
+    
+    func delete(_ mirror: SphericalMirror) {
+        self.mirrors.removeAll(where: { $0.id == mirror.id })
+    }
+    
+    
+    func computeImages() {
         
         if let object = self.objects.first,
            let lense = self.lenses.first,

@@ -14,7 +14,12 @@ struct ContentView: View {
     @State private var mirrorType: MirrorType = .convex
     @State private var mirrorFocalLength: CGFloat = 0.25
     
-    @State private var scene = OpticsScene()
+    @State private var scene = {
+        let s = OpticsScene()
+        s.add(Object(pos: 0.1, size: 1))
+        s.add(Lense(pos: 0.5, type: .convergent, focalLength: 0.5))
+        return s
+    }()
 
     var body: some View {
         
@@ -29,7 +34,7 @@ struct ContentView: View {
                 
                 // setup scene
                 
-                scene.computeImage()
+                scene.computeImages()
                 
                 // render
                 
@@ -43,7 +48,14 @@ struct ContentView: View {
                     @Bindable var object = object
                     
                     VStack(alignment: .leading) {
-                        Text("Object").font(.title2)
+                        HStack {
+                            Text("Object").font(.title2)
+                            Button {
+                                scene.delete(object)
+                            } label: {
+                                Text("􀈑")
+                            }
+                        }
                         Form {
                             Slider(value: $object.pos, in: 0...1) {
                                 Text("Position")
@@ -62,7 +74,14 @@ struct ContentView: View {
                     @Bindable var lense = lense
                     
                     VStack(alignment: .leading) {
-                        Text("Lense").font(.title2)
+                        HStack {
+                            Text("Lense").font(.title2)
+                            Button {
+                                scene.delete(lense)
+                            } label: {
+                                Text("􀈑")
+                            }
+                        }
                         Form {
                             Slider(value: $lense.pos, in: 0...1) {
                                 Text("Position")
@@ -86,7 +105,14 @@ struct ContentView: View {
                     @Bindable var mirror = mirror
                     
                     VStack(alignment: .leading) {
-                        Text("Mirror").font(.title2)
+                        HStack {
+                            Text("Mirror").font(.title2)
+                            Button {
+                                scene.delete(mirror)
+                            } label: {
+                                Text("􀈑")
+                            }
+                        }
                         Form {
                             Slider(value: $mirror.pos, in: 0...1) {
                                 Text("Position")
@@ -104,6 +130,10 @@ struct ContentView: View {
                     .padding()
                     Divider()
                 }
+                
+                Spacer()
+                
+                Divider()
                 
                 VStack {
                     Button {
