@@ -392,18 +392,22 @@ struct Renderer {
                     atX: deviceAfterPos
                 )
                 
-                draw(
-                    parallelRay,
-                    betweenX: deviceBeforePos, andX: deviceAfterPos
-                )
-                
-                if imagePos < deviceBeforePos {
-                
+                if let lense = deviceAfter as? Lense,
+                   lense.generatesParallelRay {
+                    
                     draw(
                         parallelRay,
-                        betweenX: imagePos, andX: deviceBeforePos,
-                        virtual: true
+                        betweenX: deviceBeforePos, andX: deviceAfterPos
                     )
+                    
+                    if imagePos < deviceBeforePos {
+                        
+                        draw(
+                            parallelRay,
+                            betweenX: imagePos, andX: deviceBeforePos,
+                            virtual: true
+                        )
+                    }
                 }
                 
                 // center ray
@@ -420,18 +424,22 @@ struct Renderer {
                     atX: deviceAfterPos
                 )
                 
-                draw(
-                    centerRay,
-                    betweenX: deviceBeforePos, andX: deviceAfterPos
-                )
-                
-                if imagePos < deviceBeforePos {
-                
+                if let lense = deviceAfter as? Lense,
+                   lense.generatesCenterRay {
+                    
                     draw(
                         centerRay,
-                        betweenX: imagePos, andX: deviceBeforePos,
-                        virtual: true
+                        betweenX: deviceBeforePos, andX: deviceAfterPos
                     )
+                    
+                    if imagePos < deviceBeforePos {
+                        
+                        draw(
+                            centerRay,
+                            betweenX: imagePos, andX: deviceBeforePos,
+                            virtual: true
+                        )
+                    }
                 }
                 
                 // focal ray
@@ -448,47 +456,69 @@ struct Renderer {
                     atX: deviceAfterPos
                 )
                 
-                draw(
-                    focalRay,
-                    betweenX: deviceBeforePos, andX: deviceAfterPos
-                )
-                
-                if imagePos < deviceBeforePos {
-                
-                    draw(
-                        focalRay,
-                        betweenX: imagePos, andX: deviceBeforePos,
-                        virtual: true
-                    )
-                }
-                
-                if imagePos > deviceAfterFocalPoint.x {
+                if let lense = deviceAfter as? Lense,
+                   lense.generatesFocalRay {
                     
                     draw(
                         focalRay,
-                        betweenX: deviceAfterFocalPoint.x, andX: imagePos,
-                        virtual: true
+                        betweenX: deviceBeforePos, andX: deviceAfterPos
                     )
+                    
+                    if imagePos < deviceBeforePos {
+                        
+                        draw(
+                            focalRay,
+                            betweenX: imagePos, andX: deviceBeforePos,
+                            virtual: true
+                        )
+                    }
+                    
+                    if imagePos > deviceAfterFocalPoint.x {
+                        
+                        draw(
+                            focalRay,
+                            betweenX: deviceAfterFocalPoint.x, andX: imagePos,
+                            virtual: true
+                        )
+                    }
+                    
+                    if let lense = deviceAfter as? Lense,
+                       lense.type == .divergent {
+                        
+                        drawRay(
+                            from: deviceAfterFocalPoint,
+                            to: pointFromHorizontalOnDeviceAfter,
+                            minX: deviceAfterFocalPoint.x, maxX: deviceAfterPos,
+                            virtual: true
+                        )
+                    }
                 }
+                
+                var pointsOnDeviceBefore: [RayPoint] = []
                 
                 if let lense = deviceAfter as? Lense,
-                   lense.type == .divergent {
+                   lense.generatesParallelRay {
                     
-                    drawRay(
-                        from: deviceAfterFocalPoint,
-                        to: pointFromHorizontalOnDeviceAfter,
-                        minX: deviceAfterFocalPoint.x, maxX: deviceAfterPos,
-                        virtual: true
-                    )
+                    pointsOnDeviceBefore.append(RayPoint(
+                        p: pointFromHorizontalOnDeviceAfter, type: .parallel
+                    ))
+                }
+                if let lense = deviceAfter as? Lense,
+                   lense.generatesCenterRay {
+                    
+                    pointsOnDeviceBefore.append(RayPoint(
+                        p: pointFromCenterOnDeviceAfter, type: .center
+                    ))
+                }
+                if let lense = deviceAfter as? Lense,
+                   lense.generatesFocalRay {
+                    
+                    pointsOnDeviceBefore.append(RayPoint(
+                        p: pointFromFocalPointOnDeviceAfter, type: .focal
+                    ))
                 }
 
                 // continue rays forward through all devices
-                
-                var pointsOnDeviceBefore: [RayPoint] = [
-                    RayPoint(p: pointFromHorizontalOnDeviceAfter, type: .parallel),
-                    RayPoint(p: pointFromCenterOnDeviceAfter, type: .center),
-                    RayPoint(p: pointFromFocalPointOnDeviceAfter, type: .focal),
-                ]
                 
                 for i2 in (i1+1)..<images.count {
 
@@ -573,50 +603,73 @@ struct Renderer {
                 
                 // continue rays backwards through all devices
                 
-                var pointsOnDeviceAfter: [CGPoint] = [
-                    pointFromHorizontalOnDeviceBefore,
-                    pointFromCenterOnDeviceBefore,
-                    pointFromFocalPointOnDeviceBefore,
-                ]
-                
-                for i2 in 0..<i1 {
+                if let lense = deviceAfter as? Lense,
+                   lense.retroPropagatesRays {
                     
-                    let i3 = i1-1-i2
+                    var pointsOnDeviceAfter: [RayPoint] = []
                     
-//                    if ![].contains(i2) { continue }
-                    
-                    let currentImage = images[i3]
-                    
-                    let deviceBefore = (i3-1) >= 0 ? devices[i3-1] : nil
-                    let deviceAfter = i3 < devices.count ? devices[i3] : nil
-                    
-                    let imagePos = rendererPos(from: currentImage.pos)
-                    let imageSize = rendererObjectSize(from: currentImage.size)
-                    let imageTop = CGPoint(x: imagePos, y: imageSize)
-                    
-                    let deviceBeforePos = rendererPos(
-                        from: deviceBefore?.pos ?? currentImage.pos
-                    )
-                    
-                    var pointsOnDeviceBefore: [CGPoint] = []
-
-                    for pointOnDeviceAfter in pointsOnDeviceAfter {
-
-                        let pointOnDeviceBefore = Ray(
-                            from: pointOnDeviceAfter, to: imageTop
-                        ).point(
-                            atX: deviceBeforePos
-                        )
-
-                        drawRay(
-                            from: pointOnDeviceBefore,
-                            to: pointOnDeviceAfter
-                        )
-
-                        pointsOnDeviceAfter.append(pointOnDeviceAfter)
+                    if let lense = deviceAfter as? Lense,
+                       lense.generatesParallelRay {
+                        
+                        pointsOnDeviceAfter.append(RayPoint(
+                            p: pointFromHorizontalOnDeviceBefore, type: .parallel
+                        ))
                     }
-
-                    pointsOnDeviceAfter = pointsOnDeviceBefore
+                    if let lense = deviceAfter as? Lense,
+                       lense.generatesCenterRay {
+                        
+                        pointsOnDeviceAfter.append(RayPoint(
+                            p: pointFromCenterOnDeviceBefore, type: .center
+                        ))
+                    }
+                    if let lense = deviceAfter as? Lense,
+                       lense.generatesFocalRay {
+                        
+                        pointsOnDeviceAfter.append(RayPoint(
+                            p: pointFromFocalPointOnDeviceBefore, type: .focal
+                        ))
+                    }
+                    
+                    for i2 in 0..<i1 {
+                        
+                        let i3 = i1-1-i2
+                        
+                        //                    if ![].contains(i2) { continue }
+                        
+                        let currentImage = images[i3]
+                        
+                        let deviceBefore = (i3-1) >= 0 ? devices[i3-1] : nil
+                        
+                        let imagePos = rendererPos(from: currentImage.pos)
+                        let imageSize = rendererObjectSize(from: currentImage.size)
+                        let imageTop = CGPoint(x: imagePos, y: imageSize)
+                        
+                        let deviceBeforePos = rendererPos(
+                            from: deviceBefore?.pos ?? currentImage.pos
+                        )
+                        
+                        var pointsOnDeviceBefore: [RayPoint] = []
+                        
+                        for pointOnDeviceAfter in pointsOnDeviceAfter {
+                            
+                            let pointOnDeviceBefore = Ray(
+                                from: pointOnDeviceAfter.p, to: imageTop
+                            ).point(
+                                atX: deviceBeforePos
+                            )
+                            
+                            drawRay(
+                                from: pointOnDeviceBefore,
+                                to: pointOnDeviceAfter.p
+                            )
+                            
+                            pointsOnDeviceBefore.append(RayPoint(
+                                p: pointOnDeviceBefore, type: pointOnDeviceAfter.type
+                            ))
+                        }
+                        
+                        pointsOnDeviceAfter = pointsOnDeviceBefore
+                    }
                 }
             }
         }

@@ -168,13 +168,20 @@ struct ContentView: View {
                                     }
                                     Text("\(lense.focalLength, specifier: "%.2f")")
                                 }
-                            }
-                            Picker("Type", selection: $lense.type) {
-                                ForEach(LenseType.allCases) { type in
-                                    Text(type.label).tag(type)
+                                Picker("Type", selection: $lense.type) {
+                                    ForEach(LenseType.allCases) { type in
+                                        Text(type.label).tag(type)
+                                    }
+                                }
+                                LabeledContent("Rays") {
+                                    HStack {
+                                        Toggle("Parallel", isOn: $lense.generatesParallelRay)
+                                        Toggle("Center", isOn: $lense.generatesCenterRay)
+                                        Toggle("Focal", isOn: $lense.generatesFocalRay)
+                                        Toggle("Retropropagate", isOn: $lense.retroPropagatesRays)
+                                    }
                                 }
                             }
-                            .labelsHidden()
                         }
                         .padding(.vertical)
                     }
@@ -215,13 +222,12 @@ struct ContentView: View {
                                     }
                                     Text("\(mirror.focalLength, specifier: "%.2f")")
                                 }
-                            }
-                            Picker("Type", selection: $mirror.type) {
-                                ForEach(MirrorType.allCases) { type in
-                                    Text(type.label).tag(type)
+                                Picker("Type", selection: $mirror.type) {
+                                    ForEach(MirrorType.allCases) { type in
+                                        Text(type.label).tag(type)
+                                    }
                                 }
                             }
-                            .labelsHidden()
                         }
                         .padding(.vertical)
                     }
