@@ -75,7 +75,7 @@ struct ContentView: View {
                 // parallel ray F > image
                 if lense.type == .convergent {
                     path.move(to: CGPoint(x: scene.lense.pos+scene.lense.focalLength, y: 0))
-                    path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
+                    path.addLine(to: CGPoint(x: scene.image.pos, y: scene.image.size))
                 }
                 
                 // center ray object > O
@@ -85,7 +85,7 @@ struct ContentView: View {
                 // center ray O > image
                 if lense.type == .convergent {
                     path.move(to: CGPoint(x: scene.lense.pos, y: 0))
-                    path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
+                    path.addLine(to: CGPoint(x: scene.image.pos, y: scene.image.size))
                 }
                 
                 context.stroke(path, with: .color(.yellow), lineWidth: 1)
@@ -110,7 +110,7 @@ struct ContentView: View {
                 // parallel ray F > image
                 if mirror.type == .concave {
                     path.move(to: CGPoint(x: scene.mirror.pos-scene.mirror.focalLength, y: 0))
-                    path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
+                    path.addLine(to: CGPoint(x: scene.image.pos, y: scene.image.size))
                 }
                 
                 // center ray object > S
@@ -119,7 +119,7 @@ struct ContentView: View {
                 
                 // center ray S > image
                 path.move(to: CGPoint(x: scene.mirror.pos, y: 0))
-                path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
+                path.addLine(to: CGPoint(x: scene.image.pos, y: scene.image.size))
                 
                 context.stroke(path, with: .color(.yellow), lineWidth: 1)
             }
@@ -169,8 +169,7 @@ struct OpticsScene {
     let lense: Lense
     let mirror: SphericalMirror
     
-    let imagePos: CGFloat
-    let imageSize: CGFloat
+    let image: Image
     
     
     init(
@@ -180,27 +179,29 @@ struct OpticsScene {
         self.lense = lense
         self.mirror = mirror
         
-//        // compute image through lense
-//        let f = lense.focalLength * (lense.type == .convergent ? +1 : -1)
-//        let distO = lense.pos - objectPos
-//        let gamma = f / (distO - f)
-//        let distI = distO * gamma
-//        self.imagePos = lense.pos + distI
-//        self.imageSize = -objectSize * gamma
+        var imagePos: CGFloat
+        var imageSize: CGFloat
+        var gamma: CGFloat
+        
+        // compute image through lense
+        let f = lense.focalLength * (lense.type == .convergent ? +1 : -1)
+        let distO = lense.pos - object.pos
+        gamma = f / (distO - f)
+        let distI = distO * gamma
+        imagePos = lense.pos + distI
+        imageSize = -object.size * gamma
 
         // compute image through mirror
         let posf = mirror.pos + (mirror.type == .convex ? +1 : -1) * mirror.focalLength
         let fa = object.pos - posf
-        
         let fa_im = mirror.focalLength*mirror.focalLength / fa
-        // fa_im = imagePos - posf
-        self.imagePos = fa_im + posf
-        
+        imagePos = fa_im + posf
         let sa = object.pos - mirror.pos
-        let sa_im = self.imagePos - mirror.pos
-        let gamma = sa_im / sa
+        let sa_im = imagePos - mirror.pos
+        gamma = sa_im / sa
+        imageSize = -object.size * gamma
         
-        self.imageSize = -object.size * gamma
+        self.image = Image(pos: imagePos, size: imageSize)
     }
 }
 
@@ -371,7 +372,7 @@ struct DrawEngine {
         drawObject(at: scene.object.pos, size: scene.object.size)
         draw(scene.lense, at: scene.lense.pos)
         draw(scene.mirror, at: scene.mirror.pos)
-        drawImage(at: scene.imagePos, size: scene.imageSize)
+        drawImage(at: scene.image.pos, size: scene.image.size)
     }
 }
 
@@ -383,6 +384,12 @@ enum ArrowDirection {
 
 
 struct Object {
+    
+    let pos: CGFloat
+    let size: CGFloat
+}
+
+struct Image {
     
     let pos: CGFloat
     let size: CGFloat
