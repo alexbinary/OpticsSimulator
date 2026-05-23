@@ -9,9 +9,13 @@ struct ContentView: View {
             name: "Object 1",
             pos: 0.1, size: 1
         ))
-        s.add(Lense(
-            name: "Lense 1",
-            pos: 0.5, type: .convergent, focalLength: 0.1
+//        s.add(Lense(
+//            name: "Lense 1",
+//            pos: 0.5, type: .convergent, focalLength: 0.1
+//        ))
+        s.add(SphericalMirror(
+            name: "Mirror 1",
+            pos: 0.5, type: .concave, focalLength: 0.1
         ))
         return s
     }()

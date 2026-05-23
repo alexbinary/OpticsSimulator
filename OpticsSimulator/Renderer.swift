@@ -171,92 +171,102 @@ struct Renderer {
         context.stroke(path, with: .color(.red), lineWidth: 2)
     }
     
+    func drawRay(
+        from p1: CGPoint, to p2: CGPoint, extendToX targetXs: [CGFloat] = []
+    ) {
+        let direction = Direction(from: p1, to: p2)
+        
+        let allX = [p1.x, p2.x]+targetXs
+        let minX = allX.min()!
+        let maxX = allX.max()!
+        
+        let startPoint = direction.point(
+            atX: minX, startingFrom: p1
+        )
+        let endPoint = direction.point(
+            atX: maxX, startingFrom: p1
+        )
+        
+        var path = Path()
+        
+        path.move(to: startPoint)
+        path.addLine(to: endPoint)
+        
+        context.stroke(path, with: .color(.yellow), lineWidth: 1)
+    }
+    
     func drawRays(for object: Object, _ lense: Lense, _ image: Image) {
         
         let objectPos = rendererPos(from: object.pos)
         let objectSize = rendererObjectSize(from: object.size)
+        let objectTop = CGPoint(x: objectPos, y: objectSize)
         
         let imagePos = rendererPos(from: image.pos)
-        let imageSize = rendererObjectSize(from: image.size)
         
         let lensePos = rendererPos(from: lense.pos)
-        let lenseF = rendererFocalLength(from: lense.focalLength)
+        let lenseCenter = CGPoint(x: lensePos, y: 0)
+        let f = rendererFocalLength(from: lense.focalLength)
+        let F1 = CGPoint(x: lensePos-f, y: 0)
+        let F2 = CGPoint(x: lensePos+f, y: 0)
         
-        var path = Path()
+        // parallel ray : object > lense
         
-        // parallel ray object > lense
-        path.move(to: CGPoint(x: objectPos, y: objectSize))
-        path.addLine(to: CGPoint(x: lensePos, y: objectSize))
+        let projectedPointOnLense = Direction.horizontal.point(
+            atX: lensePos, startingFrom: objectTop
+        )
+        drawRay(from: objectTop, to: projectedPointOnLense)
         
-        // parallel ray lense > F
+        // parallel ray : lense > F > image
+        
         if lense.type == .convergent {
-            path.move(to: CGPoint(x: lensePos, y: objectSize))
-            path.addLine(to: CGPoint(x: lensePos+lenseF, y: 0))
+            drawRay(from: projectedPointOnLense, to: F2, extendToX: [imagePos])
         } else {
-            path.move(to: CGPoint(x: lensePos, y: objectSize))
-            path.addLine(to: CGPoint(x: lensePos-lenseF, y: 0))
+            drawRay(from: projectedPointOnLense, to: F1, extendToX: [imagePos])
         }
         
-        // parallel ray F > image
-        if lense.type == .convergent {
-            path.move(to: CGPoint(x: lensePos+lenseF, y: 0))
-            path.addLine(to: CGPoint(x: imagePos, y: imageSize))
-        }
+        // center ray : object > O > image
         
-        // center ray object > O
-        path.move(to: CGPoint(x: objectPos, y: objectSize))
-        path.addLine(to: CGPoint(x: lensePos, y: 0))
-        
-        // center ray O > image
-        if lense.type == .convergent {
-            path.move(to: CGPoint(x: lensePos, y: 0))
-            path.addLine(to: CGPoint(x: imagePos, y: imageSize))
-        }
-        
-        context.stroke(path, with: .color(.yellow), lineWidth: 1)
+        drawRay(from: objectTop, to: lenseCenter, extendToX: [imagePos])
     }
     
     func drawRays(for object: Object, _ mirror: SphericalMirror, _ image: Image) {
         
         let objectPos = rendererPos(from: object.pos)
         let objectSize = rendererObjectSize(from: object.size)
+        let objectTop = CGPoint(x: objectPos, y: objectSize)
         
         let imagePos = rendererPos(from: image.pos)
         let imageSize = rendererObjectSize(from: image.size)
+        let imageTop = CGPoint(x: imagePos, y: imageSize)
         
         let mirrorPos = rendererPos(from: mirror.pos)
-        let mirrorF = rendererFocalLength(from: mirror.focalLength)
+        let f = rendererFocalLength(from: mirror.focalLength)
+        let mirrorVertex = CGPoint(x: mirrorPos, y: 0)
+        let mirrorCenter = CGPoint(x: mirrorPos+(mirror.type == .concave ? -1 : +1)*2*f, y: 0)
+        let F = CGPoint(x: mirrorPos+(mirror.type == .concave ? -1 : +1)*f, y: 0)
         
-        var path = Path()
+        // parallel ray : object > mirror
         
-        // parallel ray object > mirror
-        path.move(to: CGPoint(x: objectPos, y: objectSize))
-        path.addLine(to: CGPoint(x: mirrorPos, y: objectSize))
+        let projectedPointOnMirror = Direction.horizontal.point(
+            atX: mirrorPos, startingFrom: objectTop
+        )
+        drawRay(from: objectTop, to: projectedPointOnMirror)
         
-        // parallel ray mirror > F
-        if mirror.type == .concave {
-            path.move(to: CGPoint(x: mirrorPos, y: objectSize))
-            path.addLine(to: CGPoint(x: mirrorPos-mirrorF, y: 0))
-        } else {
-            path.move(to: CGPoint(x: mirrorPos, y: objectSize))
-            path.addLine(to: CGPoint(x: mirrorPos+mirrorF, y: 0))
-        }
+        // parallel ray : mirror > F > image
         
-        // parallel ray F > image
-        if mirror.type == .concave {
-            path.move(to: CGPoint(x: mirrorPos-mirrorF, y: 0))
-            path.addLine(to: CGPoint(x: imagePos, y: imageSize))
-        }
+        drawRay(from: projectedPointOnMirror, to: F, extendToX: [imagePos])
         
-        // center ray object > S
-        path.move(to: CGPoint(x: objectPos, y: objectSize))
-        path.addLine(to: CGPoint(x: mirrorPos, y: 0))
+        // vertex ray : object > S
         
-        // center ray S > image
-        path.move(to: CGPoint(x: mirrorPos, y: 0))
-        path.addLine(to: CGPoint(x: imagePos, y: imageSize))
+        drawRay(from: objectTop, to: mirrorVertex)
         
-        context.stroke(path, with: .color(.yellow), lineWidth: 1)
+        // vertex ray : S > image
+
+        drawRay(from: mirrorVertex, to: imageTop)
+        
+        // center ray : S > image
+
+        drawRay(from: objectTop, to: mirrorCenter, extendToX: [imagePos])
     }
     
     func rendererPos(from resIndependantPos: CGFloat) -> CGFloat {
