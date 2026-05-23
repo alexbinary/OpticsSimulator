@@ -36,13 +36,16 @@ struct ContentView: View {
                 let mirrorPos = size.width*mirrorPosition
                 let mirrorF = size.width*mirrorFocalLength/2
                 
-                let lense = Lense(type: lenseType, focalLength: lenseF)
-                let mirror = SphericalMirror(type: mirrorType, focalLength: mirrorF)
+                let lense = Lense(
+                    pos: lensePos, type: lenseType, focalLength: lenseF
+                )
+                let mirror = SphericalMirror(
+                    pos: mirrorPos, type: mirrorType, focalLength: mirrorF
+                )
                 
                 let scene = OpticsScene(
                     objectPos: objectPos, objectSize: objectSize,
-                    lensePos: lensePos, lense: lense,
-                    mirrorPos: mirrorPos, mirror: mirror
+                    lense: lense, mirror: mirror
                 )
                 
                 // render
@@ -50,40 +53,40 @@ struct ContentView: View {
                 let engine = DrawEngine(context: context, size: size)
                 engine.render(scene)
                 
-                //                // simulated rays - lense
-                //
-                //                var path = Path()
-                //
-                //                // parallel ray object > lense
-                //                path.move(to: CGPoint(x: scene.objectPos, y: scene.objectSize))
-                //                path.addLine(to: CGPoint(x: scene.lensePos, y: scene.objectSize))
-                //
-                //                // parallel ray lense > F
-                //                if lense.type == .convergent {
-                //                    path.move(to: CGPoint(x: scene.lensePos, y: scene.objectSize))
-                //                    path.addLine(to: CGPoint(x: scene.lensePos+scene.lense.focalLength, y: 0))
-                //                } else {
-                //                    path.move(to: CGPoint(x: scene.lensePos, y: scene.objectSize))
-                //                    path.addLine(to: CGPoint(x: scene.lensePos-scene.lense.focalLength, y: 0))
-                //                }
-                //
-                //                // parallel ray F > image
-                //                if lense.type == .convergent {
-                //                    path.move(to: CGPoint(x: scene.lensePos+scene.lense.focalLength, y: 0))
-                //                    path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
-                //                }
-                //
-                //                // center ray object > O
-                //                path.move(to: CGPoint(x: scene.objectPos, y: scene.objectSize))
-                //                path.addLine(to: CGPoint(x: scene.lensePos, y: 0))
-                //
-                //                // center ray O > image
-                //                if lense.type == .convergent {
-                //                    path.move(to: CGPoint(x: scene.lensePos, y: 0))
-                //                    path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
-                //                }
-                //
-                //                context.stroke(path, with: .color(.yellow), lineWidth: 1)
+//                // simulated rays - lense
+//                
+//                var path = Path()
+//                
+//                // parallel ray object > lense
+//                path.move(to: CGPoint(x: scene.objectPos, y: scene.objectSize))
+//                path.addLine(to: CGPoint(x: scene.lense.pos, y: scene.objectSize))
+//                
+//                // parallel ray lense > F
+//                if lense.type == .convergent {
+//                    path.move(to: CGPoint(x: scene.lense.pos, y: scene.objectSize))
+//                    path.addLine(to: CGPoint(x: scene.lense.pos+scene.lense.focalLength, y: 0))
+//                } else {
+//                    path.move(to: CGPoint(x: scene.lense.pos, y: scene.objectSize))
+//                    path.addLine(to: CGPoint(x: scene.lense.pos-scene.lense.focalLength, y: 0))
+//                }
+//                
+//                // parallel ray F > image
+//                if lense.type == .convergent {
+//                    path.move(to: CGPoint(x: scene.lense.pos+scene.lense.focalLength, y: 0))
+//                    path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
+//                }
+//                
+//                // center ray object > O
+//                path.move(to: CGPoint(x: scene.objectPos, y: scene.objectSize))
+//                path.addLine(to: CGPoint(x: scene.lense.pos, y: 0))
+//                
+//                // center ray O > image
+//                if lense.type == .convergent {
+//                    path.move(to: CGPoint(x: scene.lense.pos, y: 0))
+//                    path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
+//                }
+//                
+//                context.stroke(path, with: .color(.yellow), lineWidth: 1)
                 
                 // simulated rays - mirror
                 
@@ -91,29 +94,29 @@ struct ContentView: View {
                 
                 // parallel ray object > mirror
                 path.move(to: CGPoint(x: scene.objectPos, y: scene.objectSize))
-                path.addLine(to: CGPoint(x: scene.mirrorPos, y: scene.objectSize))
+                path.addLine(to: CGPoint(x: scene.mirror.pos, y: scene.objectSize))
                 
                 // parallel ray mirror > F
                 if mirror.type == .concave {
-                    path.move(to: CGPoint(x: scene.mirrorPos, y: scene.objectSize))
-                    path.addLine(to: CGPoint(x: scene.mirrorPos-scene.mirror.focalLength, y: 0))
+                    path.move(to: CGPoint(x: scene.mirror.pos, y: scene.objectSize))
+                    path.addLine(to: CGPoint(x: scene.mirror.pos-scene.mirror.focalLength, y: 0))
                 } else {
-                    path.move(to: CGPoint(x: scene.mirrorPos, y: scene.objectSize))
-                    path.addLine(to: CGPoint(x: scene.mirrorPos+scene.mirror.focalLength, y: 0))
+                    path.move(to: CGPoint(x: scene.mirror.pos, y: scene.objectSize))
+                    path.addLine(to: CGPoint(x: scene.mirror.pos+scene.mirror.focalLength, y: 0))
                 }
                 
                 // parallel ray F > image
                 if mirror.type == .concave {
-                    path.move(to: CGPoint(x: scene.mirrorPos-scene.mirror.focalLength, y: 0))
+                    path.move(to: CGPoint(x: scene.mirror.pos-scene.mirror.focalLength, y: 0))
                     path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
                 }
                 
                 // center ray object > S
                 path.move(to: CGPoint(x: scene.objectPos, y: scene.objectSize))
-                path.addLine(to: CGPoint(x: scene.mirrorPos, y: 0))
+                path.addLine(to: CGPoint(x: scene.mirror.pos, y: 0))
                 
                 // center ray S > image
-                path.move(to: CGPoint(x: scene.mirrorPos, y: 0))
+                path.move(to: CGPoint(x: scene.mirror.pos, y: 0))
                 path.addLine(to: CGPoint(x: scene.imagePos, y: scene.imageSize))
                 
                 context.stroke(path, with: .color(.yellow), lineWidth: 1)
@@ -162,10 +165,7 @@ struct OpticsScene {
     let objectPos: CGFloat
     let objectSize: CGFloat
     
-    let lensePos: CGFloat
     let lense: Lense
-    
-    let mirrorPos: CGFloat
     let mirror: SphericalMirror
     
     let imagePos: CGFloat
@@ -174,33 +174,32 @@ struct OpticsScene {
     
     init(
         objectPos: CGFloat, objectSize: CGFloat,
-        lensePos: CGFloat, lense: Lense,
-        mirrorPos: CGFloat, mirror: SphericalMirror
+        lense: Lense, mirror: SphericalMirror
     ) {
         
         self.objectPos = objectPos
         self.objectSize = objectSize
-        self.lensePos = lensePos
         self.lense = lense
-        self.mirrorPos = mirrorPos
         self.mirror = mirror
         
-        // compute image through lense
+//        // compute image through lense
 //        let f = lense.focalLength * (lense.type == .convergent ? +1 : -1)
-//        let distO = lensePos - objectPos
+//        let distO = lense.pos - objectPos
 //        let gamma = f / (distO - f)
 //        let distI = distO * gamma
-        
+//        self.imagePos = lense.pos + distI
+//        self.imageSize = -objectSize * gamma
+
         // compute image through mirror
-        let posf = mirrorPos + (mirror.type == .convex ? +1 : -1) * mirror.focalLength
+        let posf = mirror.pos + (mirror.type == .convex ? +1 : -1) * mirror.focalLength
         let fa = objectPos - posf
         
         let fa_im = mirror.focalLength*mirror.focalLength / fa
         // fa_im = imagePos - posf
         self.imagePos = fa_im + posf
         
-        let sa = objectPos - mirrorPos
-        let sa_im = self.imagePos - mirrorPos
+        let sa = objectPos - mirror.pos
+        let sa_im = self.imagePos - mirror.pos
         let gamma = sa_im / sa
         
         self.imageSize = -objectSize * gamma
@@ -372,8 +371,8 @@ struct DrawEngine {
         
         drawAxis()
         drawObject(at: scene.objectPos, size: scene.objectSize)
-//        draw(scene.lense, at: scene.lensePos)
-        draw(scene.mirror, at: scene.mirrorPos)
+//        draw(scene.lense, at: scene.lense.pos)
+        draw(scene.mirror, at: scene.mirror.pos)
         drawImage(at: scene.imagePos, size: scene.imageSize)
     }
 }
@@ -401,6 +400,7 @@ enum LenseType: CaseIterable, Identifiable {
 
 struct Lense {
     
+    let pos: CGFloat
     let type: LenseType
     let focalLength: CGFloat
 }
@@ -421,6 +421,7 @@ enum MirrorType: CaseIterable, Identifiable {
 
 struct SphericalMirror {
     
+    let pos: CGFloat
     let type: MirrorType
     let focalLength: CGFloat
 }
