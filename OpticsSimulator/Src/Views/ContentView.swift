@@ -153,6 +153,7 @@ struct ContentView: View {
                                 } label: {
                                     Text(self.activeDevice?.id == lense.id ? "􀋮" : "􀋭")
                                 }
+                                Toggle("Enabled", isOn: $lense.enabled)
                             }
                             Form {
                                 HStack {
@@ -199,6 +200,7 @@ struct ContentView: View {
                                 } label: {
                                     Text(self.activeDevice?.id == mirror.id ? "􀋮" : "􀋭")
                                 }
+                                Toggle("Enabled", isOn: $mirror.enabled)
                             }
                             Form {
                                 HStack {
@@ -236,6 +238,7 @@ struct ContentView: View {
                                 } label: {
                                     Text("􀈑")
                                 }
+                                Toggle("Enabled", isOn: $screen.enabled)
                             }
                             Form {
                                 HStack {

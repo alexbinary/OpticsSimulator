@@ -35,6 +35,7 @@ class OpticsDevice {
     
     var id = UUID()
     var pos: CGFloat
+    var enabled: Bool = true
     
     init(pos: CGFloat) {
         self.pos = pos

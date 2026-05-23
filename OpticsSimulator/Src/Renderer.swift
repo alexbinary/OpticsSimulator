@@ -294,20 +294,22 @@ struct Renderer {
         for object in scene.objects {
             draw(object)
         }
-        for lense in scene.lenses {
+        for lense in scene.lenses.filter({ $0.enabled }) {
             draw(lense)
         }
-        for mirror in scene.mirrors {
+        for mirror in scene.mirrors.filter({ $0.enabled }) {
             draw(mirror)
         }
-        for screen in scene.screens {
+        for screen in scene.screens.filter({ $0.enabled }) {
             draw(screen)
         }
         
         
         // compute images
         
-        let devicesByPosition = scene.devices.sorted { $0.pos < $1.pos }
+        let devicesByPosition = scene.devices
+            .sorted { $0.pos < $1.pos }
+            .filter { $0.enabled }
         
         var images: [Image] = []
         
