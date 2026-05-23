@@ -29,22 +29,6 @@ struct ContentView: View {
                 
                 // setup scene
                 
-                let object = Object(
-                    pos: objectPosition, size: objectSize
-                )
-                let lense = Lense(
-                    pos: lensePosition, type: lenseType,
-                    focalLength: lenseFocalLength
-                )
-                let mirror = SphericalMirror(
-                    pos: mirrorPosition, type: mirrorType,
-                    focalLength: mirrorFocalLength
-                )
-                
-                let scene = OpticsScene()
-                scene.add(object)
-                scene.add(lense)
-                scene.add(mirror)
                 scene.computeImage()
                 
                 // render
@@ -53,51 +37,93 @@ struct ContentView: View {
                 renderer.render(scene)
             }
             HStack(alignment: .top) {
-                VStack(alignment: .leading) {
-                    Text("Object").font(.title2)
-                    Form {
-                        Slider(value: $objectPosition, in: 0...1) {
-                            Text("Position")
-                        }
-                        Slider(value: $objectSize, in: 0...1) {
-                            Text("Size")
-                        }
-                    }
-                }
-                .padding()
-                Divider()
-                VStack(alignment: .leading) {
-                    Text("Lense").font(.title2)
-                    Form {
-                        Slider(value: $lensePosition, in: 0...1) {
-                            Text("Position")
-                        }
-                        Slider(value: $lenseFocalLength, in: 0...1) {
-                            Text("Focal length")
-                        }
-                        Picker("Type", selection: $lenseType) {
-                            ForEach(LenseType.allCases) { type in
-                                Text(type.label).tag(type)
+                
+                if let object = scene.objects.first {
+                    
+                    @Bindable var object = object
+                    
+                    VStack(alignment: .leading) {
+                        Text("Object").font(.title2)
+                        Form {
+                            Slider(value: $object.pos, in: 0...1) {
+                                Text("Position")
+                            }
+                            Slider(value: $object.size, in: 0...1) {
+                                Text("Size")
                             }
                         }
                     }
+                    .padding()
+                    Divider()
                 }
-                .padding()
-                Divider()
-                VStack(alignment: .leading) {
-                    Text("Mirror").font(.title2)
-                    Form {
-                        Slider(value: $mirrorPosition, in: 0...1) {
-                            Text("Position")
-                        }
-                        Slider(value: $mirrorFocalLength, in: 0...1) {
-                            Text("Focal length")
-                        }
-                        Picker("Type", selection: $mirrorType) {
-                            ForEach(MirrorType.allCases) { type in
-                                Text(type.label).tag(type)
+                
+                if let lense = scene.lenses.first {
+                    
+                    @Bindable var lense = lense
+                    
+                    VStack(alignment: .leading) {
+                        Text("Lense").font(.title2)
+                        Form {
+                            Slider(value: $lense.pos, in: 0...1) {
+                                Text("Position")
+                            }
+                            Slider(value: $lense.focalLength, in: 0...1) {
+                                Text("Focal length")
+                            }
+                            Picker("Type", selection: $lense.type) {
+                                ForEach(LenseType.allCases) { type in
+                                    Text(type.label).tag(type)
+                                }
                             }
                         }
+                    }
+                    .padding()
+                    Divider()
+                }
+                
+                if let mirror = scene.mirrors.first {
+                    
+                    @Bindable var mirror = mirror
+                    
+                    VStack(alignment: .leading) {
+                        Text("Mirror").font(.title2)
+                        Form {
+                            Slider(value: $mirror.pos, in: 0...1) {
+                                Text("Position")
+                            }
+                            Slider(value: $mirror.focalLength, in: 0...1) {
+                                Text("Focal length")
+                            }
+                            Picker("Type", selection: $mirror.type) {
+                                ForEach(MirrorType.allCases) { type in
+                                    Text(type.label).tag(type)
+                                }
+                            }
+                        }
+                    }
+                    .padding()
+                    Divider()
+                }
+                
+                VStack {
+                    Button {
+                        scene.add(Object(pos: 0.1, size: 1))
+                    } label: {
+                        Text("Add object")
+                    }
+                    Button {
+                        scene.add(Lense(
+                            pos: 0.9, type: .convergent, focalLength: 0.5
+                        ))
+                    } label: {
+                        Text("Add lense")
+                    }
+                    Button {
+                        scene.add(SphericalMirror(
+                            pos: 0.9, type: .convex, focalLength: 0.5
+                        ))
+                    } label: {
+                        Text("Add mirror")
                     }
                 }
                 .padding()

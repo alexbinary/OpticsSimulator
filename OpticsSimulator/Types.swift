@@ -3,10 +3,16 @@ import SwiftUI
 
 
 
-struct Object {
+@Observable
+class Object {
     
-    let pos: CGFloat
-    let size: CGFloat
+    var pos: CGFloat
+    var size: CGFloat
+    
+    init(pos: CGFloat, size: CGFloat) {
+        self.pos = pos
+        self.size = size
+    }
 }
 
 struct Image {
@@ -29,11 +35,18 @@ enum LenseType: CaseIterable, Identifiable {
     }
 }
 
-struct Lense {
+@Observable
+class Lense {
     
-    let pos: CGFloat
-    let type: LenseType
-    let focalLength: CGFloat
+    var pos: CGFloat
+    var type: LenseType
+    var focalLength: CGFloat
+    
+    init(pos: CGFloat, type: LenseType, focalLength: CGFloat) {
+        self.pos = pos
+        self.type = type
+        self.focalLength = focalLength
+    }
 }
 
 enum MirrorType: CaseIterable, Identifiable {
@@ -50,9 +63,16 @@ enum MirrorType: CaseIterable, Identifiable {
     }
 }
 
-struct SphericalMirror {
+@Observable
+class SphericalMirror {
     
-    let pos: CGFloat
-    let type: MirrorType
-    let focalLength: CGFloat
+    var pos: CGFloat
+    var type: MirrorType
+    var focalLength: CGFloat
+    
+    init(pos: CGFloat, type: MirrorType, focalLength: CGFloat) {
+        self.pos = pos
+        self.type = type
+        self.focalLength = focalLength
+    }
 }
