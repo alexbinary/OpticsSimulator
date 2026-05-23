@@ -323,7 +323,7 @@ struct Renderer {
             
             for i1 in 0..<images.count {
             
-                if ![0].contains(i1) { continue }
+//                if ![0].contains(i1) { continue }
                 
                 // draw rays from image to devices on both side
                 
@@ -439,15 +439,15 @@ struct Renderer {
 
                 // continue rays forward through all devices
                 
-                var pointsOnDeviceBefore: [CGPoint] = [
-                    pointFromHorizontalOnDeviceAfter,
-                    pointFromCenterOnDeviceAfter,
-                    pointFromFocalPointOnDeviceAfter,
+                var pointsOnDeviceBefore: [RayPoint] = [
+                    RayPoint(p: pointFromHorizontalOnDeviceAfter, type: .parallel),
+                    RayPoint(p: pointFromCenterOnDeviceAfter, type: .center),
+                    RayPoint(p: pointFromFocalPointOnDeviceAfter, type: .focal),
                 ]
                 
                 for i2 in (i1+1)..<images.count {
 
-                    if ![1].contains(i2) { continue }
+//                    if ![].contains(i2) { continue }
                     
                     let currentImage = images[i2]
                     let previousImage = (i2-1) >= 0 ? images[i2-1] : nil
@@ -468,36 +468,39 @@ struct Renderer {
                         from: deviceAfter?.pos ?? currentImage.pos
                     )
                     
-                    var pointsOnDeviceAfter: [CGPoint] = []
+                    var pointsOnDeviceAfter: [RayPoint] = []
 
                     for pointOnDeviceBefore in pointsOnDeviceBefore {
 
                         let pointOnDeviceAfter = Ray(
-                            from: pointOnDeviceBefore, to: imageTop
+                            from: pointOnDeviceBefore.p, to: imageTop
                         ).point(
                             atX: deviceAfterPos
                         )
 
                         drawRay(
-                            from: pointOnDeviceBefore,
+                            from: pointOnDeviceBefore.p,
                             to: pointOnDeviceAfter
                         )
                         
                         if imagePos < deviceBeforePos {
                             
-                            if let previousImage = previousImage {
+                            if pointOnDeviceBefore.type == .center,
+                               previousImage != nil,
+                               let lense = deviceBefore as? Lense, lense.type == .convergent {
                                 
                                 drawRay(
-                                    from: pointOnDeviceBefore,
+                                    from: pointOnDeviceBefore.p,
                                     to: pointOnDeviceAfter,
                                     minX: imagePos, maxX: previousImagePos,
                                     virtual: true
                                 )
                                 
-                            } else {
+                            } else if pointOnDeviceBefore.type != .center,
+                                      pointOnDeviceBefore.type != .parallel {
                              
                                 drawRay(
-                                    from: pointOnDeviceBefore,
+                                    from: pointOnDeviceBefore.p,
                                     to: pointOnDeviceAfter,
                                     minX: imagePos, maxX: deviceBeforePos,
                                     virtual: true
@@ -508,14 +511,16 @@ struct Renderer {
                         if imagePos > deviceAfterPos {
                             
                             drawRay(
-                                from: pointOnDeviceBefore,
+                                from: pointOnDeviceBefore.p,
                                 to: pointOnDeviceAfter,
                                 minX: deviceAfterPos, maxX: imagePos,
                                 virtual: true
                             )
                         }
 
-                        pointsOnDeviceAfter.append(pointOnDeviceAfter)
+                        pointsOnDeviceAfter.append(RayPoint(
+                            p: pointOnDeviceAfter, type: pointOnDeviceBefore.type
+                        ))
                     }
 
                     pointsOnDeviceBefore = pointsOnDeviceAfter
@@ -533,7 +538,7 @@ struct Renderer {
                     
                     let i3 = i1-1-i2
                     
-                    if ![].contains(i2) { continue }
+//                    if ![].contains(i2) { continue }
                     
                     let currentImage = images[i3]
                     

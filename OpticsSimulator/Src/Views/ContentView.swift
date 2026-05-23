@@ -7,11 +7,11 @@ struct ContentView: View {
         let s = OpticsScene()
         s.add(Object(
             name: "Object 1",
-            pos: 0.45, size: 0.3
+            pos: 0.3, size: 0.3
         ))
         s.add(Lense(
             name: "Lense 1",
-            pos: 0.5, type: .convergent, focalLength: 0.1
+            pos: 0.5, type: .divergent, focalLength: 0.1
         ))
 //        s.add(Lense(
 //            name: "Lense 2",

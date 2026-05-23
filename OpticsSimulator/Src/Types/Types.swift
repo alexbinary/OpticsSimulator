@@ -110,3 +110,17 @@ class Screen: OpticsDevice, Identifiable {
         super.init(pos: pos)
     }
 }
+
+
+enum RayType {
+    
+    case parallel
+    case focal
+    case center
+}
+
+struct RayPoint {
+    
+    let p: CGPoint
+    let type: RayType
+}
