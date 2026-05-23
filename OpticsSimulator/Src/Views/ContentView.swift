@@ -7,15 +7,15 @@ struct ContentView: View {
         let s = OpticsScene()
         s.add(Object(
             name: "Object 1",
-            pos: 0.22, size: 0.3
+            pos: 0.24, size: 0.3
         ))
         s.add(Lense(
             name: "Lense 1",
-            pos: 0.28, type: .convergent, focalLength: 0.1
+            pos: 0.29, type: .convergent, focalLength: 0.1
         ))
         s.add(Lense(
             name: "Lense 2",
-            pos: 0.69, type: .convergent, focalLength: 0.1
+            pos: 0.34, type: .convergent, focalLength: 0.1
         ))
 //        s.add(SphericalMirror(
 //            name: "Mirror 1",
@@ -43,7 +43,7 @@ struct ContentView: View {
                 
                 // render
                 
-                let renderer = Renderer(context: context, size: size)
+                let renderer = Renderer(context: context, renderSize: size)
                 renderer.render(scene, activeDevice: activeDevice)
             }
             
