@@ -276,27 +276,27 @@ struct Renderer {
     
     func render(_ scene: OpticsScene) {
         
-        let object = scene.objects.first
-        let lense = scene.lenses.first
-        let mirror = scene.mirrors.first
-        let image = scene.image
-        
         drawAxis()
         
-        if let object = object {
+        for object in scene.objects {
             
             draw(object)
         }
         
-        if let lense = lense {
-        
+        for lense in scene.lenses {
+            
             draw(lense)
         }
         
-        if let mirror = mirror {
+        for mirror in scene.mirrors {
             
             draw(mirror)
         }
+        
+        let object = scene.objects.first
+        let lense = scene.lenses.first
+        let mirror = scene.mirrors.first
+        let image = scene.image
             
         if let image = image {
             

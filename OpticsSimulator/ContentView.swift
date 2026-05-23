@@ -38,7 +38,7 @@ struct ContentView: View {
             }
             HStack(alignment: .top) {
                 
-                if let object = scene.objects.first {
+                ForEach(scene.objects) { object in
                     
                     @Bindable var object = object
                     
@@ -57,7 +57,7 @@ struct ContentView: View {
                     Divider()
                 }
                 
-                if let lense = scene.lenses.first {
+                ForEach(scene.lenses) { lense in
                     
                     @Bindable var lense = lense
                     
@@ -81,7 +81,7 @@ struct ContentView: View {
                     Divider()
                 }
                 
-                if let mirror = scene.mirrors.first {
+                ForEach(scene.mirrors) { mirror in
                     
                     @Bindable var mirror = mirror
                     

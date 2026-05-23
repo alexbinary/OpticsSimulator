@@ -4,8 +4,9 @@ import SwiftUI
 
 
 @Observable
-class Object {
+class Object: Identifiable {
     
+    var id = UUID()
     var pos: CGFloat
     var size: CGFloat
     
@@ -36,8 +37,9 @@ enum LenseType: CaseIterable, Identifiable {
 }
 
 @Observable
-class Lense {
+class Lense: Identifiable {
     
+    var id = UUID()
     var pos: CGFloat
     var type: LenseType
     var focalLength: CGFloat
@@ -64,8 +66,9 @@ enum MirrorType: CaseIterable, Identifiable {
 }
 
 @Observable
-class SphericalMirror {
+class SphericalMirror: Identifiable {
     
+    var id = UUID()
     var pos: CGFloat
     var type: MirrorType
     var focalLength: CGFloat
