@@ -271,7 +271,7 @@ struct Renderer {
     
     func rendererObjectSize(from resIndependantSize: CGFloat) -> CGFloat {
         
-        resIndependantSize * size.height/2*0.9
+        resIndependantSize * size.height/2*0.7
     }
     
     func render(_ scene: OpticsScene) {
