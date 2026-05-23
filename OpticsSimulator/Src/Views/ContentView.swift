@@ -7,25 +7,30 @@ struct ContentView: View {
         let s = OpticsScene()
         s.add(Object(
             name: "Object 1",
-            pos: 0.65, size: 0.5
+            pos: 0.1, size: 0.5
         ))
-//        s.add(Lense(
-//            name: "Lense 1",
-//            pos: 0.5, type: .convergent, focalLength: 0.1
+        s.add(Lense(
+            name: "Lense 1",
+            pos: 0.3, type: .convergent, focalLength: 0.1
+        ))
+        s.add(Lense(
+            name: "Lense 2",
+            pos: 0.7, type: .convergent, focalLength: 0.1
+        ))
+//        s.add(SphericalMirror(
+//            name: "Mirror 1",
+//            pos: 0.8, type: .convex, focalLength: 0.1
 //        ))
-        s.add(SphericalMirror(
-            name: "Mirror 1",
-            pos: 0.8, type: .convex, focalLength: 0.1
-        ))
         s.add(Screen(
-            name: "Screen 1", pos: 0.55
+            name: "Screen 1",
+            pos: 0.9
         ))
         return s
     }()
 
     var body: some View {
         
-        VStack {
+        HStack(alignment: .top) {
             
             Canvas { context, size in
                 
@@ -43,169 +48,194 @@ struct ContentView: View {
                 let renderer = Renderer(context: context, size: size)
                 renderer.render(scene)
             }
-            HStack(alignment: .top) {
-                
-                ForEach(scene.objects) { object in
+            
+            Divider()
+            
+            VStack(alignment: .center) {
                     
-                    @Bindable var object = object
+                Grid {
                     
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text(object.name).font(.title2)
-                            Button {
-                                scene.delete(object)
-                            } label: {
-                                Text("􀈑")
-                            }
+                    GridRow {
+                        
+                        Button {
+                            scene.add(Object(
+                                name: "Object \(scene.objects.count+1)",
+                                pos: 0.1, size: 1
+                            ))
+                        } label: {
+                            Text("Add object")
                         }
-                        Form {
-                            Slider(value: $object.pos, in: 0...1) {
-                                Text("Position")
-                            }
-                            Slider(value: $object.size, in: 0...1) {
-                                Text("Size")
-                            }
+                        
+                        Button {
+                            scene.add(Screen(
+                                name: "Screen \(scene.screens.count+1)",
+                                pos: 0.9
+                            ))
+                        } label: {
+                            Text("Add screen")
                         }
                     }
-                    .padding()
-                    Divider()
+                    
+                    GridRow {
+                        
+                        Button {
+                            scene.add(Lense(
+                                name: "Lense \(scene.lenses.count+1)",
+                                pos: 0.5, type: .convergent, focalLength: 0.1
+                            ))
+                        } label: {
+                            Text("Add lense")
+                        }
+                        
+                        Button {
+                            scene.add(SphericalMirror(
+                                name: "Mirror \(scene.mirrors.count+1)",
+                                pos: 0.5, type: .concave, focalLength: 0.1
+                            ))
+                        } label: {
+                            Text("Add mirror")
+                        }
+                    }
                 }
+                .padding()
                 
-                ForEach(scene.lenses) { lense in
+                Divider()
+                
+                List {
                     
-                    @Bindable var lense = lense
-                    
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text(lense.name).font(.title2)
-                            Button {
-                                scene.delete(lense)
-                            } label: {
-                                Text("􀈑")
+                    ForEach(scene.objects) { object in
+                        
+                        @Bindable var object = object
+                        
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Text(object.name).font(.title2)
+                                Button {
+                                    scene.delete(object)
+                                } label: {
+                                    Text("􀈑")
+                                }
+                            }
+                            Form {
+                                HStack {
+                                    Slider(value: $object.pos, in: 0...1) {
+                                        Text("Position")
+                                    }
+                                    Text("\(object.pos, specifier: "%.2f")")
+                                }
+                                HStack {
+                                    Slider(value: $object.size, in: 0...1) {
+                                        Text("Size")
+                                    }
+                                    Text("\(object.size, specifier: "%.2f")")
+                                }
                             }
                         }
-                        Form {
-                            Slider(value: $lense.pos, in: 0...1) {
-                                Text("Position")
+                        .padding(.vertical)
+                    }
+                    
+                    ForEach(scene.lenses) { lense in
+                        
+                        @Bindable var lense = lense
+                        
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Text(lense.name).font(.title2)
+                                Button {
+                                    scene.delete(lense)
+                                } label: {
+                                    Text("􀈑")
+                                }
                             }
-                            Slider(value: $lense.focalLength, in: 0...1) {
-                                Text("Focal length")
+                            Form {
+                                HStack {
+                                    Slider(value: $lense.pos, in: 0...1) {
+                                        Text("Position")
+                                    }
+                                    Text("\(lense.pos, specifier: "%.2f")")
+                                }
+                                HStack {
+                                    Slider(value: $lense.focalLength, in: 0...1) {
+                                        Text("Focal length")
+                                    }
+                                    Text("\(lense.focalLength, specifier: "%.2f")")
+                                }
                             }
                             Picker("Type", selection: $lense.type) {
                                 ForEach(LenseType.allCases) { type in
                                     Text(type.label).tag(type)
                                 }
                             }
+                            .labelsHidden()
                         }
+                        .padding(.vertical)
                     }
-                    .padding()
-                    Divider()
-                }
-                
-                ForEach(scene.mirrors) { mirror in
                     
-                    @Bindable var mirror = mirror
-                    
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text(mirror.name).font(.title2)
-                            Button {
-                                scene.delete(mirror)
-                            } label: {
-                                Text("􀈑")
+                    ForEach(scene.mirrors) { mirror in
+                        
+                        @Bindable var mirror = mirror
+                        
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Text(mirror.name).font(.title2)
+                                Button {
+                                    scene.delete(mirror)
+                                } label: {
+                                    Text("􀈑")
+                                }
                             }
-                        }
-                        Form {
-                            Slider(value: $mirror.pos, in: 0...1) {
-                                Text("Position")
-                            }
-                            Slider(value: $mirror.focalLength, in: 0...1) {
-                                Text("Focal length")
+                            Form {
+                                HStack {
+                                    Slider(value: $mirror.pos, in: 0...1) {
+                                        Text("Position")
+                                    }
+                                    Text("\(mirror.pos, specifier: "%.2f")")
+                                }
+                                HStack {
+                                    Slider(value: $mirror.focalLength, in: 0...1) {
+                                        Text("Focal length")
+                                    }
+                                    Text("\(mirror.focalLength, specifier: "%.2f")")
+                                }
                             }
                             Picker("Type", selection: $mirror.type) {
                                 ForEach(MirrorType.allCases) { type in
                                     Text(type.label).tag(type)
                                 }
                             }
+                            .labelsHidden()
                         }
+                        .padding(.vertical)
                     }
-                    .padding()
-                    Divider()
-                }
-                
-                ForEach(scene.screens) { screen in
                     
-                    @Bindable var screen = screen
-                    
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text(screen.name).font(.title2)
-                            Button {
-                                scene.delete(screen)
-                            } label: {
-                                Text("􀈑")
+                    ForEach(scene.screens) { screen in
+                        
+                        @Bindable var screen = screen
+                        
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Text(screen.name).font(.title2)
+                                Button {
+                                    scene.delete(screen)
+                                } label: {
+                                    Text("􀈑")
+                                }
+                            }
+                            Form {
+                                HStack {
+                                    Slider(value: $screen.pos, in: 0...1) {
+                                        Text("Position")
+                                    }
+                                    Text("\(screen.pos, specifier: "%.2f")")
+                                }
                             }
                         }
-                        Form {
-                            Slider(value: $screen.pos, in: 0...1) {
-                                Text("Position")
-                            }
-                        }
-                    }
-                    .padding()
-                    Divider()
-                }
-                
-                Spacer()
-                
-                Divider()
-                
-                VStack {
-                    Button {
-                        scene.add(Object(
-                            name: "Object \(scene.objects.count+1)",
-                            pos: 0.1, size: 1
-                        ))
-                    } label: {
-                        Text("Add object")
-                            .frame(maxWidth: .infinity)
-                    }
-                
-                    Button {
-                        scene.add(Lense(
-                            name: "Lense \(scene.lenses.count+1)",
-                            pos: 0.5, type: .convergent, focalLength: 0.1
-                        ))
-                    } label: {
-                        Text("Add lense")
-                            .frame(maxWidth: .infinity)
-                    }
-                    
-                    Button {
-                        scene.add(SphericalMirror(
-                            name: "Mirror \(scene.mirrors.count+1)",
-                            pos: 0.5, type: .concave, focalLength: 0.1
-                        ))
-                    } label: {
-                        Text("Add mirror")
-                            .frame(maxWidth: .infinity)
-                    }
-                    
-                    Button {
-                        scene.add(Screen(
-                            name: "Screen \(scene.screens.count+1)",
-                            pos: 0.9
-                        ))
-                    } label: {
-                        Text("Add screen")
-                            .frame(maxWidth: .infinity)
+                        .padding(.vertical)
                     }
                 }
-                .fixedSize(horizontal: true, vertical: false)
-                .padding()
             }
             .pickerStyle(.segmented)
-            .fixedSize(horizontal: false, vertical: true)
+            .fixedSize(horizontal: true, vertical: false)
         }
         .padding([.horizontal])
         .frame(minWidth: 1200, minHeight: 600)
