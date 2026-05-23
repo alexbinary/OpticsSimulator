@@ -85,3 +85,17 @@ class SphericalMirror: Identifiable {
         self.focalLength = focalLength
     }
 }
+
+
+@Observable
+class Screen: Identifiable {
+    
+    var id = UUID()
+    var name: String
+    var pos: CGFloat
+    
+    init(name: String, pos: CGFloat) {
+        self.name = name
+        self.pos = pos
+    }
+}

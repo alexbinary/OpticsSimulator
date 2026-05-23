@@ -12,6 +12,8 @@ class OpticsScene {
     
     var images: [Image] = []
     
+    var screens: [Screen] = []
+    
     
     func add(_ object: Object) {
         self.objects.append(object)
@@ -25,6 +27,10 @@ class OpticsScene {
         self.mirrors.append(mirror)
     }
     
+    func add(_ screen: Screen) {
+        self.screens.append(screen)
+    }
+    
     
     func delete(_ object: Object) {
         self.objects.removeAll(where: { $0.id == object.id })
@@ -36,6 +42,10 @@ class OpticsScene {
     
     func delete(_ mirror: SphericalMirror) {
         self.mirrors.removeAll(where: { $0.id == mirror.id })
+    }
+    
+    func delete(_ screen: Screen) {
+        self.screens.removeAll(where: { $0.id == screen.id })
     }
     
     

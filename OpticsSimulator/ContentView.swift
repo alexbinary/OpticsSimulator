@@ -7,7 +7,7 @@ struct ContentView: View {
         let s = OpticsScene()
         s.add(Object(
             name: "Object 1",
-            pos: 0.1, size: 1
+            pos: 0.65, size: 0.5
         ))
 //        s.add(Lense(
 //            name: "Lense 1",
@@ -15,7 +15,10 @@ struct ContentView: View {
 //        ))
         s.add(SphericalMirror(
             name: "Mirror 1",
-            pos: 0.5, type: .concave, focalLength: 0.1
+            pos: 0.8, type: .convex, focalLength: 0.1
+        ))
+        s.add(Screen(
+            name: "Screen 1", pos: 0.55
         ))
         return s
     }()
@@ -130,6 +133,29 @@ struct ContentView: View {
                     Divider()
                 }
                 
+                ForEach(scene.screens) { screen in
+                    
+                    @Bindable var screen = screen
+                    
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Text(screen.name).font(.title2)
+                            Button {
+                                scene.delete(screen)
+                            } label: {
+                                Text("􀈑")
+                            }
+                        }
+                        Form {
+                            Slider(value: $screen.pos, in: 0...1) {
+                                Text("Position")
+                            }
+                        }
+                    }
+                    .padding()
+                    Divider()
+                }
+                
                 Spacer()
                 
                 Divider()
@@ -158,6 +184,14 @@ struct ContentView: View {
                         ))
                     } label: {
                         Text("Add mirror")
+                    }
+                    Button {
+                        scene.add(Screen(
+                            name: "Screen \(scene.screens.count+1)",
+                            pos: 0.9
+                        ))
+                    } label: {
+                        Text("Add screen")
                     }
                 }
                 .padding()

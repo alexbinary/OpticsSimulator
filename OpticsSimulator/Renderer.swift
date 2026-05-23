@@ -171,20 +171,42 @@ struct Renderer {
         context.stroke(path, with: .color(.red), lineWidth: 2)
     }
     
+    func draw(_ screen: Screen) {
+        
+        let x = rendererPos(from: screen.pos)
+        let h = size.height/2
+        
+        let a: CGFloat = 5
+        
+        var path = Path()
+        
+        path.move(to: CGPoint(x: x, y: h))
+        path.addLine(to: CGPoint(x: x, y: -h))
+        
+        let n = 45
+        for i in 0...n {
+            
+            let hi: CGFloat = -h + CGFloat(i)*2*h/CGFloat(n)
+            
+            path.move(to: CGPoint(x: x, y: hi))
+            path.addLine(to: CGPoint(x: x+a, y: hi-a))
+        }
+        
+        context.stroke(path, with: .color(.gray), lineWidth: 2)
+    }
+    
     func drawRay(
-        from p1: CGPoint, to p2: CGPoint, extendToX targetXs: [CGFloat] = []
+        from p1: CGPoint, to p2: CGPoint,
+        minX: CGFloat? = nil, maxX: CGFloat? = nil,
+        virtual: Bool = false
     ) {
         let direction = Direction(from: p1, to: p2)
         
-        let allX = [p1.x, p2.x]+targetXs
-        let minX = allX.min()!
-        let maxX = allX.max()!
-        
         let startPoint = direction.point(
-            atX: minX, startingFrom: p1
+            atX: minX ?? p1.x, startingFrom: p1
         )
         let endPoint = direction.point(
-            atX: maxX, startingFrom: p1
+            atX: maxX ?? p2.x, startingFrom: p1
         )
         
         var path = Path()
@@ -192,22 +214,42 @@ struct Renderer {
         path.move(to: startPoint)
         path.addLine(to: endPoint)
         
-        context.stroke(path, with: .color(.yellow), lineWidth: 1)
+        context.stroke(path, with: .color(.yellow), style: StrokeStyle(
+            lineWidth: 1,
+            dash: virtual ? [4, 4] : []
+        ))
     }
     
-    func drawRays(for object: Object, _ lense: Lense, _ image: Image) {
-        
+//    func drawRay(
+//        from p1: CGPoint, to p2: CGPoint, extendToX targetXs: [CGFloat] = [],
+//        virtual: Bool = false
+//    ) {
+//        let allX = [p1.x, p2.x]+targetXs
+//        let minX = allX.min()!
+//        let maxX = allX.max()!
+//        
+//        drawRay(joining: p1, with: p2, fromX: minX, toX: maxX, virtual: virtual)
+//    }
+    
+    func drawRays(
+        for object: Object,
+        _ lense: Lense, _ image: Image,
+        _ screen: Screen
+    ) {
         let objectPos = rendererPos(from: object.pos)
         let objectSize = rendererObjectSize(from: object.size)
         let objectTop = CGPoint(x: objectPos, y: objectSize)
         
         let imagePos = rendererPos(from: image.pos)
+        let imageSize = rendererObjectSize(from: image.size)
+        let imageTop = CGPoint(x: imagePos, y: imageSize)
         
         let lensePos = rendererPos(from: lense.pos)
         let lenseCenter = CGPoint(x: lensePos, y: 0)
         let f = rendererFocalLength(from: lense.focalLength)
         let F1 = CGPoint(x: lensePos-f, y: 0)
-        let F2 = CGPoint(x: lensePos+f, y: 0)
+        
+        let screenPos = rendererPos(from: screen.pos)
         
         // parallel ray : object > lense
         
@@ -218,19 +260,49 @@ struct Renderer {
         
         // parallel ray : lense > F > image
         
-        if lense.type == .convergent {
-            drawRay(from: projectedPointOnLense, to: F2, extendToX: [imagePos])
-        } else {
-            drawRay(from: projectedPointOnLense, to: F1, extendToX: [imagePos])
+        drawRay(
+            from: projectedPointOnLense, to: imageTop,
+            minX: lensePos, maxX: screenPos
+        )
+        if lense.type == .divergent {
+            drawRay(
+                from: projectedPointOnLense, to: imageTop,
+                minX: F1.x, maxX: lensePos,
+                virtual: true
+            )
+        }
+        
+        if imagePos > screenPos {
+            
+            drawRay(
+                from: projectedPointOnLense, to: imageTop,
+                minX: screenPos, maxX: imagePos,
+                virtual: true
+            )
         }
         
         // center ray : object > O > image
         
-        drawRay(from: objectTop, to: lenseCenter, extendToX: [imagePos])
+        drawRay(
+            from: objectTop, to: lenseCenter,
+            minX: objectPos, maxX: screenPos
+        )
+        
+        if imagePos > screenPos {
+            
+            drawRay(
+                from: objectTop, to: lenseCenter,
+                minX: screenPos, maxX: imagePos,
+                virtual: true
+            )
+        }
     }
     
-    func drawRays(for object: Object, _ mirror: SphericalMirror, _ image: Image) {
-        
+    func drawRays(
+        for object: Object,
+        _ mirror: SphericalMirror, _ image: Image,
+        _ screen: Screen
+    ) {
         let objectPos = rendererPos(from: object.pos)
         let objectSize = rendererObjectSize(from: object.size)
         let objectTop = CGPoint(x: objectPos, y: objectSize)
@@ -245,6 +317,8 @@ struct Renderer {
         let mirrorCenter = CGPoint(x: mirrorPos+(mirror.type == .concave ? -1 : +1)*2*f, y: 0)
         let F = CGPoint(x: mirrorPos+(mirror.type == .concave ? -1 : +1)*f, y: 0)
         
+        let screenPos = rendererPos(from: screen.pos)
+        
         // parallel ray : object > mirror
         
         let projectedPointOnMirror = Direction.horizontal.point(
@@ -254,7 +328,28 @@ struct Renderer {
         
         // parallel ray : mirror > F > image
         
-        drawRay(from: projectedPointOnMirror, to: F, extendToX: [imagePos])
+        drawRay(
+            from: projectedPointOnMirror, to: F,
+            minX: screenPos, maxX: mirrorPos
+        )
+        
+        if imagePos < screenPos {
+        
+            drawRay(
+                from: projectedPointOnMirror, to: F,
+                minX: imagePos, maxX: screenPos,
+                virtual: true
+            )
+        }
+        
+        if imagePos > mirrorPos {
+        
+            drawRay(
+                from: projectedPointOnMirror, to: F,
+                minX: mirrorPos, maxX: [imagePos, F.x].max()!,
+                virtual: true
+            )
+        }
         
         // vertex ray : object > S
         
@@ -262,11 +357,53 @@ struct Renderer {
         
         // vertex ray : S > image
 
-        drawRay(from: mirrorVertex, to: imageTop)
+        drawRay(
+            from: mirrorVertex, to: imageTop,
+            minX: screenPos, maxX: mirrorPos
+        )
         
-        // center ray : S > image
+        if imagePos < screenPos {
+            
+            drawRay(
+                from: mirrorVertex, to: imageTop,
+                minX: imagePos, maxX: screenPos,
+                virtual: true
+            )
+        }
+        
+        if imagePos > mirrorPos {
+        
+            drawRay(
+                from: mirrorVertex, to: imageTop,
+                minX: mirrorPos, maxX: imagePos,
+                virtual: true
+            )
+        }
+        
+        // center ray : object > image
 
-        drawRay(from: objectTop, to: mirrorCenter, extendToX: [imagePos])
+        drawRay(
+            from: objectTop, to: mirrorCenter,
+            minX: screenPos, maxX: mirrorPos
+        )
+        
+        if imagePos < screenPos {
+        
+            drawRay(
+                from: objectTop, to: mirrorCenter,
+                minX: imagePos, maxX: screenPos,
+                virtual: true
+            )
+        }
+        
+        if imagePos > mirrorPos {
+        
+            drawRay(
+                from: objectTop, to: mirrorCenter,
+                minX: mirrorPos, maxX: [imagePos, mirrorCenter.x].max()!,
+                virtual: true
+            )
+        }
     }
     
     func rendererPos(from resIndependantPos: CGFloat) -> CGFloat {
@@ -308,19 +445,31 @@ struct Renderer {
             draw(image)
         }
         
+        for screen in scene.screens {
+            
+            draw(screen)
+        }
+        
         let object = scene.objects.first
         let lense = scene.lenses.first
         let mirror = scene.mirrors.first
         let image = scene.images.first
+        let screen = scene.screens.first
          
-        if let object = object, let lense = lense, let image = image {
+        if let object = object,
+           let lense = lense,
+           let image = image,
+           let screen = screen {
             
-            drawRays(for: object, lense, image)
+            drawRays(for: object, lense, image, screen)
         }
         
-        if let object = object, let mirror = mirror, let image = image {
+        if let object = object,
+           let mirror = mirror,
+           let image = image,
+           let screen = screen {
             
-            drawRays(for: object, mirror, image)
+            drawRays(for: object, mirror, image, screen)
         }
     }
 }
