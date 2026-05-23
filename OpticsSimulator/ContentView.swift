@@ -3,21 +3,16 @@ import SwiftUI
 
 struct ContentView: View {
     
-    @State private var objectPosition: CGFloat = 0.25
-    @State private var objectSize: CGFloat = 1
-    
-    @State private var lensePosition: CGFloat = 0.75
-    @State private var lenseType: LenseType = .convergent
-    @State private var lenseFocalLength: CGFloat = 0.25
-    
-    @State private var mirrorPosition: CGFloat = 0.6
-    @State private var mirrorType: MirrorType = .convex
-    @State private var mirrorFocalLength: CGFloat = 0.25
-    
     @State private var scene = {
         let s = OpticsScene()
-        s.add(Object(name: "Object 1", pos: 0.1, size: 1))
-        s.add(Lense(name: "Lense 1", pos: 0.5, type: .convergent, focalLength: 0.5))
+        s.add(Object(
+            name: "Object 1",
+            pos: 0.1, size: 1
+        ))
+        s.add(Lense(
+            name: "Lense 1",
+            pos: 0.5, type: .convergent, focalLength: 0.1
+        ))
         return s
     }()
 

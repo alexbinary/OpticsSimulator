@@ -266,7 +266,7 @@ struct Renderer {
     
     func rendererFocalLength(from resIndependantF: CGFloat) -> CGFloat {
         
-        resIndependantF * size.width/2
+        resIndependantF * size.width
     }
     
     func rendererObjectSize(from resIndependantSize: CGFloat) -> CGFloat {
@@ -293,16 +293,16 @@ struct Renderer {
             draw(mirror)
         }
         
-        let object = scene.objects.first
-        let lense = scene.lenses.first
-        let mirror = scene.mirrors.first
-        let image = scene.image
-            
-        if let image = image {
+        for image in scene.images {
             
             draw(image)
         }
         
+        let object = scene.objects.first
+        let lense = scene.lenses.first
+        let mirror = scene.mirrors.first
+        let image = scene.images.first
+         
         if let object = object, let lense = lense, let image = image {
             
             drawRays(for: object, lense, image)

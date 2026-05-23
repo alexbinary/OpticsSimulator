@@ -10,7 +10,7 @@ class OpticsScene {
     var lenses: [Lense] = []
     var mirrors: [SphericalMirror] = []
     
-    var image: Image?
+    var images: [Image] = []
     
     
     func add(_ object: Object) {
@@ -41,9 +41,10 @@ class OpticsScene {
     
     func computeImages() {
         
+        self.images = []
+        
         if let object = self.objects.first,
-           let lense = self.lenses.first,
-           let mirror = self.mirrors.first {
+           let lense = self.lenses.first {
             
             var imagePos: CGFloat
             var imageSize: CGFloat
@@ -57,6 +58,16 @@ class OpticsScene {
             imagePos = lense.pos + distI
             imageSize = -object.size * gamma
             
+            self.images.append(Image(pos: imagePos, size: imageSize))
+        }
+        
+        if let object = self.objects.first,
+           let mirror = self.mirrors.first {
+            
+            var imagePos: CGFloat
+            var imageSize: CGFloat
+            var gamma: CGFloat
+            
             // compute image through mirror
             let posf = mirror.pos + (mirror.type == .convex ? +1 : -1) * mirror.focalLength
             let fa = object.pos - posf
@@ -67,7 +78,7 @@ class OpticsScene {
             gamma = sa_im / sa
             imageSize = -object.size * gamma
             
-            self.image = Image(pos: imagePos, size: imageSize)
+            self.images.append(Image(pos: imagePos, size: imageSize))
         }
     }
 }
