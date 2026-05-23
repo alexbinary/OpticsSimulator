@@ -323,7 +323,7 @@ struct Renderer {
             
             for i1 in 0..<images.count {
             
-//                if ![1].contains(i1) { continue }
+                if ![0].contains(i1) { continue }
                 
                 // draw rays from image to devices on both side
                 
@@ -415,6 +415,27 @@ struct Renderer {
                     from: pointFromFocalPointOnDeviceBefore,
                     to: pointFromFocalPointOnDeviceAfter
                 )
+                
+                if imagePos > deviceAfterFocalPoint.x {
+                    
+                    drawRay(
+                        from: pointFromFocalPointOnDeviceBefore,
+                        to: pointFromFocalPointOnDeviceAfter,
+                        minX: deviceAfterFocalPoint.x, maxX: imagePos,
+                        virtual: true
+                    )
+                }
+                
+                if let lense = deviceAfter as? Lense,
+                   lense.type == .divergent {
+                    
+                    drawRay(
+                        from: deviceAfterFocalPoint,
+                        to: pointFromHorizontalOnDeviceAfter,
+                        minX: deviceAfterFocalPoint.x, maxX: deviceAfterPos,
+                        virtual: true
+                    )
+                }
 
                 // continue rays forward through all devices
                 
@@ -426,9 +447,10 @@ struct Renderer {
                 
                 for i2 in (i1+1)..<images.count {
 
-//                    if ![].contains(i2) { continue }
+                    if ![1].contains(i2) { continue }
                     
                     let currentImage = images[i2]
+                    let previousImage = (i2-1) >= 0 ? images[i2-1] : nil
                     
                     let deviceBefore = (i2-1) >= 0 ? devices[i2-1] : nil
                     let deviceAfter = i2 < devices.count ? devices[i2] : nil
@@ -437,6 +459,11 @@ struct Renderer {
                     let imageSize = rendererObjectSize(from: currentImage.size)
                     let imageTop = CGPoint(x: imagePos, y: imageSize)
                     
+                    let previousImagePos = rendererPos(from: previousImage?.pos ?? 0)
+                    
+                    let deviceBeforePos = rendererPos(
+                        from: deviceBefore?.pos ?? currentImage.pos
+                    )
                     let deviceAfterPos = rendererPos(
                         from: deviceAfter?.pos ?? currentImage.pos
                     )
@@ -455,6 +482,28 @@ struct Renderer {
                             from: pointOnDeviceBefore,
                             to: pointOnDeviceAfter
                         )
+                        
+                        if imagePos < deviceBeforePos {
+                            
+                            if let previousImage = previousImage {
+                                
+                                drawRay(
+                                    from: pointOnDeviceBefore,
+                                    to: pointOnDeviceAfter,
+                                    minX: imagePos, maxX: previousImagePos,
+                                    virtual: true
+                                )
+                                
+                            } else {
+                             
+                                drawRay(
+                                    from: pointOnDeviceBefore,
+                                    to: pointOnDeviceAfter,
+                                    minX: imagePos, maxX: deviceBeforePos,
+                                    virtual: true
+                                )
+                            }
+                        }
                         
                         if imagePos > deviceAfterPos {
                             
@@ -484,7 +533,7 @@ struct Renderer {
                     
                     let i3 = i1-1-i2
                     
-//                    if ![].contains(i2) { continue }
+                    if ![].contains(i2) { continue }
                     
                     let currentImage = images[i3]
                     
