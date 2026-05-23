@@ -57,40 +57,61 @@ struct ContentView: View {
                 let engine = DrawEngine(context: context, size: size)
                 engine.render(scene)
             }
-            Form {
-                Slider(value: $objectPosition, in: 0...1) {
-                    Text("Object position")
-                }
-                Slider(value: $objectSize, in: 0...1) {
-                    Text("Object size")
-                }
-                Slider(value: $lensePosition, in: 0...1) {
-                    Text("Lense position")
-                }
-                Slider(value: $lenseFocalLength, in: 0...1) {
-                    Text("Lense focal length")
-                }
-                Picker("Lense type", selection: $lenseType) {
-                    ForEach(LenseType.allCases) { type in
-                        Text(type.label).tag(type)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading) {
+                    Text("Object").font(.title2)
+                    Form {
+                        Slider(value: $objectPosition, in: 0...1) {
+                            Text("Position")
+                        }
+                        Slider(value: $objectSize, in: 0...1) {
+                            Text("Size")
+                        }
                     }
                 }
-                Slider(value: $mirrorPosition, in: 0...1) {
-                    Text("Mirror position")
-                }
-                Slider(value: $mirrorFocalLength, in: 0...1) {
-                    Text("Mirror focal length")
-                }
-                Picker("Mirror type", selection: $mirrorType) {
-                    ForEach(MirrorType.allCases) { type in
-                        Text(type.label).tag(type)
+                .padding()
+                Divider()
+                VStack(alignment: .leading) {
+                    Text("Lense").font(.title2)
+                    Form {
+                        Slider(value: $lensePosition, in: 0...1) {
+                            Text("Position")
+                        }
+                        Slider(value: $lenseFocalLength, in: 0...1) {
+                            Text("Focal length")
+                        }
+                        Picker("Type", selection: $lenseType) {
+                            ForEach(LenseType.allCases) { type in
+                                Text(type.label).tag(type)
+                            }
+                        }
                     }
                 }
+                .padding()
+                Divider()
+                VStack(alignment: .leading) {
+                    Text("Mirror").font(.title2)
+                    Form {
+                        Slider(value: $mirrorPosition, in: 0...1) {
+                            Text("Position")
+                        }
+                        Slider(value: $mirrorFocalLength, in: 0...1) {
+                            Text("Focal length")
+                        }
+                        Picker("Type", selection: $mirrorType) {
+                            ForEach(MirrorType.allCases) { type in
+                                Text(type.label).tag(type)
+                            }
+                        }
+                    }
+                }
+                .padding()
             }
             .pickerStyle(.segmented)
+            .fixedSize(horizontal: false, vertical: true)
         }
         .padding([.horizontal])
-        .frame(minWidth: 200, minHeight: 200)
+        .frame(minWidth: 1200, minHeight: 600)
         .padding()
     }
 }
@@ -464,4 +485,5 @@ struct SphericalMirror {
 
 #Preview {
     ContentView()
+        .frame(width: 1200, height: 800)
 }
