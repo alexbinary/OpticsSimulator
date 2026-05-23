@@ -16,8 +16,8 @@ struct ContentView: View {
     
     @State private var scene = {
         let s = OpticsScene()
-        s.add(Object(pos: 0.1, size: 1))
-        s.add(Lense(pos: 0.5, type: .convergent, focalLength: 0.5))
+        s.add(Object(name: "Object 1", pos: 0.1, size: 1))
+        s.add(Lense(name: "Lense 1", pos: 0.5, type: .convergent, focalLength: 0.5))
         return s
     }()
 
@@ -49,7 +49,7 @@ struct ContentView: View {
                     
                     VStack(alignment: .leading) {
                         HStack {
-                            Text("Object").font(.title2)
+                            Text(object.name).font(.title2)
                             Button {
                                 scene.delete(object)
                             } label: {
@@ -75,7 +75,7 @@ struct ContentView: View {
                     
                     VStack(alignment: .leading) {
                         HStack {
-                            Text("Lense").font(.title2)
+                            Text(lense.name).font(.title2)
                             Button {
                                 scene.delete(lense)
                             } label: {
@@ -106,7 +106,7 @@ struct ContentView: View {
                     
                     VStack(alignment: .leading) {
                         HStack {
-                            Text("Mirror").font(.title2)
+                            Text(mirror.name).font(.title2)
                             Button {
                                 scene.delete(mirror)
                             } label: {
@@ -137,12 +137,16 @@ struct ContentView: View {
                 
                 VStack {
                     Button {
-                        scene.add(Object(pos: 0.1, size: 1))
+                        scene.add(Object(
+                            name: "Object \(scene.objects.count+1)",
+                            pos: 0.1, size: 1
+                        ))
                     } label: {
                         Text("Add object")
                     }
                     Button {
                         scene.add(Lense(
+                            name: "Lense \(scene.lenses.count+1)",
                             pos: 0.9, type: .convergent, focalLength: 0.5
                         ))
                     } label: {
@@ -150,6 +154,7 @@ struct ContentView: View {
                     }
                     Button {
                         scene.add(SphericalMirror(
+                            name: "Mirror \(scene.mirrors.count+1)",
                             pos: 0.9, type: .convex, focalLength: 0.5
                         ))
                     } label: {

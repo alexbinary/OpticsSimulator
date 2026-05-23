@@ -7,10 +7,12 @@ import SwiftUI
 class Object: Identifiable {
     
     var id = UUID()
+    var name: String
     var pos: CGFloat
     var size: CGFloat
     
-    init(pos: CGFloat, size: CGFloat) {
+    init(name: String, pos: CGFloat, size: CGFloat) {
+        self.name = name
         self.pos = pos
         self.size = size
     }
@@ -40,11 +42,13 @@ enum LenseType: CaseIterable, Identifiable {
 class Lense: Identifiable {
     
     var id = UUID()
+    var name: String
     var pos: CGFloat
     var type: LenseType
     var focalLength: CGFloat
     
-    init(pos: CGFloat, type: LenseType, focalLength: CGFloat) {
+    init(name: String, pos: CGFloat, type: LenseType, focalLength: CGFloat) {
+        self.name = name
         self.pos = pos
         self.type = type
         self.focalLength = focalLength
@@ -69,11 +73,13 @@ enum MirrorType: CaseIterable, Identifiable {
 class SphericalMirror: Identifiable {
     
     var id = UUID()
+    var name: String
     var pos: CGFloat
     var type: MirrorType
     var focalLength: CGFloat
     
-    init(pos: CGFloat, type: MirrorType, focalLength: CGFloat) {
+    init(name: String, pos: CGFloat, type: MirrorType, focalLength: CGFloat) {
+        self.name = name
         self.pos = pos
         self.type = type
         self.focalLength = focalLength
