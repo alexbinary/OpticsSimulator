@@ -205,13 +205,23 @@ struct Renderer {
         minX: CGFloat? = nil, maxX: CGFloat? = nil,
         virtual: Bool = false
     ) {
-        let direction = Ray(from: p1, to: p2)
-        
-        let startPoint = direction.point(
-            atX: minX ?? p1.x
+        draw(
+            Ray(from: p1, to: p2),
+            betweenX: minX ?? p1.x, andX: maxX ?? p2.x,
+            virtual: virtual
         )
-        let endPoint = direction.point(
-            atX: maxX ?? p2.x
+    }
+    
+    func draw(
+        _ ray: Ray,
+        betweenX minX: CGFloat, andX maxX: CGFloat,
+        virtual: Bool = false
+    ) {
+        let startPoint = ray.point(
+            atX: minX
+        )
+        let endPoint = ray.point(
+            atX: maxX
         )
         
         var path = Path()
@@ -277,7 +287,7 @@ struct Renderer {
         fatalError()
     }
     
-    func render(_ scene: OpticsScene) {
+    func render(_ scene: OpticsScene, activeDevice: OpticsDevice?) {
         
         drawAxis()
         
@@ -323,7 +333,7 @@ struct Renderer {
             
             for i1 in 0..<images.count {
             
-//                if ![0].contains(i1) { continue }
+//                if ![1].contains(i1) { continue }
                 
                 // draw rays from image to devices on both side
                 
@@ -335,6 +345,13 @@ struct Renderer {
                 if deviceAfter == nil {
                     
                     break
+                }
+                
+                if let activeDevice = activeDevice,
+                   let deviceAfter = deviceAfter,
+                   deviceAfter.id != activeDevice.id {
+                    
+                    continue
                 }
                    
                 if deviceAfter is Screen,
@@ -373,10 +390,19 @@ struct Renderer {
                     atX: deviceAfterPos
                 )
                 
-                drawRay(
-                    from: pointFromHorizontalOnDeviceBefore,
-                    to: pointFromHorizontalOnDeviceAfter
+                draw(
+                    parallelRay,
+                    betweenX: deviceBeforePos, andX: deviceAfterPos
                 )
+                
+                if imagePos < deviceBeforePos {
+                
+                    draw(
+                        parallelRay,
+                        betweenX: imagePos, andX: deviceBeforePos,
+                        virtual: true
+                    )
+                }
                 
                 // center ray
                 
@@ -392,10 +418,19 @@ struct Renderer {
                     atX: deviceAfterPos
                 )
                 
-                drawRay(
-                    from: pointFromCenterOnDeviceBefore,
-                    to: pointFromCenterOnDeviceAfter
+                draw(
+                    centerRay,
+                    betweenX: deviceBeforePos, andX: deviceAfterPos
                 )
+                
+                if imagePos < deviceBeforePos {
+                
+                    draw(
+                        centerRay,
+                        betweenX: imagePos, andX: deviceBeforePos,
+                        virtual: true
+                    )
+                }
                 
                 // focal ray
                 
@@ -411,17 +446,25 @@ struct Renderer {
                     atX: deviceAfterPos
                 )
                 
-                drawRay(
-                    from: pointFromFocalPointOnDeviceBefore,
-                    to: pointFromFocalPointOnDeviceAfter
+                draw(
+                    focalRay,
+                    betweenX: deviceBeforePos, andX: deviceAfterPos
                 )
+                
+                if imagePos < deviceBeforePos {
+                
+                    draw(
+                        focalRay,
+                        betweenX: imagePos, andX: deviceBeforePos,
+                        virtual: true
+                    )
+                }
                 
                 if imagePos > deviceAfterFocalPoint.x {
                     
-                    drawRay(
-                        from: pointFromFocalPointOnDeviceBefore,
-                        to: pointFromFocalPointOnDeviceAfter,
-                        minX: deviceAfterFocalPoint.x, maxX: imagePos,
+                    draw(
+                        focalRay,
+                        betweenX: deviceAfterFocalPoint.x, andX: imagePos,
                         virtual: true
                     )
                 }

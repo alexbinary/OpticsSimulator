@@ -7,16 +7,16 @@ struct ContentView: View {
         let s = OpticsScene()
         s.add(Object(
             name: "Object 1",
-            pos: 0.3, size: 0.3
+            pos: 0.22, size: 0.3
         ))
         s.add(Lense(
             name: "Lense 1",
-            pos: 0.5, type: .divergent, focalLength: 0.1
+            pos: 0.28, type: .convergent, focalLength: 0.1
         ))
-//        s.add(Lense(
-//            name: "Lense 2",
-//            pos: 0.7, type: .convergent, focalLength: 0.1
-//        ))
+        s.add(Lense(
+            name: "Lense 2",
+            pos: 0.69, type: .convergent, focalLength: 0.1
+        ))
 //        s.add(SphericalMirror(
 //            name: "Mirror 1",
 //            pos: 0.8, type: .convex, focalLength: 0.1
@@ -27,6 +27,8 @@ struct ContentView: View {
         ))
         return s
     }()
+    
+    @State var activeDevice: OpticsDevice? = nil
 
     var body: some View {
         
@@ -42,7 +44,7 @@ struct ContentView: View {
                 // render
                 
                 let renderer = Renderer(context: context, size: size)
-                renderer.render(scene)
+                renderer.render(scene, activeDevice: activeDevice)
             }
             
             Divider()
@@ -142,6 +144,15 @@ struct ContentView: View {
                                 } label: {
                                     Text("􀈑")
                                 }
+                                Button {
+                                    if self.activeDevice?.id == lense.id {
+                                        self.activeDevice = nil
+                                    } else {
+                                        self.activeDevice = lense
+                                    }
+                                } label: {
+                                    Text(self.activeDevice?.id == lense.id ? "􀋮" : "􀋭")
+                                }
                             }
                             Form {
                                 HStack {
@@ -178,6 +189,15 @@ struct ContentView: View {
                                     scene.delete(mirror)
                                 } label: {
                                     Text("􀈑")
+                                }
+                                Button {
+                                    if self.activeDevice?.id == mirror.id {
+                                        self.activeDevice = nil
+                                    } else {
+                                        self.activeDevice = mirror
+                                    }
+                                } label: {
+                                    Text(self.activeDevice?.id == mirror.id ? "􀋮" : "􀋭")
                                 }
                             }
                             Form {
