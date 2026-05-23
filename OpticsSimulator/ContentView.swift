@@ -13,6 +13,8 @@ struct ContentView: View {
     @State private var mirrorPosition: CGFloat = 0.6
     @State private var mirrorType: MirrorType = .convex
     @State private var mirrorFocalLength: CGFloat = 0.25
+    
+    @State private var scene = OpticsScene()
 
     var body: some View {
         
@@ -27,26 +29,19 @@ struct ContentView: View {
                 
                 // setup scene
                 
-                let objectPos = size.width*objectPosition
-                let objectSize = size.height/2*0.9*objectSize
-                
-                let lensePos = size.width*lensePosition
-                let lenseF = size.width*lenseFocalLength/2
-                
-                let mirrorPos = size.width*mirrorPosition
-                let mirrorF = size.width*mirrorFocalLength/2
-                
                 let object = Object(
-                    pos: objectPos, size: objectSize
+                    pos: objectPosition, size: objectSize
                 )
                 let lense = Lense(
-                    pos: lensePos, type: lenseType, focalLength: lenseF
+                    pos: lensePosition, type: lenseType,
+                    focalLength: lenseFocalLength
                 )
                 let mirror = SphericalMirror(
-                    pos: mirrorPos, type: mirrorType, focalLength: mirrorF
+                    pos: mirrorPosition, type: mirrorType,
+                    focalLength: mirrorFocalLength
                 )
                 
-                var scene = OpticsScene()
+                let scene = OpticsScene()
                 scene.add(object)
                 scene.add(lense)
                 scene.add(mirror)

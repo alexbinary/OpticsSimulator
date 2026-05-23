@@ -2,8 +2,8 @@
 import SwiftUI
 
 
-
-struct OpticsScene {
+@Observable
+class OpticsScene {
     
     var objects: [Object] = []
     
@@ -13,20 +13,20 @@ struct OpticsScene {
     var image: Image = Image(pos: 0, size: 0)
     
     
-    mutating func add(_ object: Object) {
+    func add(_ object: Object) {
         self.objects.append(object)
     }
     
-    mutating func add(_ lense: Lense) {
+    func add(_ lense: Lense) {
         self.lenses.append(lense)
     }
     
-    mutating func add(_ mirror: SphericalMirror) {
+    func add(_ mirror: SphericalMirror) {
         self.mirrors.append(mirror)
     }
     
     
-    mutating func computeImage() {
+    func computeImage() {
         
         let object = self.objects.first!
         let lense = self.lenses.first!
