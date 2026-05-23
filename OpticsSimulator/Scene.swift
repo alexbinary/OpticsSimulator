@@ -1,0 +1,59 @@
+
+import SwiftUI
+
+
+
+struct OpticsScene {
+    
+    var objects: [Object] = []
+    
+    var lenses: [Lense] = []
+    var mirrors: [SphericalMirror] = []
+    
+    var image: Image = Image(pos: 0, size: 0)
+    
+    
+    mutating func add(_ object: Object) {
+        self.objects.append(object)
+    }
+    
+    mutating func add(_ lense: Lense) {
+        self.lenses.append(lense)
+    }
+    
+    mutating func add(_ mirror: SphericalMirror) {
+        self.mirrors.append(mirror)
+    }
+    
+    
+    mutating func computeImage() {
+        
+        let object = self.objects.first!
+        let lense = self.lenses.first!
+        let mirror = self.mirrors.first!
+        
+        var imagePos: CGFloat
+        var imageSize: CGFloat
+        var gamma: CGFloat
+        
+        // compute image through lense
+        let f = lense.focalLength * (lense.type == .convergent ? +1 : -1)
+        let distO = lense.pos - object.pos
+        gamma = f / (distO - f)
+        let distI = distO * gamma
+        imagePos = lense.pos + distI
+        imageSize = -object.size * gamma
+
+        // compute image through mirror
+        let posf = mirror.pos + (mirror.type == .convex ? +1 : -1) * mirror.focalLength
+        let fa = object.pos - posf
+        let fa_im = mirror.focalLength*mirror.focalLength / fa
+        imagePos = fa_im + posf
+        let sa = object.pos - mirror.pos
+        let sa_im = imagePos - mirror.pos
+        gamma = sa_im / sa
+        imageSize = -object.size * gamma
+        
+        self.image = Image(pos: imagePos, size: imageSize)
+    }
+}
