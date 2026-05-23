@@ -168,7 +168,9 @@ struct ContentView: View {
                         ))
                     } label: {
                         Text("Add object")
+                            .frame(maxWidth: .infinity)
                     }
+                
                     Button {
                         scene.add(Lense(
                             name: "Lense \(scene.lenses.count+1)",
@@ -176,7 +178,9 @@ struct ContentView: View {
                         ))
                     } label: {
                         Text("Add lense")
+                            .frame(maxWidth: .infinity)
                     }
+                    
                     Button {
                         scene.add(SphericalMirror(
                             name: "Mirror \(scene.mirrors.count+1)",
@@ -184,7 +188,9 @@ struct ContentView: View {
                         ))
                     } label: {
                         Text("Add mirror")
+                            .frame(maxWidth: .infinity)
                     }
+                    
                     Button {
                         scene.add(Screen(
                             name: "Screen \(scene.screens.count+1)",
@@ -192,8 +198,10 @@ struct ContentView: View {
                         ))
                     } label: {
                         Text("Add screen")
+                            .frame(maxWidth: .infinity)
                     }
                 }
+                .fixedSize(horizontal: true, vertical: false)
                 .padding()
             }
             .pickerStyle(.segmented)
