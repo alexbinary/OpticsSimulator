@@ -7,7 +7,7 @@ struct ContentView: View {
         let s = OpticsScene()
         s.add(Object(
             name: "Object 1",
-            pos: 0.1, size: 0.5
+            pos: 0.1, size: 0.3
         ))
         s.add(Lense(
             name: "Lense 1",
@@ -23,7 +23,7 @@ struct ContentView: View {
 //        ))
         s.add(Screen(
             name: "Screen 1",
-            pos: 0.9
+            pos: 0.95
         ))
         return s
     }()
@@ -38,10 +38,6 @@ struct ContentView: View {
                 
                 context.translateBy(x: 0, y: size.height/2)
                 context.scaleBy(x: 1, y: -1)
-                
-                // setup scene
-                
-                scene.computeImages()
                 
                 // render
                 
@@ -235,10 +231,10 @@ struct ContentView: View {
                 }
             }
             .pickerStyle(.segmented)
-            .fixedSize(horizontal: true, vertical: false)
+//            .fixedSize(horizontal: true, vertical: false)
         }
         .padding([.horizontal])
-        .frame(minWidth: 1200, minHeight: 600)
+        .frame(minWidth: 1600, minHeight: 800)
         .padding()
     }
 }
@@ -246,5 +242,4 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .frame(width: 1200, height: 800)
 }

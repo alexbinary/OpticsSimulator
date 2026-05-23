@@ -4,24 +4,41 @@ import SwiftUI
 
 
 @Observable
-class Object: Identifiable {
+class ObjectOrImage {
     
-    var id = UUID()
-    var name: String
     var pos: CGFloat
     var size: CGFloat
     
-    init(name: String, pos: CGFloat, size: CGFloat) {
-        self.name = name
+    init(pos: CGFloat, size: CGFloat) {
         self.pos = pos
         self.size = size
     }
 }
-
-struct Image {
     
-    let pos: CGFloat
-    let size: CGFloat
+@Observable
+class Object: ObjectOrImage, Identifiable {
+    
+    var id = UUID()
+    var name: String
+    
+    init(name: String, pos: CGFloat, size: CGFloat) {
+        self.name = name
+        super.init(pos: pos, size: size)
+    }
+}
+
+class Image: ObjectOrImage {}
+
+
+@Observable
+class OpticsDevice {
+    
+    var id = UUID()
+    var pos: CGFloat
+    
+    init(pos: CGFloat) {
+        self.pos = pos
+    }
 }
 
 enum LenseType: CaseIterable, Identifiable {
@@ -39,19 +56,17 @@ enum LenseType: CaseIterable, Identifiable {
 }
 
 @Observable
-class Lense: Identifiable {
+class Lense: OpticsDevice, Identifiable {
     
-    var id = UUID()
     var name: String
-    var pos: CGFloat
     var type: LenseType
     var focalLength: CGFloat
     
     init(name: String, pos: CGFloat, type: LenseType, focalLength: CGFloat) {
         self.name = name
-        self.pos = pos
         self.type = type
         self.focalLength = focalLength
+        super.init(pos: pos)
     }
 }
 
@@ -70,32 +85,28 @@ enum MirrorType: CaseIterable, Identifiable {
 }
 
 @Observable
-class SphericalMirror: Identifiable {
+class SphericalMirror: OpticsDevice, Identifiable {
     
-    var id = UUID()
     var name: String
-    var pos: CGFloat
     var type: MirrorType
     var focalLength: CGFloat
     
     init(name: String, pos: CGFloat, type: MirrorType, focalLength: CGFloat) {
         self.name = name
-        self.pos = pos
         self.type = type
         self.focalLength = focalLength
+        super.init(pos: pos)
     }
 }
 
 
 @Observable
-class Screen: Identifiable {
+class Screen: OpticsDevice, Identifiable {
     
-    var id = UUID()
     var name: String
-    var pos: CGFloat
     
     init(name: String, pos: CGFloat) {
         self.name = name
-        self.pos = pos
+        super.init(pos: pos)
     }
 }

@@ -3,32 +3,37 @@ import SwiftUI
 
 
 
-struct Direction {
+struct Ray {
     
+    let anchor: CGPoint
     
     let dx: CGFloat
     let dy: CGFloat
     
     
-    init(dx: CGFloat, dy: CGFloat) {
+    init(anchor: CGPoint, dx: CGFloat, dy: CGFloat) {
         
+        self.anchor = anchor
         self.dx = dx
         self.dy = dy
     }
     
     init(from p1: CGPoint, to p2: CGPoint) {
         
+        self.anchor = p1
         self.dx = p2.x - p1.x
         self.dy = p2.y - p1.y
     }
     
-    static var horizontal: Direction {
+    init(horizontalFrom p1: CGPoint) {
         
-        Direction(dx: 1, dy: 0)
+        self.anchor = p1
+        self.dx = 1
+        self.dy = 0
     }
     
     
-    func point(atX x: CGFloat, startingFrom anchor: CGPoint) -> CGPoint {
+    func point(atX x: CGFloat) -> CGPoint {
         
         let y = anchor.y + dy * (x-anchor.x) / dx
         return CGPoint(x: x, y: y)
