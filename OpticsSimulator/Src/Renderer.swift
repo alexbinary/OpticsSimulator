@@ -553,14 +553,10 @@ struct Renderer {
                         ) : nil
                         
                         let ray = Ray(
-                            from: rayPointOnPreviousDevice.p, to: currentSourceTop
+                            from: rayPointOnPreviousDevice.p,
+                            to: currentSourceTop
                         )
-                        
                         let endX = currentDevicePos ?? renderSize.width
-                        
-                        let endPoint = ray.point(
-                            atX: endX
-                        )
                         
                         draw(
                             ray,
@@ -568,48 +564,20 @@ struct Renderer {
                             maxX: endX
                         )
                         
-                        if let lense = previousDevice as? Lense,
-                           lense.type == .divergent,
-                           rayPointOnPreviousDevice.hasParallelIncidence {
-                            
-                            draw(
-                                ray,
-                                minX: previousDeviceFocalPointBefore!.x,
-                                maxX: rayPointOnPreviousDevice.p.x,
-                                virtual: true
-                            )
-                        }
+                        var coveredMinX: CGFloat = rayPointOnPreviousDevice.p.x
+                        var coveredMaxX: CGFloat = endX
                         
-                        if let lense = previousDevice as? Lense,
-                           lense.type == .convergent,
-                           rayPointOnPreviousDevice.hasParallelIncidence,
-                           let currentDevicePos = currentDevicePos,
-                           previousDeviceFocalPointAfter!.x > currentDevicePos
-                        {
-                            draw(
-                                ray,
-                                minX: currentDevicePos,
-                                maxX: previousDeviceFocalPointAfter!.x,
-                                virtual: true
-                            )
-                        }
-                        
-                        if currentSourcePos < previousDevicePos! {
-                            
-                            if previousDeviceIsRaySourceDevice,
-                               let lense = previousDevice as? Lense,
-                               lense.type == .divergent,
-                               rayPointOnPreviousDevice.hasParallelIncidence
-                            {
-                            } else {
+                        if let previousDevicePos = previousDevicePos,
+                           currentSourcePos < previousDevicePos {
                                 
-                                draw(
-                                    ray,
-                                    minX: currentSourcePos,
-                                    maxX: rayPointOnPreviousDevice.p.x,
-                                    virtual: true
-                                )
-                            }
+                            draw(
+                                ray,
+                                minX: currentSourcePos,
+                                maxX: previousDevicePos,
+                                virtual: true
+                            )
+                            
+                            coveredMinX = currentSourcePos
                         }
                         
                         if let currentDevicePos = currentDevicePos,
@@ -621,10 +589,42 @@ struct Renderer {
                                 maxX: currentSourcePos,
                                 virtual: true
                             )
+                            
+                            coveredMaxX = currentSourcePos
+                        }
+                        
+                        if let lense = previousDevice as? Lense,
+                           lense.type == .divergent,
+                           rayPointOnPreviousDevice.hasParallelIncidence,
+                           previousDeviceFocalPointBefore!.x < coveredMinX
+                        {
+                            draw(
+                                ray,
+                                minX: previousDeviceFocalPointBefore!.x,
+                                maxX: coveredMinX,
+                                virtual: true
+                            )
+                            
+                            coveredMinX = previousDeviceFocalPointBefore!.x
+                        }
+                        
+                        if let lense = previousDevice as? Lense,
+                           lense.type == .convergent,
+                           rayPointOnPreviousDevice.hasParallelIncidence,
+                           previousDeviceFocalPointAfter!.x > coveredMaxX
+                        {
+                            draw(
+                                ray,
+                                minX: coveredMaxX,
+                                maxX: previousDeviceFocalPointAfter!.x,
+                                virtual: true
+                            )
+                            
+                            coveredMaxX = previousDeviceFocalPointAfter!.x
                         }
                         
                         rayPointOnPreviousDevice = RayPoint(
-                            p: endPoint,
+                            p: ray.point(atX: endX),
                             type: rayPointOnPreviousDevice.type,
                             sourceDevice: rayPointOnPreviousDevice.sourceDevice
                         )
