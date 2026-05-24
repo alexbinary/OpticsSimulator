@@ -579,11 +579,9 @@ struct Renderer {
                             )
                         }
                         
-                        if let lense = previousDevice as? Lense,
-                           lense.type == .convergent,
-                           rayPointOnPreviousDevice.type == .parallel,
-                           currentSourcePos < previousDevicePos!
-                        {
+                        if !previousDeviceIsRaySourceDevice,
+                           currentSourcePos < previousDevicePos! {
+                            
                             draw(
                                 ray,
                                 minX: currentSourcePos,
@@ -592,26 +590,12 @@ struct Renderer {
                             )
                         }
                         
-                        if let lense = previousDevice as? Lense,
-                           lense.type == .convergent,
-                           rayPointOnPreviousDevice.type == .parallel ,
-                           let deviceAfterPos = currentDevicePos,
-                           previousDeviceFocalPointAfter!.x > deviceAfterPos
-                        {
-                            draw(
-                                ray,
-                                minX: deviceAfterPos,
-                                maxX: previousDeviceFocalPointAfter!.x,
-                                virtual: true
-                            )
-                        }
-                        
-                        if let deviceAfterPos = currentDevicePos,
-                           currentSourcePos > deviceAfterPos {
+                        if let currentDevicePos = currentDevicePos,
+                           currentSourcePos > currentDevicePos {
                             
                             draw(
                                 ray,
-                                minX: deviceAfterPos,
+                                minX: currentDevicePos,
                                 maxX: currentSourcePos,
                                 virtual: true
                             )
