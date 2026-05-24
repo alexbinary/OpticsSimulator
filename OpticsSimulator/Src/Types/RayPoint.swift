@@ -14,16 +14,16 @@ struct RayPoint {
     
     let p: CGPoint
     let type: RayType
-    let firstDevice: OpticsDevice?
+    let sourceDevice: OpticsDevice
     let source: ObjectOrImage?
     
     init(
         p: CGPoint, type: RayType,
-        firstDevice: OpticsDevice? = nil, source: ObjectOrImage? = nil
+        sourceDevice: OpticsDevice, source: ObjectOrImage? = nil
     ) {
         self.p = p
         self.type = type
-        self.firstDevice = firstDevice
+        self.sourceDevice = sourceDevice
         self.source = source
     }
 }
