@@ -4,9 +4,7 @@ import SwiftUI
 struct ContentView: View {
     
     @State private var scene = OpticsScene()
-    
-    @State var userActiveDevice: OpticsDevice? = nil
-    @State var activeScenePresetIndex: Int = 0
+    @State private var activeScenePresetIndex: Int = 0
 
     var body: some View {
         
@@ -22,7 +20,7 @@ struct ContentView: View {
                 // render
                 
                 let renderer = Renderer(context: context, renderSize: size)
-                renderer.render(scene, userActiveDevice: userActiveDevice)
+                renderer.render(scene)
             }
             
             Divider()
@@ -177,15 +175,6 @@ struct ContentView: View {
                                 } label: {
                                     Text("􀈑")
                                 }
-                                Button {
-                                    if self.userActiveDevice?.id == lense.id {
-                                        self.userActiveDevice = nil
-                                    } else {
-                                        self.userActiveDevice = lense
-                                    }
-                                } label: {
-                                    Text(self.userActiveDevice?.id == lense.id ? "􀋮" : "􀋭")
-                                }
                                 Toggle("Enabled", isOn: $lense.enabled)
                             }
                             Form {
@@ -230,15 +219,6 @@ struct ContentView: View {
                                     scene.delete(mirror)
                                 } label: {
                                     Text("􀈑")
-                                }
-                                Button {
-                                    if self.userActiveDevice?.id == mirror.id {
-                                        self.userActiveDevice = nil
-                                    } else {
-                                        self.userActiveDevice = mirror
-                                    }
-                                } label: {
-                                    Text(self.userActiveDevice?.id == mirror.id ? "􀋮" : "􀋭")
                                 }
                                 Toggle("Enabled", isOn: $mirror.enabled)
                             }

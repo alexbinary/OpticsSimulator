@@ -300,7 +300,7 @@ struct Renderer {
         fatalError()
     }
     
-    func render(_ scene: OpticsScene, userActiveDevice: OpticsDevice?) {
+    func render(_ scene: OpticsScene) {
         
         drawAxis()
         
@@ -389,12 +389,6 @@ struct Renderer {
                     break
                 }
                 
-                if let userActiveDevice = userActiveDevice,
-                   currentDevice.id != userActiveDevice.id {
-                    
-                    continue
-                }
-                 
                 let currentSourcePos = resolvedPos(
                     from: currentSource.pos
                 )
