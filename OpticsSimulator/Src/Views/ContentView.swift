@@ -145,6 +145,7 @@ struct ContentView: View {
                                     Text("􀈑")
                                 }
                                 Toggle("Enabled", isOn: $object.enabled)
+                                Toggle("Visible", isOn: $object.visible)
                             }
                             Form {
                                 HStack {
@@ -177,6 +178,7 @@ struct ContentView: View {
                                     Text("􀈑")
                                 }
                                 Toggle("Enabled", isOn: $lense.enabled)
+                                Toggle("Visible", isOn: $lense.visible)
                             }
                             Form {
                                 HStack {
@@ -222,6 +224,7 @@ struct ContentView: View {
                                     Text("􀈑")
                                 }
                                 Toggle("Enabled", isOn: $mirror.enabled)
+                                Toggle("Visible", isOn: $mirror.visible)
                             }
                             Form {
                                 HStack {
@@ -259,6 +262,7 @@ struct ContentView: View {
                                     Text("􀈑")
                                 }
                                 Toggle("Enabled", isOn: $screen.enabled)
+                                Toggle("Visible", isOn: $screen.visible)
                             }
                             Form {
                                 HStack {

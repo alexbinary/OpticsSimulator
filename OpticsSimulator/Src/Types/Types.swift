@@ -21,10 +21,15 @@ class Object: ObjectOrImage, Identifiable {
     var id = UUID()
     var name: String
     var enabled: Bool
+    var visible: Bool
     
-    init(name: String, pos: CGFloat, size: CGFloat, enabled: Bool = true) {
+    init(
+        name: String, pos: CGFloat, size: CGFloat,
+        enabled: Bool = true, visible: Bool = true
+    ) {
         self.name = name
         self.enabled = enabled
+        self.visible = visible
         super.init(pos: pos, size: size)
     }
 }
@@ -38,10 +43,12 @@ class OpticsDevice {
     var id = UUID()
     var pos: CGFloat
     var enabled: Bool
+    var visible: Bool
     
-    init(pos: CGFloat, enabled: Bool = true) {
+    init(pos: CGFloat, enabled: Bool = true, visible: Bool = true) {
         self.pos = pos
         self.enabled = enabled
+        self.visible = visible
     }
 }
 
@@ -78,7 +85,7 @@ class Lense: OpticsDevice, Identifiable {
         generatesCenterRay: Bool = true,
         generatesFocalRay: Bool = true,
         retroPropagatesRays: Bool = false,
-        enabled: Bool = true
+        enabled: Bool = true, visible: Bool = true
     ) {
         self.name = name
         self.type = type
@@ -89,7 +96,7 @@ class Lense: OpticsDevice, Identifiable {
         self.generatesFocalRay = generatesFocalRay
         self.retroPropagatesRays = retroPropagatesRays
         
-        super.init(pos: pos, enabled: enabled)
+        super.init(pos: pos, enabled: enabled, visible: visible)
     }
 }
 
@@ -116,12 +123,12 @@ class SphericalMirror: OpticsDevice, Identifiable {
     
     init(
         name: String, pos: CGFloat, type: MirrorType, focalLength: CGFloat,
-        enabled: Bool = true
+        enabled: Bool = true, visible: Bool = true
     ) {
         self.name = name
         self.type = type
         self.focalLength = focalLength
-        super.init(pos: pos, enabled: enabled)
+        super.init(pos: pos, enabled: enabled, visible: visible)
     }
 }
 
@@ -131,8 +138,11 @@ class Screen: OpticsDevice, Identifiable {
     
     var name: String
     
-    init(name: String, pos: CGFloat, enabled: Bool = true) {
+    init(
+        name: String, pos: CGFloat,
+        enabled: Bool = true, visible: Bool = true
+    ) {
         self.name = name
-        super.init(pos: pos, enabled: enabled)
+        super.init(pos: pos, enabled: enabled, visible: visible)
     }
 }

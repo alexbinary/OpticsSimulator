@@ -36,12 +36,15 @@ struct Renderer {
         )
     }
     
+    let opacityWhenHidden: CGFloat = 0.2
+    
     func draw(_ object: Object) {
         
         drawObjectOrImage(
             at: resolvedPos(from: object.pos),
             size: resolvedObjectSize(from: object.size),
-            color: .blue
+            color: .blue,
+            opacity: object.visible ? 1 : opacityWhenHidden
         )
     }
     
@@ -56,7 +59,7 @@ struct Renderer {
         
     func drawObjectOrImage(
         at position: CGFloat, size: CGFloat,
-        color: Color, virtual: Bool = false
+        color: Color, virtual: Bool = false, opacity: CGFloat = 1
     ) {
         let x = position
         let h = size
@@ -71,7 +74,7 @@ struct Renderer {
         path.addPath(pathForArrow(at: h, pointing: .towardAxis),
                      transform: .init(translationX: position, y: 0))
         
-        context.stroke(path, with: .color(color), style: StrokeStyle(
+        context.stroke(path, with: .color(color.opacity(opacity)), style: StrokeStyle(
             lineWidth: lineWidth,
             dash: virtual ? [4, 4] : []
         ))
@@ -88,6 +91,7 @@ struct Renderer {
         let arrowDir: ArrowDirection = lense.type == .convergent ? .towardAxis : .awayFromAxis
         
         var path = Path()
+        let color: Color = .red.opacity(lense.visible ? 1 : opacityWhenHidden)
         
         // lense body
         path.move(to: CGPoint(x: x, y: h))
@@ -107,7 +111,7 @@ struct Renderer {
         path.move(to: CGPoint(x: x+f, y: -m))
         path.addLine(to: CGPoint(x: x+f, y: +m))
         
-        context.stroke(path, with: .color(.red), lineWidth: 2)
+        context.stroke(path, with: .color(color), lineWidth: 2)
         
         // connect focal points
         
@@ -117,7 +121,7 @@ struct Renderer {
         path.addLine(to: CGPoint(x: x+f, y: 0))
         path.addLine(to: CGPoint(x: x, y: h))
         
-        context.stroke(path, with: .color(.red.opacity(0.5)), style: StrokeStyle(
+        context.stroke(path, with: .color(color.opacity(0.5)), style: StrokeStyle(
             lineWidth: 1,
             dash: [4, 4]
         ))
@@ -134,6 +138,7 @@ struct Renderer {
         let a: CGFloat = 5
         
         var path = Path()
+        let color: Color = .red.opacity(mirror.visible ? 1 : opacityWhenHidden)
         
         // mirror body
         path.move(to: CGPoint(x: x, y: h))
@@ -186,7 +191,7 @@ struct Renderer {
             path.addLine(to: CGPoint(x: x+2*f, y: +m))
         }
         
-        context.stroke(path, with: .color(.red), lineWidth: 2)
+        context.stroke(path, with: .color(color), lineWidth: 2)
     }
     
     func draw(_ screen: Screen) {
@@ -197,6 +202,7 @@ struct Renderer {
         let a: CGFloat = 5
         
         var path = Path()
+        let color: Color = .gray.opacity(screen.visible ? 1 : opacityWhenHidden)
         
         path.move(to: CGPoint(x: x, y: h))
         path.addLine(to: CGPoint(x: x, y: -h))
@@ -210,7 +216,7 @@ struct Renderer {
             path.addLine(to: CGPoint(x: x+a, y: hi-a))
         }
         
-        context.stroke(path, with: .color(.gray), lineWidth: 2)
+        context.stroke(path, with: .color(color), lineWidth: 2)
     }
     
     func drawRay(
@@ -304,7 +310,7 @@ struct Renderer {
         
         drawAxis()
         
-        for object in scene.objects {
+        for object in scene.objects.filter({ $0.enabled }) {
             draw(object)
         }
         for lense in scene.lenses.filter({ $0.enabled }) {
@@ -326,7 +332,7 @@ struct Renderer {
         
         var images: [Image] = []
         
-        if let object = scene.objects.first {
+        if let object = scene.objects.filter({ $0.enabled }).first {
             
             let devices = devicesByPosition
                 .filter { $0.pos > object.pos }

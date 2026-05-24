@@ -41,6 +41,7 @@ class OpticsScene {
             objects: objects.map { object in
                 ObjectDescriptor(
                     enabled: object.enabled,
+                    visible: object.visible,
                     pos: object.pos,
                     size: object.size,
                     name: object.name
@@ -49,6 +50,7 @@ class OpticsScene {
             lenses: lenses.map { lense in
                 LenseDescriptor(
                     enabled: lense.enabled,
+                    visible: lense.visible,
                     pos: lense.pos,
                     focalLength: lense.focalLength,
                     type: lense.type,
@@ -62,6 +64,7 @@ class OpticsScene {
             mirrors: mirrors.map { mirror in
                 MirrorDescriptor(
                     enabled: mirror.enabled,
+                    visible: mirror.visible,
                     pos: mirror.pos,
                     focalLength: mirror.focalLength,
                     type: mirror.type,
@@ -71,6 +74,7 @@ class OpticsScene {
             screens: screens.map { screen in
                 ScreenDescriptor(
                     enabled: screen.enabled,
+                    visible: screen.visible,
                     pos: screen.pos,
                     name: screen.name
                 )
@@ -95,7 +99,8 @@ class OpticsScene {
                 name: descriptor.name,
                 pos: descriptor.pos,
                 size: descriptor.size,
-                enabled: descriptor.enabled
+                enabled: descriptor.enabled,
+                visible: descriptor.visible
             )
         }.forEach { object in
             add(object)
@@ -111,7 +116,8 @@ class OpticsScene {
                 generatesCenterRay: descriptor.generatesCenterRay,
                 generatesFocalRay: descriptor.generatesFocalRay,
                 retroPropagatesRays: descriptor.retroPropagatesRays,
-                enabled: descriptor.enabled
+                enabled: descriptor.enabled,
+                visible: descriptor.visible
             )
         }.forEach { lense in
             add(lense)
@@ -123,7 +129,8 @@ class OpticsScene {
                 pos: descriptor.pos,
                 type: descriptor.type,
                 focalLength: descriptor.focalLength,
-                enabled: descriptor.enabled
+                enabled: descriptor.enabled,
+                visible: descriptor.visible
             )
         }.forEach { mirror in
             add(mirror)
@@ -133,7 +140,8 @@ class OpticsScene {
             Screen(
                 name: descriptor.name,
                 pos: descriptor.pos,
-                enabled: descriptor.enabled
+                enabled: descriptor.enabled,
+                visible: descriptor.visible
             )
         }.forEach { screen in
             add(screen)
@@ -180,6 +188,7 @@ class OpticsScene {
 struct ObjectDescriptor: Codable {
     
     let enabled: Bool
+    let visible: Bool
     
     let pos: CGFloat
     let size: CGFloat
@@ -189,6 +198,7 @@ struct ObjectDescriptor: Codable {
 struct LenseDescriptor: Codable {
     
     let enabled: Bool
+    let visible: Bool
     
     let pos: CGFloat
     let focalLength: CGFloat
@@ -205,6 +215,7 @@ struct LenseDescriptor: Codable {
 struct MirrorDescriptor: Codable {
     
     let enabled: Bool
+    let visible: Bool
     
     let pos: CGFloat
     let focalLength: CGFloat
@@ -215,6 +226,7 @@ struct MirrorDescriptor: Codable {
 struct ScreenDescriptor: Codable {
     
     let enabled: Bool
+    let visible: Bool
     
     let pos: CGFloat
     let name: String
