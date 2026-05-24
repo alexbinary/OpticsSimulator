@@ -63,11 +63,11 @@ class Lense: OpticsDevice, Identifiable {
     var type: LenseType
     var focalLength: CGFloat
     
-    var generatesParallelRay: Bool = true
+    var generatesParallelRay: Bool = false
     var generatesCenterRay: Bool = true
     var generatesFocalRay: Bool = true
     
-    var retroPropagatesRays: Bool = true
+    var retroPropagatesRays: Bool = false
     
     init(name: String, pos: CGFloat, type: LenseType, focalLength: CGFloat) {
         self.name = name
@@ -116,18 +116,4 @@ class Screen: OpticsDevice, Identifiable {
         self.name = name
         super.init(pos: pos)
     }
-}
-
-
-enum RayType {
-    
-    case parallel
-    case focal
-    case center
-}
-
-struct RayPoint {
-    
-    let p: CGPoint
-    let type: RayType
 }

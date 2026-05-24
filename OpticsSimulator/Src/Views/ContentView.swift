@@ -7,16 +7,23 @@ struct ContentView: View {
         let s = OpticsScene()
         s.add(Object(
             name: "Object 1",
-            pos: 0.24, size: 0.3
+            pos: 0.01, size: 0.3
         ))
         s.add(Lense(
             name: "Lense 1",
-            pos: 0.29, type: .convergent, focalLength: 0.1
+            pos: 0.12, type: .convergent, focalLength: 0.05
         ))
         s.add(Lense(
             name: "Lense 2",
-            pos: 0.34, type: .convergent, focalLength: 0.1
+            pos: 0.32, type: .convergent, focalLength: 0.06
         ))
+        let l3 = Lense(
+            name: "Lense 3",
+            pos: 0.55, type: .convergent, focalLength: 0.05
+        )
+        l3.generatesParallelRay = true
+        l3.retroPropagatesRays = true
+        s.add(l3)
 //        s.add(SphericalMirror(
 //            name: "Mirror 1",
 //            pos: 0.8, type: .convex, focalLength: 0.1
@@ -28,7 +35,7 @@ struct ContentView: View {
         return s
     }()
     
-    @State var activeDevice: OpticsDevice? = nil
+    @State var userActiveDevice: OpticsDevice? = nil
 
     var body: some View {
         
@@ -44,7 +51,7 @@ struct ContentView: View {
                 // render
                 
                 let renderer = Renderer(context: context, renderSize: size)
-                renderer.render(scene, activeDevice: activeDevice)
+                renderer.render(scene, userActiveDevice: userActiveDevice)
             }
             
             Divider()
@@ -145,13 +152,13 @@ struct ContentView: View {
                                     Text("􀈑")
                                 }
                                 Button {
-                                    if self.activeDevice?.id == lense.id {
-                                        self.activeDevice = nil
+                                    if self.userActiveDevice?.id == lense.id {
+                                        self.userActiveDevice = nil
                                     } else {
-                                        self.activeDevice = lense
+                                        self.userActiveDevice = lense
                                     }
                                 } label: {
-                                    Text(self.activeDevice?.id == lense.id ? "􀋮" : "􀋭")
+                                    Text(self.userActiveDevice?.id == lense.id ? "􀋮" : "􀋭")
                                 }
                                 Toggle("Enabled", isOn: $lense.enabled)
                             }
@@ -199,13 +206,13 @@ struct ContentView: View {
                                     Text("􀈑")
                                 }
                                 Button {
-                                    if self.activeDevice?.id == mirror.id {
-                                        self.activeDevice = nil
+                                    if self.userActiveDevice?.id == mirror.id {
+                                        self.userActiveDevice = nil
                                     } else {
-                                        self.activeDevice = mirror
+                                        self.userActiveDevice = mirror
                                     }
                                 } label: {
-                                    Text(self.activeDevice?.id == mirror.id ? "􀋮" : "􀋭")
+                                    Text(self.userActiveDevice?.id == mirror.id ? "􀋮" : "􀋭")
                                 }
                                 Toggle("Enabled", isOn: $mirror.enabled)
                             }
