@@ -83,6 +83,7 @@ struct ContentView: View {
                             
                             Button {
                                 activeScenePresetIndex -= 1
+                                updateActivePresetIndex()
                                 loadActivePreset()
                             } label: {
                                 Text("<")
@@ -91,6 +92,7 @@ struct ContentView: View {
                             
                             Button {
                                 activeScenePresetIndex += 1
+                                updateActivePresetIndex()
                                 loadActivePreset()
                             } label: {
                                 Text(">")
@@ -104,6 +106,7 @@ struct ContentView: View {
                                 Button {
                                     deleteActivePreset()
                                     activeScenePresetIndex = max(0, activeScenePresetIndex-1)
+                                    updateActivePresetIndex()
                                     if scene.presets.count > 0 {
                                         loadActivePreset()
                                     }
@@ -118,6 +121,7 @@ struct ContentView: View {
                             Button {
                                 scene.savePreset()
                                 activeScenePresetIndex = scene.presets.count-1
+                                updateActivePresetIndex()
                                 loadActivePreset()
                             } label: {
                                 Text("Save new")
@@ -284,6 +288,7 @@ struct ContentView: View {
         .padding()
         .onAppear() {
             scene.loadPresetsFromFile()
+            activeScenePresetIndex = scene.activePresetIndex ?? 0
             if scene.presets.count > 0 {
                 loadActivePreset()
             }
@@ -298,6 +303,11 @@ struct ContentView: View {
     func deleteActivePreset() {
         
         scene.deletePreset(scene.presets[activeScenePresetIndex])
+    }
+    
+    func updateActivePresetIndex() {
+        
+        scene.setActivePreset(activeScenePresetIndex)
     }
 }
 

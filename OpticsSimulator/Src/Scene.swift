@@ -32,6 +32,7 @@ class OpticsScene {
     
     
     var presets: [ScenePresetDescriptor] = []
+    var activePresetIndex: Int? = nil
     
     func savePreset() {
         
@@ -154,6 +155,12 @@ class OpticsScene {
         writePresetsToFile()
     }
     
+    func setActivePreset(_ index: Int) {
+        
+        activePresetIndex = index
+        writePresetsToFile()
+    }
+    
     let presetsFileUrl: URL = {
         let path = FileManager.default.currentDirectoryPath.appending("/data/data.json5")
         return URL(fileURLWithPath: path)
@@ -167,6 +174,7 @@ class OpticsScene {
            let decodedData = try? decoder.decode(FileRoot.self, from: rawData) {
             
             self.presets = decodedData.presets
+            self.activePresetIndex = decodedData.activePresetIndex
             
         } else {
             
@@ -179,7 +187,9 @@ class OpticsScene {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         
-        let rawData = try! encoder.encode(FileRoot(presets: presets))
+        let rawData = try! encoder.encode(FileRoot(
+            activePresetIndex: activePresetIndex, presets: presets
+        ))
         try! rawData.write(to: self.presetsFileUrl)
     }
 }
@@ -245,5 +255,6 @@ struct ScenePresetDescriptor: Codable {
 
 struct FileRoot: Codable {
     
+    let activePresetIndex: Int?
     let presets: [ScenePresetDescriptor]
 }
