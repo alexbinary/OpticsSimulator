@@ -3,39 +3,10 @@ import SwiftUI
 
 struct ContentView: View {
     
-    @State private var scene = {
-        let s = OpticsScene()
-        s.add(Object(
-            name: "Object 1",
-            pos: 0.01, size: 0.3
-        ))
-        s.add(Lense(
-            name: "Lense 1",
-            pos: 0.12, type: .convergent, focalLength: 0.05
-        ))
-        s.add(Lense(
-            name: "Lense 2",
-            pos: 0.32, type: .convergent, focalLength: 0.06
-        ))
-        let l3 = Lense(
-            name: "Lense 3",
-            pos: 0.55, type: .convergent, focalLength: 0.05
-        )
-        l3.generatesParallelRay = true
-        l3.retroPropagatesRays = true
-        s.add(l3)
-//        s.add(SphericalMirror(
-//            name: "Mirror 1",
-//            pos: 0.8, type: .convex, focalLength: 0.1
-//        ))
-        s.add(Screen(
-            name: "Screen 1",
-            pos: 0.95
-        ))
-        return s
-    }()
+    @State private var scene = OpticsScene()
     
     @State var userActiveDevice: OpticsDevice? = nil
+    @State var activeScenePresetIndex: Int = 0
 
     var body: some View {
         
@@ -57,52 +28,107 @@ struct ContentView: View {
             Divider()
             
             VStack(alignment: .center) {
+                
+                HStack {
                     
-                Grid {
-                    
-                    GridRow {
+                    Grid {
                         
-                        Button {
-                            scene.add(Object(
-                                name: "Object \(scene.objects.count+1)",
-                                pos: 0.1, size: 1
-                            ))
-                        } label: {
-                            Text("Add object")
+                        GridRow {
+                            
+                            Button {
+                                scene.add(Object(
+                                    name: "Object \(scene.objects.count+1)",
+                                    pos: 0.1, size: 1
+                                ))
+                            } label: {
+                                Text("Add object")
+                            }
+                            
+                            Button {
+                                scene.add(Screen(
+                                    name: "Screen \(scene.screens.count+1)",
+                                    pos: 0.9
+                                ))
+                            } label: {
+                                Text("Add screen")
+                            }
                         }
                         
-                        Button {
-                            scene.add(Screen(
-                                name: "Screen \(scene.screens.count+1)",
-                                pos: 0.9
-                            ))
-                        } label: {
-                            Text("Add screen")
+                        GridRow {
+                            
+                            Button {
+                                scene.add(Lense(
+                                    name: "Lense \(scene.lenses.count+1)",
+                                    pos: 0.5, type: .convergent, focalLength: 0.1
+                                ))
+                            } label: {
+                                Text("Add lense")
+                            }
+                            
+                            Button {
+                                scene.add(SphericalMirror(
+                                    name: "Mirror \(scene.mirrors.count+1)",
+                                    pos: 0.5, type: .concave, focalLength: 0.1
+                                ))
+                            } label: {
+                                Text("Add mirror")
+                            }
                         }
                     }
+                    .padding()
                     
-                    GridRow {
-                        
-                        Button {
-                            scene.add(Lense(
-                                name: "Lense \(scene.lenses.count+1)",
-                                pos: 0.5, type: .convergent, focalLength: 0.1
-                            ))
-                        } label: {
-                            Text("Add lense")
+                    Divider()
+                    
+                    VStack {
+                                
+                        HStack {
+                            
+                            Button {
+                                activeScenePresetIndex -= 1
+                                loadActivePreset()
+                            } label: {
+                                Text("<")
+                            }
+                            .disabled(activeScenePresetIndex == 0)
+                            
+                            Button {
+                                activeScenePresetIndex += 1
+                                loadActivePreset()
+                            } label: {
+                                Text(">")
+                            }
+                            .disabled(activeScenePresetIndex >= scene.presets.count-1)
+                            
+                            if activeScenePresetIndex >= 0, activeScenePresetIndex < scene.presets.count {
+                                
+                                Text(scene.presets[activeScenePresetIndex].name)
+                                
+                                Button {
+                                    deleteActivePreset()
+                                    activeScenePresetIndex = max(0, activeScenePresetIndex-1)
+                                    if scene.presets.count > 0 {
+                                        loadActivePreset()
+                                    }
+                                } label: {
+                                    Text("􀈑")
+                                }
+                            }
                         }
                         
-                        Button {
-                            scene.add(SphericalMirror(
-                                name: "Mirror \(scene.mirrors.count+1)",
-                                pos: 0.5, type: .concave, focalLength: 0.1
-                            ))
-                        } label: {
-                            Text("Add mirror")
+                        HStack {
+                            
+                            Button {
+                                scene.savePreset()
+                                activeScenePresetIndex = scene.presets.count-1
+                                loadActivePreset()
+                            } label: {
+                                Text("Save new")
+                            }
                         }
                     }
+                    .padding()
                 }
-                .padding()
+                .fixedSize()
                 
                 Divider()
                 
@@ -267,11 +293,26 @@ struct ContentView: View {
                 }
             }
             .pickerStyle(.segmented)
-//            .fixedSize(horizontal: true, vertical: false)
         }
         .padding([.horizontal])
         .frame(minWidth: 1600, minHeight: 800)
         .padding()
+        .onAppear() {
+            scene.loadPresetsFromFile()
+            if scene.presets.count > 0 {
+                loadActivePreset()
+            }
+        }
+    }
+    
+    func loadActivePreset() {
+        
+        scene.loadPreset(scene.presets[activeScenePresetIndex])
+    }
+    
+    func deleteActivePreset() {
+        
+        scene.deletePreset(scene.presets[activeScenePresetIndex])
     }
 }
 

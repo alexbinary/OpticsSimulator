@@ -35,14 +35,15 @@ class OpticsDevice {
     
     var id = UUID()
     var pos: CGFloat
-    var enabled: Bool = true
+    var enabled: Bool
     
-    init(pos: CGFloat) {
+    init(pos: CGFloat, enabled: Bool = true) {
         self.pos = pos
+        self.enabled = enabled
     }
 }
 
-enum LenseType: CaseIterable, Identifiable {
+enum LenseType: CaseIterable, Identifiable, Codable {
     
     case convergent, divergent
     
@@ -69,15 +70,28 @@ class Lense: OpticsDevice, Identifiable {
     
     var retroPropagatesRays: Bool = false
     
-    init(name: String, pos: CGFloat, type: LenseType, focalLength: CGFloat) {
+    init(
+        name: String, pos: CGFloat, type: LenseType, focalLength: CGFloat,
+        generatesParallelRay: Bool = false,
+        generatesCenterRay: Bool = true,
+        generatesFocalRay: Bool = true,
+        retroPropagatesRays: Bool = false,
+        enabled: Bool = true
+    ) {
         self.name = name
         self.type = type
         self.focalLength = focalLength
-        super.init(pos: pos)
+        
+        self.generatesParallelRay = generatesParallelRay
+        self.generatesCenterRay = generatesCenterRay
+        self.generatesFocalRay = generatesFocalRay
+        self.retroPropagatesRays = retroPropagatesRays
+        
+        super.init(pos: pos, enabled: enabled)
     }
 }
 
-enum MirrorType: CaseIterable, Identifiable {
+enum MirrorType: CaseIterable, Identifiable, Codable {
     
     case convex, concave
     
@@ -98,11 +112,14 @@ class SphericalMirror: OpticsDevice, Identifiable {
     var type: MirrorType
     var focalLength: CGFloat
     
-    init(name: String, pos: CGFloat, type: MirrorType, focalLength: CGFloat) {
+    init(
+        name: String, pos: CGFloat, type: MirrorType, focalLength: CGFloat,
+        enabled: Bool = true
+    ) {
         self.name = name
         self.type = type
         self.focalLength = focalLength
-        super.init(pos: pos)
+        super.init(pos: pos, enabled: enabled)
     }
 }
 
@@ -112,8 +129,8 @@ class Screen: OpticsDevice, Identifiable {
     
     var name: String
     
-    init(name: String, pos: CGFloat) {
+    init(name: String, pos: CGFloat, enabled: Bool = true) {
         self.name = name
-        super.init(pos: pos)
+        super.init(pos: pos, enabled: enabled)
     }
 }
