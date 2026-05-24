@@ -634,6 +634,24 @@ struct Renderer {
                         let currentSourceTop = CGPoint(
                             x: currentSourcePos, y: currentSourceSize
                         )
+                        
+                        let currentDevice = i3 < devices.count ? devices[i3] : nil
+                        let currentDevicePos = currentDevice != nil
+                            ? resolvedPos(
+                                from: currentDevice!.pos
+                            ) : nil
+                        let currentDeviceCenter = currentDevice != nil
+                            ? CGPoint(
+                                x: currentDevicePos!, y: 0
+                            ) : nil
+                        let currentDeviceFocalLength = currentDevice is Lense
+                            ? resolvedFocalLength(
+                                from: (currentDevice as! Lense).focalLength
+                            ) : nil
+                        let currentDeviceFocalPoint = currentDevice is Lense
+                            ? CGPoint(
+                                x: currentDevicePos! - currentDeviceFocalLength!, y: 0
+                            ) : nil
 
                         let previousDevice = (i3-1) >= 0 ? devices[i3-1] : nil
                         let previousDevicePos = previousDevice != nil
@@ -656,6 +674,18 @@ struct Renderer {
                             minX: startX,
                             maxX: currentRayPoint.p.x
                         )
+                        
+                        if let lense = currentDevice as? Lense,
+                           lense.type == .convergent,
+                           currentDeviceFocalPoint!.x < startX {
+                            
+                            draw(
+                                ray,
+                                minX: currentDeviceFocalPoint!.x,
+                                maxX: startX,
+                                virtual: true
+                            )
+                        }
                         
                         currentRayPoint = RayPoint(
                             p: startPoint,
