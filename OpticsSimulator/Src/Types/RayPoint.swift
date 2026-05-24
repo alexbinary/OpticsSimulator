@@ -8,6 +8,7 @@ enum RayType {
     case parallel
     case focal
     case center
+    case undefined
 }
 
 struct RayPoint {

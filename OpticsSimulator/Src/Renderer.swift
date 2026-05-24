@@ -332,6 +332,8 @@ struct Renderer {
         
         var images: [Image] = []
         
+        var rayDescriptors: [RayDescriptor] = []
+        
         if let object = scene.objects.filter({ $0.enabled }).first {
             
             let devices = devicesByPosition
@@ -401,6 +403,7 @@ struct Renderer {
                     break
                 }
                 
+                let previousDevice = iterator.previousDeviceInfo?.device
                 let previousDevicePos = iterator.previousDeviceInfo?.pos
                 
                 var rayPointsOnPreviousDevice: [RayPoint] = []
@@ -425,29 +428,30 @@ struct Renderer {
                         horizontalFrom: currentSourceTop
                     )
                     
-                    if let previousDevicePos = previousDevicePos,
-                       currentSourcePos < previousDevicePos {
+                    var points: [PointDescriptor] = [
                         
-                        draw(
-                            parallelRay,
-                            minX: previousDevicePos,
-                            maxX: currentDevicePos
-                        )
+                        PointDescriptor(
+                            device: nil,
+                            source: currentSource,
+                            type: .top,
+                            point: parallelRay.point(atX: currentSourcePos)
+                        ),
+                        PointDescriptor(
+                            device: currentDevice,
+                            source: nil,
+                            type: .undefined,
+                            point: parallelRay.point(atX: currentDevicePos)
+                        ),
+                    ]
+                    
+                    if let previousDevicePos = previousDevicePos {
                         
-                        draw(
-                            parallelRay,
-                            minX: currentSourcePos,
-                            maxX: previousDevicePos,
-                            virtual: true
-                        )
-                        
-                    } else {
-                        
-                        draw(
-                            parallelRay,
-                            minX: currentSourcePos,
-                            maxX: currentDevicePos
-                        )
+                        points.append(PointDescriptor(
+                            device: previousDevice,
+                            source: nil,
+                            type: .undefined,
+                            point: parallelRay.point(atX: previousDevicePos)
+                        ))
                     }
                     
                     let pointFromParallelRayOnCurrentDevice =
@@ -467,15 +471,6 @@ struct Renderer {
                        lense.retroPropagatesRays,
                        let previousDevicePos = previousDevicePos {
                         
-                        if currentSourcePos > previousDevicePos {
-                            
-                            draw(
-                                parallelRay,
-                                minX: previousDevicePos,
-                                maxX: currentSourcePos
-                            )
-                        }
-                        
                         let pointFromParallelRayOnPreviousDevice =
                             parallelRay.point(
                                 atX: previousDevicePos
@@ -489,6 +484,12 @@ struct Renderer {
                             horizontalIncidence: true
                         ))
                     }
+                    
+                    rayDescriptors.append(RayDescriptor(
+                        deviceBefore: previousDevice,
+                        deviceAfter: currentDevice,
+                        points: points
+                    ))
                 }
                 
                 // center ray
@@ -511,31 +512,30 @@ struct Renderer {
                         to: currentDeviceCenter,
                     )
                     
-                    if let previousDevicePos = previousDevicePos,
-                       currentSourcePos < previousDevicePos {
+                    var points: [PointDescriptor] = [
                         
-                        draw(
-                            centerRay,
-                            minX: previousDevicePos,
-                            maxX: currentDevicePos
+                        PointDescriptor(
+                            device: nil,
+                            source: currentSource,
+                            type: .top,
+                            point: centerRay.point(atX: currentSourcePos)
+                        ),
+                        PointDescriptor(
+                            device: currentDevice,
+                            source: nil,
+                            type: .center,
+                            point: centerRay.point(atX: currentDevicePos)
                         )
+                    ]
+                    
+                    if let previousDevicePos = previousDevicePos {
                         
-                        draw(
-                            centerRay,
-                            minX: currentSourcePos,
-                            maxX: previousDevicePos,
-                            virtual: true
-                        )
-                        
-                    } else if currentSourcePos > currentDevicePos {
-                        
-                    } else {
-                        
-                        draw(
-                            centerRay,
-                            minX: currentSourcePos,
-                            maxX: currentDevicePos
-                        )
+                        points.append(PointDescriptor(
+                            device: previousDevice,
+                            source: nil,
+                            type: .undefined,
+                            point: centerRay.point(atX: previousDevicePos)
+                        ))
                     }
                     
                     let pointFromCenterRayOnCurrentDevice =
@@ -554,15 +554,6 @@ struct Renderer {
                        lense.retroPropagatesRays,
                        let previousDevicePos = previousDevicePos {
                         
-                        if currentSourcePos > previousDevicePos {
-                            
-                            draw(
-                                centerRay,
-                                minX: previousDevicePos,
-                                maxX: currentSourcePos
-                            )
-                        }
-                        
                         let pointFromCenterRayOnPreviousDevice =
                             centerRay.point(
                                 atX: previousDevicePos
@@ -575,6 +566,12 @@ struct Renderer {
                             source: currentSource
                         ))
                     }
+                    
+                    rayDescriptors.append(RayDescriptor(
+                        deviceBefore: previousDevice,
+                        deviceAfter: currentDevice,
+                        points: points
+                    ))
                 }
                 //
                 //                // focal ray
@@ -654,6 +651,7 @@ struct Renderer {
                         let currentSourceTop = iterator.currentSourceTop
                         
                         let currentDeviceInfo = iterator.currentDeviceInfo
+                        let currentDevice = currentDeviceInfo?.device
                         let currentDevicePos = currentDeviceInfo?.pos
                         
                         let previousDeviceInfo = iterator.previousDeviceInfo!
@@ -670,90 +668,74 @@ struct Renderer {
                         )
                         let endX = currentDevicePos ?? renderSize.width
                         
-                        draw(
-                            ray,
-                            minX: rayPointOnPreviousDevice.p.x,
-                            maxX: endX
-                        )
-                        
-                        var coveredMinX: CGFloat = rayPointOnPreviousDevice.p.x
-                        var coveredMaxX: CGFloat = endX
-                        
-                        if currentSourcePos < coveredMinX {
-                                
-                            if previousDeviceIsRaySource,
-                               let lense = previousDevice as? Lense,
-                               lense.type == .convergent
-                            {
-                                draw(
-                                    ray,
-                                    minX: currentSourcePos,
-                                    maxX: iterator.previousSourcePos!,
-                                    virtual: true
-                                )
-                                
-                            } else if previousDeviceIsRaySource,
-                                      let lense = previousDevice as? Lense,
-                                      lense.type == .divergent {
-                                
-                            } else {
-                                
-                                draw(
-                                    ray,
-                                    minX: currentSourcePos,
-                                    maxX: coveredMinX,
-                                    virtual: true
-                                )
-                            }
+                        var points: [PointDescriptor] = [
                             
-                            coveredMinX = currentSourcePos
-                        }
-                        
-                        if currentSourcePos > coveredMaxX {
-                            
-                            draw(
-                                ray,
-                                minX: coveredMaxX,
-                                maxX: currentSourcePos,
-                                virtual: true
+                            PointDescriptor(
+                                device: previousDevice,
+                                source: nil,
+                                type: rayPointOnPreviousDevice.type == .center ? .center : .undefined,
+                                point: ray.point(atX: rayPointOnPreviousDevice.p.x)
+                            ),
+                            PointDescriptor(
+                                device: currentDevice,
+                                source: nil,
+                                type: .undefined,
+                                point: ray.point(atX: endX)
+                            ),
+                            PointDescriptor(
+                                device: nil,
+                                source: currentSource,
+                                type: .top,
+                                point: ray.point(atX: currentSourcePos)
                             )
-                            
-                            coveredMaxX = currentSourcePos
+                        ]
+                        
+                        if previousDeviceIsRaySource,
+                           let lense = previousDevice as? Lense,
+                           lense.type == .convergent,
+                           rayPointOnPreviousDevice.type == .center
+                        {
+                            points.append(PointDescriptor(
+                                device: nil,
+                                source: iterator.previousSource!,
+                                type: .top,
+                                point: ray.point(atX: iterator.previousSourcePos!)
+                            ))
                         }
                         
                         if let lense = previousDevice as? Lense,
                            lense.type == .divergent,
-                           rayPointOnPreviousDevice.hasParallelIncidence,
-                           previousDeviceFocalPointBefore!.x < coveredMinX
+                           rayPointOnPreviousDevice.hasParallelIncidence
                         {
-                            draw(
-                                ray,
-                                minX: previousDeviceFocalPointBefore!.x,
-                                maxX: coveredMinX,
-                                virtual: true
-                            )
-                            
-                            coveredMinX = previousDeviceFocalPointBefore!.x
+                            points.append(PointDescriptor(
+                                device: previousDevice,
+                                source: nil,
+                                type: .focalPointBefore,
+                                point: ray.point(atX: previousDeviceFocalPointBefore!.x)
+                            ))
                         }
                         
                         if let lense = previousDevice as? Lense,
                            lense.type == .convergent,
-                           rayPointOnPreviousDevice.hasParallelIncidence,
-                           previousDeviceFocalPointAfter!.x > coveredMaxX
+                           rayPointOnPreviousDevice.hasParallelIncidence
                         {
-                            draw(
-                                ray,
-                                minX: coveredMaxX,
-                                maxX: previousDeviceFocalPointAfter!.x,
-                                virtual: true
-                            )
-                            
-                            coveredMaxX = previousDeviceFocalPointAfter!.x
+                            points.append(PointDescriptor(
+                                device: previousDevice,
+                                source: nil,
+                                type: .focalPointAfter,
+                                point: ray.point(atX: previousDeviceFocalPointAfter!.x)
+                            ))
                         }
+                        
+                        rayDescriptors.append(RayDescriptor(
+                            deviceBefore: previousDevice,
+                            deviceAfter: currentDevice,
+                            points: points
+                        ))
                         
                         rayPointOnPreviousDevice = RayPoint(
                             p: ray.point(atX: endX),
-                            type: rayPointOnPreviousDevice.type,
+                            type: .undefined,
                             sourceDevice: rayPointOnPreviousDevice.sourceDevice
                         )
                     }
@@ -777,10 +759,9 @@ struct Renderer {
                         
                         let currentDeviceInfo = iterator.currentDeviceInfo!
                         let currentDevice = currentDeviceInfo.device!
-                        let currentDeviceFocalPointBefore = currentDeviceInfo.focalPointBefore
-                        let currentDeviceFocalPointAfter = currentDeviceInfo.focalPointAfter
                         
                         let previousDeviceInfo = iterator.previousDeviceInfo
+                        let previousDevice = previousDeviceInfo?.device
                         let previousDevicePos = previousDeviceInfo?.pos
                         
                         let ray = Ray(
@@ -790,78 +771,119 @@ struct Renderer {
                         
                         let startX = previousDevicePos ?? currentSourcePos
                         
-                        draw(
-                            ray,
-                            minX: startX,
-                            maxX: rayPointOnCurrentDevice.p.x
-                        )
+                        var points: [PointDescriptor] = [
+                            
+                            PointDescriptor(
+                                device: nil,
+                                source: nil,
+                                type: .undefined,
+                                point: ray.point(atX: startX)
+                            ),
+                            PointDescriptor(
+                                device: currentDevice,
+                                source: nil,
+                                type: .undefined,
+                                point: ray.point(atX: rayPointOnCurrentDevice.p.x)
+                            ),
+                        ]
                         
-                        var coveredMinX: CGFloat = startX
-                        var coveredMaxX: CGFloat = rayPointOnCurrentDevice.p.x
-                        
-                        if currentSourcePos < coveredMinX {
-                            
-                            draw(
-                                ray,
-                                minX: currentSourcePos,
-                                maxX: coveredMinX,
-                                virtual: true
-                            )
-                            
-                            coveredMinX = currentSourcePos
-                        }
-                        
-                        if currentSourcePos > coveredMaxX {
-                            
-                            draw(
-                                ray,
-                                minX: coveredMaxX,
-                                maxX: currentSourcePos,
-                                virtual: true
-                            )
-                            
-                            coveredMaxX = currentSourcePos
-                        }
-                        
-                        if let lense = currentDevice as? Lense,
-                           lense.type == .convergent,
-                           rayPointOnCurrentDevice.hasParallelIncidence,
-                           currentDeviceFocalPointBefore!.x < coveredMinX {
-                            
-                            draw(
-                                ray,
-                                minX: currentDeviceFocalPointBefore!.x,
-                                maxX: coveredMinX,
-                                virtual: true
-                            )
-                            
-                            coveredMinX = currentDeviceFocalPointBefore!.x
-                        }
-                        
-                        if let lense = currentDevice as? Lense,
-                           lense.type == .divergent,
-                           rayPointOnCurrentDevice.hasParallelIncidence,
-                           currentDeviceFocalPointAfter!.x > coveredMaxX {
-                            
-                            draw(
-                                ray,
-                                minX: coveredMaxX,
-                                maxX: currentDeviceFocalPointAfter!.x,
-                                virtual: true
-                            )
-                            
-                            coveredMaxX = currentDeviceFocalPointAfter!.x
-                        }
+                        rayDescriptors.append(RayDescriptor(
+                            deviceBefore: previousDevice,
+                            deviceAfter: currentDevice,
+                            points: points
+                        ))
                         
                         rayPointOnCurrentDevice = RayPoint(
                             p: ray.point(atX: startX),
-                            type: rayPointOnCurrentDevice.type,
+                            type: .undefined,
                             sourceDevice: rayPointOnCurrentDevice.sourceDevice
                         )
                     }
                 }
-                
+            }
+        }
+        
+        // draw rays
+        
+        for rayDescriptor in rayDescriptors {
+            
+            let pointsBeforeDevice = rayDescriptor.points
+                .filter { pointDescriptor in
+                    if let deviceBefore = rayDescriptor.deviceBefore {
+                        return pointDescriptor.point.x <= resolvedPos(from: deviceBefore.pos)
+                    }
+                    return false
+                }
+                .sorted { $0.point.x < $1.point.x }
+            
+            let pointsBetweenDevices = rayDescriptor.points
+                .filter { pointDescriptor in
+                    
+                    if let deviceBefore = rayDescriptor.deviceBefore,
+                       let deviceAfter = rayDescriptor.deviceAfter {
+                        
+                        return
+                            pointDescriptor.point.x >= resolvedPos(from: deviceBefore.pos)
+                         && pointDescriptor.point.x <= resolvedPos(from: deviceAfter.pos)
+                        
+                    } else if let deviceBefore = rayDescriptor.deviceBefore {
+                        
+                        return pointDescriptor.point.x >= resolvedPos(from: deviceBefore.pos)
+                        
+                    } else if let deviceAfter = rayDescriptor.deviceAfter {
+                        
+                        return pointDescriptor.point.x <= resolvedPos(from: deviceAfter.pos)
+                    }
+                    return true
+                }
+                .sorted { $0.point.x < $1.point.x }
+            
+            let pointsAfterDevice = rayDescriptor.points
+                .filter { pointDescriptor in
+                    if let deviceAfter = rayDescriptor.deviceAfter {
+                        return pointDescriptor.point.x >= resolvedPos(from: deviceAfter.pos)
+                    }
+                    return false
+                }
+                .sorted { $0.point.x < $1.point.x }
 
+            if !pointsBeforeDevice.isEmpty {
+                
+                draw(
+                    Ray(
+                        from: pointsBeforeDevice.first!.point,
+                        to: pointsBeforeDevice.last!.point
+                    ),
+                    minX: pointsBeforeDevice.first!.point.x,
+                    maxX: pointsBeforeDevice.last!.point.x,
+                    virtual: true
+                )
+            }
+            
+            if !pointsBetweenDevices.isEmpty {
+                
+                draw(
+                    Ray(
+                        from: pointsBetweenDevices.first!.point,
+                        to: pointsBetweenDevices.last!.point
+                    ),
+                    minX: pointsBetweenDevices.first!.point.x,
+                    maxX: pointsBetweenDevices.last!.point.x,
+                    virtual: false
+                )
+            }
+            
+            if !pointsAfterDevice.isEmpty {
+                
+                draw(
+                    Ray(
+                        from: pointsAfterDevice.first!.point,
+                        to: pointsAfterDevice.last!.point
+                    ),
+                    minX: pointsAfterDevice.first!.point.x,
+                    maxX: pointsAfterDevice.last!.point.x,
+                    virtual: true
+                )
             }
         }
         
