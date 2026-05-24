@@ -371,18 +371,18 @@ struct Renderer {
             
             // draw rays
             
-            let objectOrImages = [object] + images
+            let sources = [object] + images
             
-            for i1 in 0..<objectOrImages.count {
+            for sourceIndex in 0..<sources.count {
             
 //                if ![1].contains(i1) { continue }
                 
                 // generate rays from source
                 
-                let currentSource = objectOrImages[i1]
+                let currentSource = sources[sourceIndex]
                 
-                let previousDevice = (i1-1) >= 0 ? devices[i1-1] : nil
-                let currentDevice = i1 < devices.count ? devices[i1] : nil
+                let previousDevice = (sourceIndex-1) >= 0 ? devices[sourceIndex-1] : nil
+                let currentDevice = sourceIndex < devices.count ? devices[sourceIndex] : nil
                 
                 guard let currentDevice = currentDevice else {
                     
@@ -517,14 +517,14 @@ struct Renderer {
                     
                     var rayPointOnPreviousDevice = rayPoint
                     
-                    for i2 in (i1+1)..<objectOrImages.count {
+                    for sourceIndexForward in (sourceIndex+1)..<sources.count {
                         
-                        let currentSource = objectOrImages[i2]
+                        let currentSource = sources[sourceIndexForward]
                         let currentSourcePos = resolvedPos(from: currentSource.pos)
                         let currentSourceSize = resolvedObjectSize(from: currentSource.size)
                         let currentSourceTop = CGPoint(x: currentSourcePos, y: currentSourceSize)
                         
-                        let previousDevice = (i2-1) >= 0 ? devices[i2-1] : nil
+                        let previousDevice = (sourceIndexForward-1) >= 0 ? devices[sourceIndexForward-1] : nil
                         let previousDevicePos = previousDevice != nil
                         ? resolvedPos(
                             from: previousDevice!.pos
@@ -546,7 +546,7 @@ struct Renderer {
                         previousDevice != nil &&
                         previousDevice!.id == rayPointOnPreviousDevice.sourceDevice.id
                         
-                        let currentDevice = i2 < devices.count ? devices[i2] : nil
+                        let currentDevice = sourceIndexForward < devices.count ? devices[sourceIndexForward] : nil
                         let currentDevicePos = currentDevice != nil
                         ? resolvedPos(
                             from: currentDevice!.pos
@@ -637,11 +637,10 @@ struct Renderer {
                     
                     var rayPointOnCurrentDevice = rayPoint
 
-                    for i2 in 0..<i1 {
-
-                        let i3 = i1-1-i2
+                    for i in 0..<sourceIndex {
+                        let sourceIndexBackwards = sourceIndex-1-i
                         
-                        let currentSource = objectOrImages[i3]
+                        let currentSource = sources[sourceIndexBackwards]
                         let currentSourcePos = resolvedPos(
                             from: currentSource.pos
                         )
@@ -652,7 +651,7 @@ struct Renderer {
                             x: currentSourcePos, y: currentSourceSize
                         )
                         
-                        let currentDevice = i3 < devices.count ? devices[i3] : nil
+                        let currentDevice = sourceIndexBackwards < devices.count ? devices[sourceIndexBackwards] : nil
                         let currentDevicePos = currentDevice != nil
                             ? resolvedPos(
                                 from: currentDevice!.pos
@@ -666,7 +665,7 @@ struct Renderer {
                                 x: currentDevicePos! - currentDeviceFocalLength!, y: 0
                             ) : nil
 
-                        let previousDevice = (i3-1) >= 0 ? devices[i3-1] : nil
+                        let previousDevice = (sourceIndexBackwards-1) >= 0 ? devices[sourceIndexBackwards-1] : nil
                         let previousDevicePos = previousDevice != nil
                             ? resolvedPos(
                                 from: previousDevice!.pos
