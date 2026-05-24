@@ -144,6 +144,7 @@ struct ContentView: View {
                                 } label: {
                                     Text("􀈑")
                                 }
+                                Toggle("Enabled", isOn: $object.enabled)
                             }
                             Form {
                                 HStack {

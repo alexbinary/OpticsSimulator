@@ -40,6 +40,7 @@ class OpticsScene {
             name: "Preset \(presets.count+1)",
             objects: objects.map { object in
                 ObjectDescriptor(
+                    enabled: object.enabled,
                     pos: object.pos,
                     size: object.size,
                     name: object.name
@@ -93,7 +94,8 @@ class OpticsScene {
             Object(
                 name: descriptor.name,
                 pos: descriptor.pos,
-                size: descriptor.size
+                size: descriptor.size,
+                enabled: descriptor.enabled
             )
         }.forEach { object in
             add(object)
@@ -176,6 +178,8 @@ class OpticsScene {
 
 
 struct ObjectDescriptor: Codable {
+    
+    let enabled: Bool
     
     let pos: CGFloat
     let size: CGFloat

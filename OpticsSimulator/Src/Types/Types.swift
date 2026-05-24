@@ -20,9 +20,11 @@ class Object: ObjectOrImage, Identifiable {
     
     var id = UUID()
     var name: String
+    var enabled: Bool
     
-    init(name: String, pos: CGFloat, size: CGFloat) {
+    init(name: String, pos: CGFloat, size: CGFloat, enabled: Bool = true) {
         self.name = name
+        self.enabled = enabled
         super.init(pos: pos, size: size)
     }
 }
