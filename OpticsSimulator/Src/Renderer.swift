@@ -524,27 +524,22 @@ struct Renderer {
                         let currentSourceSize = resolvedObjectSize(from: currentSource.size)
                         let currentSourceTop = CGPoint(x: currentSourcePos, y: currentSourceSize)
                         
-                        let previousDevice = (sourceIndexForward-1) >= 0 ? devices[sourceIndexForward-1] : nil
-                        let previousDevicePos = previousDevice != nil
-                        ? resolvedPos(
-                            from: previousDevice!.pos
-                        ) : nil
-                        
+                        let previousDevice = devices[sourceIndexForward-1]
+                        let previousDevicePos = resolvedPos(
+                            from: previousDevice.pos
+                        )
                         let previousDeviceFocalLength = previousDevice is Lense
                         ? resolvedFocalLength(
                             from: (previousDevice as! Lense).focalLength
                         ) : nil
                         let previousDeviceFocalPointBefore = previousDevice is Lense
                         ? CGPoint(
-                            x: previousDevicePos! - previousDeviceFocalLength!, y: 0
+                            x: previousDevicePos - previousDeviceFocalLength!, y: 0
                         ) : nil
                         let previousDeviceFocalPointAfter = previousDevice is Lense
                         ? CGPoint(
-                            x: previousDevicePos! + previousDeviceFocalLength!, y: 0
+                            x: previousDevicePos + previousDeviceFocalLength!, y: 0
                         ) : nil
-                        let previousDeviceIsRaySourceDevice =
-                        previousDevice != nil &&
-                        previousDevice!.id == rayPointOnPreviousDevice.sourceDevice.id
                         
                         let currentDevice = sourceIndexForward < devices.count ? devices[sourceIndexForward] : nil
                         let currentDevicePos = currentDevice != nil
@@ -567,8 +562,7 @@ struct Renderer {
                         var coveredMinX: CGFloat = rayPointOnPreviousDevice.p.x
                         var coveredMaxX: CGFloat = endX
                         
-                        if let previousDevicePos = previousDevicePos,
-                           currentSourcePos < previousDevicePos {
+                        if currentSourcePos < previousDevicePos {
                                 
                             draw(
                                 ray,
@@ -651,18 +645,17 @@ struct Renderer {
                             x: currentSourcePos, y: currentSourceSize
                         )
                         
-                        let currentDevice = sourceIndexBackwards < devices.count ? devices[sourceIndexBackwards] : nil
-                        let currentDevicePos = currentDevice != nil
-                            ? resolvedPos(
-                                from: currentDevice!.pos
-                            ) : nil
+                        let currentDevice = devices[sourceIndexBackwards]
+                        let currentDevicePos = resolvedPos(
+                            from: currentDevice.pos
+                        )
                         let currentDeviceFocalLength = currentDevice is Lense
                             ? resolvedFocalLength(
                                 from: (currentDevice as! Lense).focalLength
                             ) : nil
                         let currentDeviceFocalPointBefore = currentDevice is Lense
                             ? CGPoint(
-                                x: currentDevicePos! - currentDeviceFocalLength!, y: 0
+                                x: currentDevicePos - currentDeviceFocalLength!, y: 0
                             ) : nil
 
                         let previousDevice = (sourceIndexBackwards-1) >= 0 ? devices[sourceIndexBackwards-1] : nil
