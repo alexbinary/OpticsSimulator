@@ -108,6 +108,19 @@ struct Renderer {
         path.addLine(to: CGPoint(x: x+f, y: +m))
         
         context.stroke(path, with: .color(.red), lineWidth: 2)
+        
+        // connect focal points
+        
+        path.move(to: CGPoint(x: x, y: h))
+        path.addLine(to: CGPoint(x: x-f, y: 0))
+        path.addLine(to: CGPoint(x: x, y: -h))
+        path.addLine(to: CGPoint(x: x+f, y: 0))
+        path.addLine(to: CGPoint(x: x, y: h))
+        
+        context.stroke(path, with: .color(.red.opacity(0.5)), style: StrokeStyle(
+            lineWidth: 1,
+            dash: [4, 4]
+        ))
     }
     
     func draw(_ mirror: SphericalMirror) {
