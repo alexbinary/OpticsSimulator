@@ -375,19 +375,24 @@ struct Renderer {
             
             for sourceIndex in 0..<sources.count {
             
-//                if ![1].contains(i1) { continue }
-                
                 // generate rays from source
                 
-                let currentSource = sources[sourceIndex]
+                let iterator = getLoopIterator(
+                    for: sources, devices, at: sourceIndex
+                )
                 
-                let previousDevice = (sourceIndex-1) >= 0 ? devices[sourceIndex-1] : nil
-                let currentDevice = sourceIndex < devices.count ? devices[sourceIndex] : nil
-                
-                guard let currentDevice = currentDevice else {
+                guard
+                    let info = iterator.currentDeviceInfo,
+                    let currentDevice = info.device,
+                    let currentDevicePos = info.pos
+                else {
                     
                     break
                 }
+                
+                let currentSource = iterator.currentSource
+                let currentSourcePos = iterator.currentSourcePos
+                let currentSourceTop = iterator.currentSourceTop
                 
                 if currentDevice is Screen,
                    currentSource is Image {
@@ -395,34 +400,7 @@ struct Renderer {
                     break
                 }
                 
-                let currentSourcePos = resolvedPos(
-                    from: currentSource.pos
-                )
-                let currentSourceSize = resolvedObjectSize(
-                    from: currentSource.size
-                )
-                let currentSourceTop = CGPoint(
-                    x: currentSourcePos, y: currentSourceSize
-                )
-                
-                let currentDevicePos = resolvedPos(
-                    from: currentDevice.pos
-                )
-                let currentDeviceCenter = CGPoint(
-                    x: currentDevicePos, y: 0
-                )
-                let currentDeviceFocalLength = currentDevice is Lense
-                    ? resolvedFocalLength(
-                        from: (currentDevice as! Lense).focalLength
-                    ) : nil
-                let currentDeviceFocalPoint = currentDevice is Lense
-                    ? CGPoint(
-                        x: currentDevicePos - currentDeviceFocalLength!, y: 0
-                    ) : nil
-                
-                let previousDevicePos = previousDevice != nil ? resolvedPos(
-                    from: previousDevice!.pos
-                ) : nil
+                let previousDevicePos = iterator.previousDeviceInfo?.pos
                 
                 var rayPointsOnPreviousDevice: [RayPoint] = []
                 var rayPointsOnCurrentDevice: [RayPoint] = []
@@ -431,7 +409,8 @@ struct Renderer {
                 
                 var generateParallelRay = false
                 
-                if let lense = currentDevice as? Lense, lense.generatesParallelRay {
+                if let lense = currentDevice as? Lense,
+                   lense.generatesParallelRay {
                     
                     generateParallelRay = true
                 }
@@ -519,33 +498,19 @@ struct Renderer {
                     
                     for sourceIndexForward in (sourceIndex+1)..<sources.count {
                         
-                        let currentSource = sources[sourceIndexForward]
-                        let currentSourcePos = resolvedPos(from: currentSource.pos)
-                        let currentSourceSize = resolvedObjectSize(from: currentSource.size)
-                        let currentSourceTop = CGPoint(x: currentSourcePos, y: currentSourceSize)
-                        
-                        let previousDevice = devices[sourceIndexForward-1]
-                        let previousDevicePos = resolvedPos(
-                            from: previousDevice.pos
+                        let iterator = getLoopIterator(
+                            for: sources, devices, at: sourceIndexForward
                         )
-                        let previousDeviceFocalLength = previousDevice is Lense
-                        ? resolvedFocalLength(
-                            from: (previousDevice as! Lense).focalLength
-                        ) : nil
-                        let previousDeviceFocalPointBefore = previousDevice is Lense
-                        ? CGPoint(
-                            x: previousDevicePos - previousDeviceFocalLength!, y: 0
-                        ) : nil
-                        let previousDeviceFocalPointAfter = previousDevice is Lense
-                        ? CGPoint(
-                            x: previousDevicePos + previousDeviceFocalLength!, y: 0
-                        ) : nil
+                        let currentSourcePos = iterator.currentSourcePos
+                        let currentSourceTop = iterator.currentSourceTop
                         
-                        let currentDevice = sourceIndexForward < devices.count ? devices[sourceIndexForward] : nil
-                        let currentDevicePos = currentDevice != nil
-                        ? resolvedPos(
-                            from: currentDevice!.pos
-                        ) : nil
+                        let currentDeviceInfo = iterator.currentDeviceInfo
+                        let currentDevicePos = currentDeviceInfo?.pos
+                        
+                        let previousDeviceInfo = iterator.previousDeviceInfo!
+                        let previousDevice = previousDeviceInfo.device!
+                        let previousDeviceFocalPointBefore = previousDeviceInfo.focalPointBefore
+                        let previousDeviceFocalPointAfter = previousDeviceInfo.focalPointAfter
                         
                         let ray = Ray(
                             from: rayPointOnPreviousDevice.p,
@@ -562,24 +527,23 @@ struct Renderer {
                         var coveredMinX: CGFloat = rayPointOnPreviousDevice.p.x
                         var coveredMaxX: CGFloat = endX
                         
-                        if currentSourcePos < previousDevicePos {
+                        if currentSourcePos < coveredMinX {
                                 
                             draw(
                                 ray,
                                 minX: currentSourcePos,
-                                maxX: previousDevicePos,
+                                maxX: coveredMinX,
                                 virtual: true
                             )
                             
                             coveredMinX = currentSourcePos
                         }
                         
-                        if let currentDevicePos = currentDevicePos,
-                           currentSourcePos > currentDevicePos {
+                        if currentSourcePos > coveredMaxX {
                             
                             draw(
                                 ray,
-                                minX: currentDevicePos,
+                                minX: coveredMaxX,
                                 maxX: currentSourcePos,
                                 virtual: true
                             )
@@ -634,67 +598,93 @@ struct Renderer {
                     for i in 0..<sourceIndex {
                         let sourceIndexBackwards = sourceIndex-1-i
                         
-                        let currentSource = sources[sourceIndexBackwards]
-                        let currentSourcePos = resolvedPos(
-                            from: currentSource.pos
-                        )
-                        let currentSourceSize = resolvedObjectSize(
-                            from: currentSource.size
-                        )
-                        let currentSourceTop = CGPoint(
-                            x: currentSourcePos, y: currentSourceSize
+                        let iterator = getLoopIterator(
+                            for: sources, devices, at: sourceIndexBackwards
                         )
                         
-                        let currentDevice = devices[sourceIndexBackwards]
-                        let currentDevicePos = resolvedPos(
-                            from: currentDevice.pos
-                        )
-                        let currentDeviceFocalLength = currentDevice is Lense
-                            ? resolvedFocalLength(
-                                from: (currentDevice as! Lense).focalLength
-                            ) : nil
-                        let currentDeviceFocalPointBefore = currentDevice is Lense
-                            ? CGPoint(
-                                x: currentDevicePos - currentDeviceFocalLength!, y: 0
-                            ) : nil
-
-                        let previousDevice = (sourceIndexBackwards-1) >= 0 ? devices[sourceIndexBackwards-1] : nil
-                        let previousDevicePos = previousDevice != nil
-                            ? resolvedPos(
-                                from: previousDevice!.pos
-                            ) : nil
+                        let currentSourcePos = iterator.currentSourcePos
+                        let currentSourceTop = iterator.currentSourceTop
+                        
+                        let currentDeviceInfo = iterator.currentDeviceInfo!
+                        let currentDevice = currentDeviceInfo.device!
+                        let currentDeviceFocalPointBefore = currentDeviceInfo.focalPointBefore
+                        let currentDeviceFocalPointAfter = currentDeviceInfo.focalPointAfter
+                        
+                        let previousDeviceInfo = iterator.previousDeviceInfo
+                        let previousDevicePos = previousDeviceInfo?.pos
                         
                         let ray = Ray(
-                            from: currentSourceTop, to: rayPointOnCurrentDevice.p
+                            from: currentSourceTop,
+                            to: rayPointOnCurrentDevice.p
                         )
                         
                         let startX = previousDevicePos ?? currentSourcePos
                         
-                        let startPoint = ray.point(
-                            atX: startX
-                        )
-
                         draw(
                             ray,
                             minX: startX,
                             maxX: rayPointOnCurrentDevice.p.x
                         )
                         
-                        if rayPointOnCurrentDevice.hasParallelIncidence,
-                           let lense = currentDevice as? Lense,
+                        var coveredMinX: CGFloat = startX
+                        var coveredMaxX: CGFloat = rayPointOnCurrentDevice.p.x
+                        
+                        if currentSourcePos < coveredMinX {
+                            
+                            draw(
+                                ray,
+                                minX: currentSourcePos,
+                                maxX: coveredMinX,
+                                virtual: true
+                            )
+                            
+                            coveredMinX = currentSourcePos
+                        }
+                        
+                        if currentSourcePos > coveredMaxX {
+                            
+                            draw(
+                                ray,
+                                minX: coveredMaxX,
+                                maxX: currentSourcePos,
+                                virtual: true
+                            )
+                            
+                            coveredMaxX = currentSourcePos
+                        }
+                        
+                        if let lense = currentDevice as? Lense,
                            lense.type == .convergent,
-                           currentDeviceFocalPointBefore!.x < startX {
+                           rayPointOnCurrentDevice.hasParallelIncidence,
+                           currentDeviceFocalPointBefore!.x < coveredMinX {
                             
                             draw(
                                 ray,
                                 minX: currentDeviceFocalPointBefore!.x,
-                                maxX: startX,
+                                maxX: coveredMinX,
                                 virtual: true
                             )
+                            
+                            coveredMinX = currentDeviceFocalPointBefore!.x
+                        }
+                        
+                        if let lense = currentDevice as? Lense,
+                           lense.type == .divergent,
+                           rayPointOnCurrentDevice.hasParallelIncidence,
+                           currentDeviceFocalPointAfter!.x > coveredMaxX {
+                            
+                            draw(
+                                ray,
+                                minX: coveredMaxX,
+                                maxX: currentDeviceFocalPointAfter!.x,
+                                virtual: true
+                            )
+                            
+                            coveredMaxX = currentDeviceFocalPointAfter!.x
                         }
                         
                         rayPointOnCurrentDevice = RayPoint(
-                            p: startPoint,
+                            p: ray.point(atX: startX),
                             type: rayPointOnCurrentDevice.type,
                             sourceDevice: rayPointOnCurrentDevice.sourceDevice
                         )
@@ -1132,6 +1122,94 @@ struct Renderer {
             }
         }
     }
+    
+    
+    func getLoopIterator(
+        for sources: [ObjectOrImage], _ devices: [OpticsDevice],
+        at sourceIndex: Int
+    ) -> LoopIterator {
+        
+        // source
+        
+        let currentSource = sources[sourceIndex]
+        
+        let currentSourcePos = resolvedPos(
+            from: currentSource.pos
+        )
+        let currentSourceSize = resolvedObjectSize(
+            from: currentSource.size
+        )
+        let currentSourceTop = CGPoint(
+            x: currentSourcePos, y: currentSourceSize
+        )
+        
+        // current device
+        
+        let currentDevice = sourceIndex < devices.count ? devices[sourceIndex] : nil
+        
+        let currentDeviceInfo = getDeviceInfo(currentDevice)
+        
+        // previous device
+        
+        let previousDevice = (sourceIndex-1) >= 0 ? devices[sourceIndex-1] : nil
+        
+        let previousDeviceInfo = getDeviceInfo(previousDevice)
+        
+        //
+        
+        let loop = LoopIterator(
+            
+            currentSource: currentSource,
+            currentSourcePos: currentSourcePos,
+            currentSourceSize: currentSourceSize,
+            currentSourceTop: currentSourceTop,
+            
+            currentDeviceInfo: currentDeviceInfo,
+            previousDeviceInfo: previousDeviceInfo,
+        )
+        
+        return loop
+    }
+    
+    
+    func getDeviceInfo(_ device: OpticsDevice?) -> DeviceInfo {
+        
+        let devicePos = device != nil
+            ? resolvedPos(
+                from: device!.pos
+            ) : nil
+        
+        let deviceCenter = device != nil
+            ? CGPoint(
+                x: devicePos!, y: 0
+            ) : nil
+        
+        let deviceFocalLength = device is Lense
+            ? resolvedFocalLength(
+                from: (device as! Lense).focalLength
+            ) : nil
+        
+        let deviceFocalPointBefore = device is Lense
+            ? CGPoint(
+                x: devicePos! - deviceFocalLength!, y: 0
+            ) : nil
+        
+        let deviceFocalPointAfter = device is Lense
+            ? CGPoint(
+                x: devicePos! + deviceFocalLength!, y: 0
+            ) : nil
+        
+        let info = DeviceInfo(
+            device: device,
+            pos: devicePos,
+            center: deviceCenter,
+            focalLength: deviceFocalLength,
+            focalPointBefore: deviceFocalPointBefore,
+            focalPointAfter: deviceFocalPointAfter
+        )
+        
+        return info
+    }
 }
 
 
@@ -1139,4 +1217,26 @@ struct Renderer {
 enum ArrowDirection {
     
     case towardAxis, awayFromAxis
+}
+
+
+struct LoopIterator {
+    
+    let currentSource: ObjectOrImage
+    let currentSourcePos: CGFloat
+    let currentSourceSize: CGFloat
+    let currentSourceTop: CGPoint
+    
+    let currentDeviceInfo: DeviceInfo?
+    let previousDeviceInfo: DeviceInfo?
+}
+
+struct DeviceInfo {
+    
+    let device: OpticsDevice?
+    let pos: CGFloat?
+    let center: CGPoint?
+    let focalLength: CGFloat?
+    let focalPointBefore: CGPoint?
+    let focalPointAfter: CGPoint?
 }
