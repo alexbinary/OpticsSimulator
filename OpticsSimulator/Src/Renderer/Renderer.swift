@@ -1028,9 +1028,21 @@ struct Renderer {
             from: rayDescriptors
         )
         
-        raySegments = deduplicate(
-            raySegments
+        raySegments = removeZeroLengthSegments(
+            from: raySegments
         )
+        
+//        raySegments = [RaySegment](raySegments.prefix(9).suffix(1))
+//        if raySegments.count > 6 {
+//            raySegments = [
+//                raySegments[2],
+//                raySegments[3],
+////                raySegments[5],
+////                raySegments[6]
+//            ]
+//        }
+        
+//        raySegments = deduplicate(raySegments)
         
         drawRays(from: raySegments)
     }
@@ -1061,6 +1073,19 @@ struct Renderer {
     }
     
     
+    func removeZeroLengthSegments(
+        
+        from segments: [RaySegment]
+    
+    ) -> [RaySegment] {
+        
+        return segments.filter { s in
+            
+            s.p1.isVisuallyDistinct(from: s.p2)
+        }
+    }
+    
+    
     func deduplicate(
         
         _ rawRaySegments: [RaySegment]
@@ -1075,20 +1100,40 @@ struct Renderer {
             
             for alreadyAddedSegment in cleanRaySegments {
                 
-                // sont colineaires ?
-                
-                if candidateSegment.isVisuallyColinear(with: alreadyAddedSegment) {
-                    
-                    // se chevauchent ?
-                    
-                    if candidateSegment.isOverlapping(with: alreadyAddedSegment) {
+                if candidateSegment.isVisuallyOverlapping(
+                    with: alreadyAddedSegment
+                ) {
+                    let subSegments = candidateSegment.overlappingSubSegments(
+                        with: alreadyAddedSegment
+                    )
+                    var segments = subSegments.map { s in
                         
-                        // > réduire chacun
-                        // > créer segment commun
-                        // > arbitrer segment commun
-                        
-                        processed = true
+                        RaySegment(
+                            p1: s.p1,
+                            p2: s.p2,
+                            virtual: resolveVirtual(
+                                from: s.originalSegments.map { $0.virtual }
+                            )
+                        )
                     }
+                    
+                    segments = removeZeroLengthSegments(
+                        from: segments
+                    )
+                    
+                    segments = merge(segments)
+                    
+                    cleanRaySegments.removeAll { s in
+                        
+                        s.id == alreadyAddedSegment.id
+                    }
+                    
+                    for segment in segments {
+                        
+                        cleanRaySegments.append(segment)
+                    }
+                    
+                    processed = true
                 }
             }
             
@@ -1102,6 +1147,54 @@ struct Renderer {
     }
     
     
+    func merge(_ segments: [RaySegment]) -> [RaySegment] {
+        
+        var mergedSegments: [RaySegment] = []
+        
+        var draftSegment: RaySegment? = nil
+        
+        for segment in segments {
+            
+            if draftSegment != nil {
+                
+                if segment.virtual == draftSegment!.virtual {
+                    
+                    draftSegment = RaySegment(
+                        p1: draftSegment!.p1,
+                        p2: segment.p2,
+                        virtual: draftSegment!.virtual
+                    )
+                    
+                } else {
+                    
+                    mergedSegments.append(draftSegment!)
+                    draftSegment = segment
+                }
+                
+            } else {
+             
+                draftSegment = segment
+            }
+        }
+        
+        if let draftSegment = draftSegment {
+            
+            mergedSegments.append(draftSegment)
+        }
+        
+        return mergedSegments
+    }
+    
+    
+    func resolveVirtual(from values: [Bool]) -> Bool {
+        
+        if values.contains(false) {
+            return false
+        }
+        return true
+    }
+    
+    
     func getRaySegments(
         
         from rayDescriptors: [RayDescriptor]
@@ -1112,7 +1205,22 @@ struct Renderer {
         
         for rayDescriptor in rayDescriptors {
             
-            let pointsBeforeDevice = rayDescriptor.points
+            var points = rayDescriptor.points
+            
+            if let p1 = points.first,
+               let p2 = points.last {
+                
+                let ray = Ray(from: p1, to: p2)
+                
+                if let deviceBefore = rayDescriptor.deviceBefore {
+                    points.append(ray.point(atX: resolvedPos(from: deviceBefore.pos)))
+                }
+                if let deviceAfter = rayDescriptor.deviceAfter {
+                    points.append(ray.point(atX: resolvedPos(from: deviceAfter.pos)))
+                }
+            }
+            
+            let pointsBeforeDevice = points
                 .filter { pointDescriptor in
                     if let deviceBefore = rayDescriptor.deviceBefore {
                         return pointDescriptor.x <= resolvedPos(from: deviceBefore.pos)
@@ -1121,7 +1229,7 @@ struct Renderer {
                 }
                 .sorted { $0.x < $1.x }
             
-            let pointsBetweenDevices = rayDescriptor.points
+            let pointsBetweenDevices = points
                 .filter { pointDescriptor in
                     
                     if let deviceBefore = rayDescriptor.deviceBefore,
@@ -1145,7 +1253,7 @@ struct Renderer {
                 }
                 .sorted { $0.x < $1.x }
             
-            let pointsAfterDevice = rayDescriptor.points
+            let pointsAfterDevice = points
                 .filter { pointDescriptor in
                     if let deviceAfter = rayDescriptor.deviceAfter {
                         return pointDescriptor.x >= resolvedPos(from: deviceAfter.pos)
@@ -1186,7 +1294,8 @@ struct Renderer {
         let pointsSortedByXAscending = points.sorted { $0.x < $1.x }
         
         if let p1 = pointsSortedByXAscending.first,
-           let p2 = pointsSortedByXAscending.last {
+           let p2 = pointsSortedByXAscending.last,
+           !p1.isVisuallySame(as: p2) {
             
             let raySegment = RaySegment(
                 p1: p1, p2: p2,
