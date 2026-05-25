@@ -306,31 +306,52 @@ struct Renderer {
         fatalError()
     }
     
+    func computeImages(
+        from object: Object, through devices: [OpticsDevice]
+    ) -> [ImageData] {
+        
+        var imagesData: [ImageData] = []
+        
+        for i in 0..<devices.count {
+            
+            let currentDevice = devices[i]
+            let nextDevice = i+1 < devices.count ? devices[i+1] : nil
+            
+            if currentDevice is Screen {
+                break
+            }
+            
+            let currentSource = imagesData.last?.image ?? object
+            let image = image(of: currentSource, through: currentDevice)
+            
+            var imageIsVirtual = false
+            
+            if image.pos < currentDevice.pos {
+                
+                imageIsVirtual = true
+            }
+            
+            if let nextDevice = nextDevice,
+               image.pos > nextDevice.pos {
+                
+                imageIsVirtual = true
+            }
+            
+            imagesData.append(ImageData(
+                image: image, virtual: imageIsVirtual
+            ))
+        }
+        
+        return imagesData
+    }
+    
     func render(_ scene: OpticsScene) {
-        
-        drawAxis()
-        
-        for object in scene.objects.filter({ $0.enabled }) {
-            draw(object)
-        }
-        for lense in scene.lenses.filter({ $0.enabled }) {
-            draw(lense)
-        }
-        for mirror in scene.mirrors.filter({ $0.enabled }) {
-            draw(mirror)
-        }
-        for screen in scene.screens.filter({ $0.enabled }) {
-            draw(screen)
-        }
-        
-        
-        // compute images
         
         let devicesByPosition = scene.devices
             .sorted { $0.pos < $1.pos }
             .filter { $0.enabled }
         
-        var images: [Image] = []
+        var imagesDataForAllObjects: [ImageData] = []
         
         var rayDescriptors: [RayDescriptor] = []
         
@@ -341,35 +362,17 @@ struct Renderer {
             
             // compute images
             
-            for i in 0..<devices.count {
-                
-                let currentDevice = devices[i]
-                let nextDevice = i+1 < devices.count ? devices[i+1] : nil
-                
-                if currentDevice is Screen {
-                    break
-                }
-                
-                let currentSource = images.last ?? object
-                let image = image(of: currentSource, through: currentDevice)
-                
-                images.append(image)
-                
-                var imageIsVirtual = false
-                
-                if image.pos < currentDevice.pos {
-                    
-                    imageIsVirtual = true
-                }
-                
-                if let nextDevice = nextDevice,
-                   image.pos > nextDevice.pos {
-                    
-                    imageIsVirtual = true
-                }
-                
-                draw(image, virtual: imageIsVirtual)
+            var images: [Image] = []
+            
+            let imagesDataForCurrentObject = computeImages(
+                from: object, through: devices
+            )
+            for imageData in imagesDataForCurrentObject {
+                images.append(imageData.image)
             }
+            imagesDataForAllObjects.append(
+                contentsOf: imagesDataForCurrentObject
+            )
             
             // draw rays
             
@@ -803,25 +806,42 @@ struct Renderer {
             }
         }
         
-        // draw rays
+        // draw
         
+        drawAxis()
+        
+        for object in scene.objects.filter({ $0.enabled }) {
+            draw(object)
+        }
+        for lense in scene.lenses.filter({ $0.enabled }) {
+            draw(lense)
+        }
+        for mirror in scene.mirrors.filter({ $0.enabled }) {
+            draw(mirror)
+        }
+        for screen in scene.screens.filter({ $0.enabled }) {
+            draw(screen)
+        }
+        for imageData in imagesDataForAllObjects {
+            draw(imageData.image, virtual: imageData.virtual)
+        }
         drawRays(from: rayDescriptors)
         
         
         
         
-        if let object = scene.objects.first,
-           let mirror = scene.mirrors.first {
-            
-            images.append(image(of: object, through: mirror))
-        }
+//        if let object = scene.objects.first,
+//           let mirror = scene.mirrors.first {
+//            
+//            images.append(image(of: object, through: mirror))
+//        }
         
         
         // draw rays
         
         let object = scene.objects.first
         let mirror = scene.mirrors.first
-        let image = images.first
+        let image = imagesDataForAllObjects.first?.image
         let screen = scene.screens.first
          
         
@@ -1207,5 +1227,11 @@ struct RayDrawDescriptor {
     
     let p1: PointDescriptor
     let p2: PointDescriptor
+    let virtual: Bool
+}
+
+struct ImageData {
+    
+    let image: Image
     let virtual: Bool
 }
