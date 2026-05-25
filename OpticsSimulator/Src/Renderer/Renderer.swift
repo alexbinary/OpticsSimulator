@@ -1131,29 +1131,31 @@ struct Renderer {
         
         var cleanRaySegments: [RaySegment] = []
         
-        for rawRaySegment in rawRaySegments {
+        for candidateSegment in rawRaySegments {
             
-            let existing = cleanRaySegments.first {
-                
-                $0.p1.point == rawRaySegment.p1.point
-                &&
-                $0.p2.point == rawRaySegment.p2.point
-            }
-            
-            if existing == nil {
-                
-                cleanRaySegments.append(rawRaySegment)
-            }
-            
-            if let existing = existing, existing.virtual {
+            if !candidateSegment.virtual {
                 
                 cleanRaySegments.removeAll(where: {
                     
-                    $0.p1.point == existing.p1.point
+                    $0.p1.point.isVisuallySame(as: candidateSegment.p1.point)
                     &&
-                    $0.p2.point == existing.p2.point
+                    $0.p2.point.isVisuallySame(as: candidateSegment.p2.point)
                 })
-                cleanRaySegments.append(rawRaySegment)
+                cleanRaySegments.append(candidateSegment)
+                
+            } else {
+                
+                let existing = cleanRaySegments.first {
+                    
+                    $0.p1.point.isVisuallySame(as: candidateSegment.p1.point)
+                    &&
+                    $0.p2.point.isVisuallySame(as: candidateSegment.p2.point)
+                }
+                
+                if existing == nil {
+                    
+                    cleanRaySegments.append(candidateSegment)
+                }
             }
         }
         
