@@ -1086,15 +1086,15 @@ struct Renderer {
         
     ) {
         
-        let rawRaySegments = getRaySegments(
+        var raySegments = getRaySegments(
             from: rayDescriptors
         )
         
-        let cleanRaySegments = cleanRaySegments(
-            rawRaySegments
+        raySegments = deduplicate(
+            raySegments
         )
         
-        drawRays(from: cleanRaySegments)
+        drawRays(from: raySegments)
     }
     
     
@@ -1123,7 +1123,7 @@ struct Renderer {
     }
     
     
-    func cleanRaySegments(
+    func deduplicate(
         
         _ rawRaySegments: [RaySegment]
         
@@ -1137,9 +1137,7 @@ struct Renderer {
                 
                 cleanRaySegments.removeAll(where: {
                     
-                    $0.p1.point.isVisuallySame(as: candidateSegment.p1.point)
-                    &&
-                    $0.p2.point.isVisuallySame(as: candidateSegment.p2.point)
+                    $0.isVisuallySame(as: candidateSegment)
                 })
                 cleanRaySegments.append(candidateSegment)
                 
@@ -1147,9 +1145,7 @@ struct Renderer {
                 
                 let existing = cleanRaySegments.first {
                     
-                    $0.p1.point.isVisuallySame(as: candidateSegment.p1.point)
-                    &&
-                    $0.p2.point.isVisuallySame(as: candidateSegment.p2.point)
+                    $0.isVisuallySame(as: candidateSegment)
                 }
                 
                 if existing == nil {

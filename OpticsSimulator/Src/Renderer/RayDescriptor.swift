@@ -36,14 +36,3 @@ enum PointType {
     case focalPointAfter
     case undefined
 }
-
-
-extension CGPoint {
-    
-    func isVisuallySame(as p: CGPoint) -> Bool {
-        
-        let e = 0.01
-        
-        return abs(self.x - p.x) < e && abs(self.y - p.y) < e
-    }
-}
