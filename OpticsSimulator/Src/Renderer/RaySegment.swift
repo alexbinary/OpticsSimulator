@@ -5,18 +5,18 @@ import SwiftUI
 
 struct RaySegment {
     
-    let p1: PointDescriptor
-    let p2: PointDescriptor
+    let p1: CGPoint
+    let p2: CGPoint
     let virtual: Bool
     
     func isVisuallySame(as s: RaySegment) -> Bool {
         
-        if self.p1.point.isVisuallySame(as: s.p1.point),
-           self.p2.point.isVisuallySame(as: s.p2.point) {
+        if self.p1.isVisuallySame(as: s.p1),
+           self.p2.isVisuallySame(as: s.p2) {
             return true
         }
-        if self.p1.point.isVisuallySame(as: s.p2.point),
-           self.p2.point.isVisuallySame(as: s.p1.point) {
+        if self.p1.isVisuallySame(as: s.p2),
+           self.p2.isVisuallySame(as: s.p1) {
             return true
         }
         return false
