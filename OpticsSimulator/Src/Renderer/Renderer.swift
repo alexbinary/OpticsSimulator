@@ -1081,7 +1081,7 @@ struct Renderer {
     
     func drawRays(from rayDescriptors: [RayDescriptor]) {
         
-        var rawRayDrawDescriptors: [RayDrawDescriptor] = []
+        var rawRaySegments: [RaySegment] = []
         
         for rayDescriptor in rayDescriptors {
             
@@ -1125,54 +1125,56 @@ struct Renderer {
                 }
                 .sorted { $0.point.x < $1.point.x }
             
-            rawRayDrawDescriptors.append(
-                contentsOf: getRayDrawDescriptors(
+            rawRaySegments.append(
+                contentsOf: getRaySegments(
                     from: pointsBeforeDevice, virtual: true
                 )
             )
-            rawRayDrawDescriptors.append(
-                contentsOf: getRayDrawDescriptors(
+            rawRaySegments.append(
+                contentsOf: getRaySegments(
                     from: pointsBetweenDevices, virtual: false
                 )
             )
-            rawRayDrawDescriptors.append(
-                contentsOf: getRayDrawDescriptors(
+            rawRaySegments.append(
+                contentsOf: getRaySegments(
                     from: pointsAfterDevice, virtual: true
                 )
             )
         }
         
-        var cleanRayDrawDescriptors: [RayDrawDescriptor] = []
+        var cleanRaySegments: [RaySegment] = []
         
-        for rawRayDrawDescriptor in rawRayDrawDescriptors {
+        for rawRaySegment in rawRaySegments {
             
-            let existing = cleanRayDrawDescriptors.first {
-                PointDescriptor.isSame($0.p1, rawRayDrawDescriptor.p1)
+            let existing = cleanRaySegments.first {
+                
+                $0.p1.point == rawRaySegment.p1.point
                 &&
-                PointDescriptor.isSame($0.p2, rawRayDrawDescriptor.p2)
+                $0.p2.point == rawRaySegment.p2.point
             }
             
             if existing == nil {
                 
-                cleanRayDrawDescriptors.append(rawRayDrawDescriptor)
+                cleanRaySegments.append(rawRaySegment)
             }
             
-            if let existing, existing.virtual {
+            if let existing = existing, existing.virtual {
                 
-                cleanRayDrawDescriptors.removeAll(where: {
-                    PointDescriptor.isSame($0.p1, existing.p1)
+                cleanRaySegments.removeAll(where: {
+                    
+                    $0.p1.point == existing.p1.point
                     &&
-                    PointDescriptor.isSame($0.p2, existing.p2)
+                    $0.p2.point == existing.p2.point
                 })
-                cleanRayDrawDescriptors.append(rawRayDrawDescriptor)
+                cleanRaySegments.append(rawRaySegment)
             }
         }
         
-        for rayDrawDescriptor in cleanRayDrawDescriptors {
+        for segment in cleanRaySegments {
             
-            let p1 = rayDrawDescriptor.p1
-            let p2 = rayDrawDescriptor.p2
-            let virtual = rayDrawDescriptor.virtual
+            let p1 = segment.p1
+            let p2 = segment.p2
+            let virtual = segment.virtual
             
             draw(
                 Ray(
@@ -1186,13 +1188,13 @@ struct Renderer {
         }
     }
     
-    func getRayDrawDescriptors(
+    func getRaySegments(
         
         from pointDescriptors: [PointDescriptor], virtual: Bool
         
-    ) -> [RayDrawDescriptor] {
+    ) -> [RaySegment] {
         
-        var rayDrawDescriptors: [RayDrawDescriptor] = []
+        var raySegments: [RaySegment] = []
         
         if pointDescriptors.count > 1 {
             
@@ -1201,13 +1203,13 @@ struct Renderer {
                 let p1 = pointDescriptors[i]
                 let p2 = pointDescriptors[i+1]
                 
-                rayDrawDescriptors.append(RayDrawDescriptor(
+                raySegments.append(RaySegment(
                     p1: p1, p2: p2, virtual: virtual
                 ))
             }
         }
         
-        return rayDrawDescriptors
+        return raySegments
     }
 }
 
@@ -1246,17 +1248,4 @@ struct DeviceInfo {
     let focalLength: CGFloat?
     let focalPointBefore: CGPoint?
     let focalPointAfter: CGPoint?
-}
-
-struct RayDrawDescriptor {
-    
-    let p1: PointDescriptor
-    let p2: PointDescriptor
-    let virtual: Bool
-}
-
-struct ImageData {
-    
-    let image: Image
-    let virtual: Bool
 }
