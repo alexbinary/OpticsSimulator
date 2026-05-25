@@ -6,6 +6,7 @@ import SwiftUI
 @Observable
 class ObjectOrImage {
     
+    var id = UUID()
     var pos: CGFloat
     var size: CGFloat
     
@@ -18,7 +19,6 @@ class ObjectOrImage {
 @Observable
 class Object: ObjectOrImage, Identifiable {
     
-    var id = UUID()
     var name: String
     var enabled: Bool
     var visible: Bool

@@ -805,87 +805,7 @@ struct Renderer {
         
         // draw rays
         
-        for rayDescriptor in rayDescriptors {
-            
-            let pointsBeforeDevice = rayDescriptor.points
-                .filter { pointDescriptor in
-                    if let deviceBefore = rayDescriptor.deviceBefore {
-                        return pointDescriptor.point.x <= resolvedPos(from: deviceBefore.pos)
-                    }
-                    return false
-                }
-                .sorted { $0.point.x < $1.point.x }
-            
-            let pointsBetweenDevices = rayDescriptor.points
-                .filter { pointDescriptor in
-                    
-                    if let deviceBefore = rayDescriptor.deviceBefore,
-                       let deviceAfter = rayDescriptor.deviceAfter {
-                        
-                        return
-                            pointDescriptor.point.x >= resolvedPos(from: deviceBefore.pos)
-                         && pointDescriptor.point.x <= resolvedPos(from: deviceAfter.pos)
-                        
-                    } else if let deviceBefore = rayDescriptor.deviceBefore {
-                        
-                        return pointDescriptor.point.x >= resolvedPos(from: deviceBefore.pos)
-                        
-                    } else if let deviceAfter = rayDescriptor.deviceAfter {
-                        
-                        return pointDescriptor.point.x <= resolvedPos(from: deviceAfter.pos)
-                    }
-                    return true
-                }
-                .sorted { $0.point.x < $1.point.x }
-            
-            let pointsAfterDevice = rayDescriptor.points
-                .filter { pointDescriptor in
-                    if let deviceAfter = rayDescriptor.deviceAfter {
-                        return pointDescriptor.point.x >= resolvedPos(from: deviceAfter.pos)
-                    }
-                    return false
-                }
-                .sorted { $0.point.x < $1.point.x }
-
-            if !pointsBeforeDevice.isEmpty {
-                
-                draw(
-                    Ray(
-                        from: pointsBeforeDevice.first!.point,
-                        to: pointsBeforeDevice.last!.point
-                    ),
-                    minX: pointsBeforeDevice.first!.point.x,
-                    maxX: pointsBeforeDevice.last!.point.x,
-                    virtual: true
-                )
-            }
-            
-            if !pointsBetweenDevices.isEmpty {
-                
-                draw(
-                    Ray(
-                        from: pointsBetweenDevices.first!.point,
-                        to: pointsBetweenDevices.last!.point
-                    ),
-                    minX: pointsBetweenDevices.first!.point.x,
-                    maxX: pointsBetweenDevices.last!.point.x,
-                    virtual: false
-                )
-            }
-            
-            if !pointsAfterDevice.isEmpty {
-                
-                draw(
-                    Ray(
-                        from: pointsAfterDevice.first!.point,
-                        to: pointsAfterDevice.last!.point
-                    ),
-                    minX: pointsAfterDevice.first!.point.x,
-                    maxX: pointsAfterDevice.last!.point.x,
-                    virtual: true
-                )
-            }
-        }
+        drawRays(from: rayDescriptors)
         
         
         
@@ -1124,6 +1044,129 @@ struct Renderer {
         
         return info
     }
+    
+    func drawRays(from rayDescriptors: [RayDescriptor]) {
+        
+        for rayDescriptor in rayDescriptors {
+            
+            let pointsBeforeDevice = rayDescriptor.points
+                .filter { pointDescriptor in
+                    if let deviceBefore = rayDescriptor.deviceBefore {
+                        return pointDescriptor.point.x <= resolvedPos(from: deviceBefore.pos)
+                    }
+                    return false
+                }
+                .sorted { $0.point.x < $1.point.x }
+            
+            let pointsBetweenDevices = rayDescriptor.points
+                .filter { pointDescriptor in
+                    
+                    if let deviceBefore = rayDescriptor.deviceBefore,
+                       let deviceAfter = rayDescriptor.deviceAfter {
+                        
+                        return
+                            pointDescriptor.point.x >= resolvedPos(from: deviceBefore.pos)
+                         && pointDescriptor.point.x <= resolvedPos(from: deviceAfter.pos)
+                        
+                    } else if let deviceBefore = rayDescriptor.deviceBefore {
+                        
+                        return pointDescriptor.point.x >= resolvedPos(from: deviceBefore.pos)
+                        
+                    } else if let deviceAfter = rayDescriptor.deviceAfter {
+                        
+                        return pointDescriptor.point.x <= resolvedPos(from: deviceAfter.pos)
+                    }
+                    return true
+                }
+                .sorted { $0.point.x < $1.point.x }
+            
+            let pointsAfterDevice = rayDescriptor.points
+                .filter { pointDescriptor in
+                    if let deviceAfter = rayDescriptor.deviceAfter {
+                        return pointDescriptor.point.x >= resolvedPos(from: deviceAfter.pos)
+                    }
+                    return false
+                }
+                .sorted { $0.point.x < $1.point.x }
+
+            var rawRayDrawDescriptors: [RayDrawDescriptor] = []
+            
+            rawRayDrawDescriptors.append(
+                contentsOf: getRays(from: pointsBeforeDevice, virtual: true)
+            )
+            rawRayDrawDescriptors.append(
+                contentsOf: getRays(from: pointsBetweenDevices, virtual: false)
+            )
+            rawRayDrawDescriptors.append(
+                contentsOf: getRays(from: pointsAfterDevice, virtual: true)
+            )
+            
+            var cleanRayDrawDescriptors: [RayDrawDescriptor] = []
+            
+            for rawRayDrawDescriptor in rawRayDrawDescriptors {
+                
+                let existing = cleanRayDrawDescriptors.first {
+                    PointDescriptor.isSame($0.p1, rawRayDrawDescriptor.p1)
+                    &&
+                    PointDescriptor.isSame($0.p2, rawRayDrawDescriptor.p2)
+                }
+                
+                if existing == nil {
+                    
+                    cleanRayDrawDescriptors.append(rawRayDrawDescriptor)
+                }
+                
+                if let existing, existing.virtual {
+                    
+                    cleanRayDrawDescriptors.removeAll(where: {
+                        PointDescriptor.isSame($0.p1, existing.p1)
+                        &&
+                        PointDescriptor.isSame($0.p2, existing.p2)
+                    })
+                    cleanRayDrawDescriptors.append(rawRayDrawDescriptor)
+                }
+            }
+            
+            for rayDrawDescriptor in cleanRayDrawDescriptors {
+                
+                let p1 = rayDrawDescriptor.p1
+                let p2 = rayDrawDescriptor.p2
+                let virtual = rayDrawDescriptor.virtual
+                
+                draw(
+                    Ray(
+                        from: p1.point,
+                        to: p2.point
+                    ),
+                    minX: p1.point.x,
+                    maxX: p2.point.x,
+                    virtual: virtual
+                )
+            }
+        }
+    }
+    
+    func getRays(
+        from pointDescriptors: [PointDescriptor], virtual: Bool
+    ) -> [RayDrawDescriptor] {
+        
+        var rayDrawDescriptors: [RayDrawDescriptor] = []
+        
+        if pointDescriptors.count > 1 {
+            
+            for i in 0..<(pointDescriptors.count-1) {
+                
+                let p1 = pointDescriptors[i]
+                let p2 = pointDescriptors[i+1]
+                
+                rayDrawDescriptors.append(RayDrawDescriptor(
+                    p1: p1, p2: p2, virtual: virtual
+                ))
+            }
+        }
+        
+        return rayDrawDescriptors
+    }
 }
 
 
@@ -1158,4 +1201,11 @@ struct DeviceInfo {
     let focalLength: CGFloat?
     let focalPointBefore: CGPoint?
     let focalPointAfter: CGPoint?
+}
+
+struct RayDrawDescriptor {
+    
+    let p1: PointDescriptor
+    let p2: PointDescriptor
+    let virtual: Bool
 }
