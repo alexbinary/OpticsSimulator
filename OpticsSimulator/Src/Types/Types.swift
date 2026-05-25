@@ -34,7 +34,15 @@ class Object: ObjectOrImage, Identifiable {
     }
 }
 
-class Image: ObjectOrImage {}
+class Image: ObjectOrImage {
+    
+    var virtual: Bool
+    
+    init(pos: CGFloat, size: CGFloat, virtual: Bool = false) {
+        self.virtual = virtual
+        super.init(pos: pos, size: size)
+    }
+}
 
 
 @Observable
