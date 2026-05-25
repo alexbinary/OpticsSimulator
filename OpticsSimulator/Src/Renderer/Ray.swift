@@ -11,13 +11,6 @@ struct Ray {
     let dy: CGFloat
     
     
-    init(anchor: CGPoint, dx: CGFloat, dy: CGFloat) {
-        
-        self.anchor = anchor
-        self.dx = dx
-        self.dy = dy
-    }
-    
     init(from p1: CGPoint, to p2: CGPoint) {
         
         self.anchor = p1

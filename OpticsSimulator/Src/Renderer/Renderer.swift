@@ -655,10 +655,9 @@ struct Renderer {
                         let endX = currentDevicePos ?? renderSize.width
                         
                         var pointsForRay: [CGPoint] = [
-                            
                             ray.point(atX: rayPointOnPreviousDevice.p.x),
-                            ray.point(atX: endX),
                             ray.point(atX: currentSourcePos),
+                            ray.point(atX: endX),
                         ]
                         
                         if previousDeviceIsRaySource,
@@ -680,14 +679,14 @@ struct Renderer {
                             )
                         }
                         
-                        if let lense = previousDevice as? Lense,
-                           lense.type == .convergent,
-                           rayPointOnPreviousDevice.hasParallelIncidence
-                        {
-                            pointsForRay.append(
-                                ray.point(atX: previousDeviceFocalPointAfter!.x)
-                            )
-                        }
+//                        if let lense = previousDevice as? Lense,
+//                           lense.type == .convergent,
+//                           rayPointOnPreviousDevice.hasParallelIncidence
+//                        {
+//                            pointsForRay.append(
+//                                ray.point(atX: previousDeviceFocalPointAfter!.x)
+//                            )
+//                        }
                         
                         allRayDescriptors.append(RayDescriptor(
                             deviceBefore: previousDevice,
@@ -734,7 +733,6 @@ struct Renderer {
                         let startX = previousDevicePos ?? currentSourcePos
                         
                         let pointsForRay: [CGPoint] = [
-                            
                             ray.point(atX: startX),
                             ray.point(atX: rayPointOnCurrentDevice.p.x),
                         ]
@@ -1073,25 +1071,30 @@ struct Renderer {
         
         for candidateSegment in rawRaySegments {
             
-            if !candidateSegment.virtual {
+            var processed = false
+            
+            for alreadyAddedSegment in cleanRaySegments {
                 
-                cleanRaySegments.removeAll(where: {
+                // sont colineaires ?
+                
+                if candidateSegment.isVisuallyColinear(with: alreadyAddedSegment) {
                     
-                    $0.isVisuallySame(as: candidateSegment)
-                })
+                    // se chevauchent ?
+                    
+                    if candidateSegment.isOverlapping(with: alreadyAddedSegment) {
+                        
+                        // > réduire chacun
+                        // > créer segment commun
+                        // > arbitrer segment commun
+                        
+                        processed = true
+                    }
+                }
+            }
+            
+            if !processed {
+                
                 cleanRaySegments.append(candidateSegment)
-                
-            } else {
-                
-                let existing = cleanRaySegments.first {
-                    
-                    $0.isVisuallySame(as: candidateSegment)
-                }
-                
-                if existing == nil {
-                    
-                    cleanRaySegments.append(candidateSegment)
-                }
             }
         }
         
@@ -1151,49 +1154,49 @@ struct Renderer {
                 }
                 .sorted { $0.x < $1.x }
             
-            raySegments.append(
-                contentsOf: getRaySegments(
-                    from: pointsBeforeDevice, virtual: true
-                )
-            )
-            raySegments.append(
-                contentsOf: getRaySegments(
-                    from: pointsBetweenDevices, virtual: false
-                )
-            )
-            raySegments.append(
-                contentsOf: getRaySegments(
-                    from: pointsAfterDevice, virtual: true
-                )
-            )
+            if let segment = getRaySegment(
+                from: pointsBeforeDevice, virtual: true
+            ) {
+                raySegments.append(segment)
+            }
+            
+            if let segment = getRaySegment(
+                from: pointsBetweenDevices, virtual: false
+            ) {
+                raySegments.append(segment)
+            }
+            
+            if let segment = getRaySegment(
+                from: pointsAfterDevice, virtual: true
+            ) {
+                raySegments.append(segment)
+            }
         }
         
         return raySegments
     }
     
     
-    func getRaySegments(
+    func getRaySegment(
         
-        from pointDescriptors: [CGPoint], virtual: Bool
+        from points: [CGPoint], virtual: Bool
         
-    ) -> [RaySegment] {
+    ) -> RaySegment? {
         
-        var raySegments: [RaySegment] = []
+        let pointsSortedByXAscending = points.sorted { $0.x < $1.x }
         
-        if pointDescriptors.count > 1 {
+        if let p1 = pointsSortedByXAscending.first,
+           let p2 = pointsSortedByXAscending.last {
             
-            for i in 0..<(pointDescriptors.count-1) {
-                
-                let p1 = pointDescriptors[i]
-                let p2 = pointDescriptors[i+1]
-                
-                raySegments.append(RaySegment(
-                    p1: p1, p2: p2, virtual: virtual
-                ))
-            }
+            let raySegment = RaySegment(
+                p1: p1, p2: p2,
+                virtual: virtual
+            )
+            
+            return raySegment
         }
         
-        return raySegments
+        return nil
     }
 }
 

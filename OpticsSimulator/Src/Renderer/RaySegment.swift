@@ -21,6 +21,26 @@ struct RaySegment {
         }
         return false
     }
+    
+    func isVisuallyColinear(with s: RaySegment) -> Bool {
+        
+        let ray = Ray(from: s.p1, to: s.p2)
+        
+        return (
+            ray.point(atX: self.p1.x).isVisuallySame(as: self.p1)
+            &&
+            ray.point(atX: self.p2.x).isVisuallySame(as: self.p2)
+        )
+    }
+    
+    func isOverlapping(with s: RaySegment) -> Bool {
+        
+        return (
+            self.p1.isXBetween(s.p1, and: s.p2)
+            ||
+            self.p2.isXBetween(s.p1, and: s.p2)
+        )
+    }
 }
 
 
@@ -31,5 +51,10 @@ extension CGPoint {
         let e = 0.01
         
         return abs(self.x - p.x) < e && abs(self.y - p.y) < e
+    }
+    
+    func isXBetween(_ p1: CGPoint, and p2: CGPoint) -> Bool {
+        
+        return x > p1.x && x < p2.x
     }
 }
