@@ -1,0 +1,10 @@
+case "$1" in
+	open)
+		open OpticsSimulator.xcodeproj
+		clear
+		git status
+		;;
+	*)
+		echo "Usage: dev {open}"
+		;;
+esac
