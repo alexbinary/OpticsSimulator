@@ -1105,7 +1105,7 @@ struct Renderer {
             let startX: CGFloat? = {
                 
                 var pos: [CGFloat] = []
-                
+
                 if let deviceBefore = rayDescriptor.deviceBefore {
                     pos.append(resolvedPos(from: deviceBefore.pos))
                 }
@@ -1125,7 +1125,7 @@ struct Renderer {
                 return nil
             }()
             
-            var points = rayDescriptor.points
+            var points = rayDescriptor.points.sorted { $0.x < $1.x }
             
             if let p1 = points.first,
                let p2 = points.last {
@@ -1140,45 +1140,47 @@ struct Renderer {
                 }
             }
             
-            let pointsBefore = points.filter { point in
+            let pointsBefore: [CGPoint] = {
                 
                 if let startX = startX {
-                    return point.x <= startX
+                    return points.filter { $0.x <= startX }
+                } else {
+                    return []
                 }
-                return false
-                
-            }.sorted { $0.x < $1.x }
+            }().sorted { $0.x < $1.x }
             
-            let pointsBetween = points.filter { point in
-                    
+            let pointsBetween: [CGPoint] = {
+                
                 if let startX = startX, let endX = endX {
                     
-                    return (
-                        point.x >= startX
-                        &&
-                        point.x <= endX
-                    )
+                    return points.filter { $0.x >= startX && $0.x <= endX }
                     
                 } else if let startX = startX {
                     
-                    return point.x >= startX
+                    return points.filter { $0.x >= startX }
                     
                 } else if let endX = endX {
                     
-                    return point.x <= endX
+                    return points.filter { $0.x <= endX }
+                    
+                } else {
+                    
+                    return points
                 }
-                return true
-            }
-            .sorted { $0.x < $1.x }
+                
+            }().sorted { $0.x < $1.x }
             
-            let pointsAfter = points.filter { point in
+            let pointsAfter: [CGPoint] = {
                 
                 if let endX = endX {
-                    return point.x >= endX
+                    
+                    return points.filter { $0.x >= endX }
+                    
+                } else {
+                    
+                    return []
                 }
-                return false
-            }
-            .sorted { $0.x < $1.x }
+            }().sorted { $0.x < $1.x }
             
             if let segment = getRaySegment(
                 from: pointsBefore, virtual: true
