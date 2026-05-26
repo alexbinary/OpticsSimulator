@@ -660,16 +660,6 @@ struct Renderer {
                             ray.point(atX: endX),
                         ]
                         
-                        if previousDeviceIsRaySource,
-                           let lense = previousDevice as? Lense,
-                           lense.type == .convergent,
-                           rayPointOnPreviousDevice.type == .center
-                        {
-                            pointsForRay.append(
-                                ray.point(atX: iterator.previousSourcePos!)
-                            )
-                        }
-                        
                         if let lense = previousDevice as? Lense,
                            lense.type == .divergent,
                            rayPointOnPreviousDevice.hasParallelIncidence
@@ -1032,17 +1022,15 @@ struct Renderer {
             from: raySegments
         )
         
-//        raySegments = [RaySegment](raySegments.prefix(9).suffix(1))
-//        if raySegments.count > 6 {
+//        if raySegments.count > 2 {
 //            raySegments = [
+//                raySegments[0],
+//                raySegments[1],
 //                raySegments[2],
-//                raySegments[3],
-////                raySegments[5],
-////                raySegments[6]
 //            ]
 //        }
         
-//        raySegments = deduplicate(raySegments)
+        raySegments = deduplicate(raySegments)
         
         drawRays(from: raySegments)
     }
@@ -1088,62 +1076,71 @@ struct Renderer {
     
     func deduplicate(
         
-        _ rawRaySegments: [RaySegment]
+        _ rawSegments: [RaySegment]
         
     ) -> [RaySegment] {
         
-        var cleanRaySegments: [RaySegment] = []
+        var committedSegments: [RaySegment] = []
         
-        for candidateSegment in rawRaySegments {
+        var candidateSegments: [RaySegment] = []
+        
+        for segment in rawSegments {
             
-            var processed = false
+            candidateSegments.insert(segment, at: 0)
+        }
+        
+        while let candidateSegment = candidateSegments.popLast() {
             
-            for alreadyAddedSegment in cleanRaySegments {
+            if let overlappingSegment = committedSegments.first(where: { segment in
                 
-                if candidateSegment.isVisuallyOverlapping(
-                    with: alreadyAddedSegment
-                ) {
-                    let subSegments = candidateSegment.overlappingSubSegments(
-                        with: alreadyAddedSegment
-                    )
-                    var segments = subSegments.map { s in
-                        
-                        RaySegment(
-                            p1: s.p1,
-                            p2: s.p2,
-                            virtual: resolveVirtual(
-                                from: s.originalSegments.map { $0.virtual }
-                            )
-                        )
-                    }
+                candidateSegment.isVisuallyOverlapping(with: segment)
+            }) {
+                
+                committedSegments.removeAll { s in
                     
-                    segments = removeZeroLengthSegments(
-                        from: segments
-                    )
-                    
-                    segments = merge(segments)
-                    
-                    cleanRaySegments.removeAll { s in
-                        
-                        s.id == alreadyAddedSegment.id
-                    }
-                    
-                    for segment in segments {
-                        
-                        cleanRaySegments.append(segment)
-                    }
-                    
-                    processed = true
+                    s.id == overlappingSegment.id
                 }
-            }
-            
-            if !processed {
                 
-                cleanRaySegments.append(candidateSegment)
+                let subSegments = candidateSegment.overlappingSubSegments(
+                 
+                    with: overlappingSegment
+                )
+                
+                var segments = subSegments.map { s in
+                    
+                    RaySegment(
+                        p1: s.p1,
+                        p2: s.p2,
+                        virtual: resolveVirtual(
+                            from: s.originalSegments.map { $0.virtual }
+                        )
+                    )
+                }
+                
+                segments = removeZeroLengthSegments(
+                
+                    from: segments
+                )
+                
+                segments = merge(segments)
+                
+                segments = removeZeroLengthSegments(
+                
+                    from: segments
+                )
+                
+                for segment in segments {
+                    
+                    candidateSegments.insert(segment, at: 0)
+                }
+                
+            } else {
+            
+                committedSegments.append(candidateSegment)
             }
         }
         
-        return cleanRaySegments
+        return committedSegments
     }
     
     

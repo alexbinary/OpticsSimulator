@@ -39,13 +39,13 @@ struct RaySegment {
         if self.isVisuallyColinear(with: s) {
             
             return (
-                self.p1.isXBetween(s.p1, and: s.p2)
+                self.p1.isXStrictlyBetween(s.p1, and: s.p2)
                 ||
-                self.p2.isXBetween(s.p1, and: s.p2)
+                self.p2.isXStrictlyBetween(s.p1, and: s.p2)
                 ||
-                s.p1.isXBetween(self.p1, and: self.p2)
+                s.p1.isXStrictlyBetween(self.p1, and: self.p2)
                 ||
-                s.p2.isXBetween(self.p1, and: self.p2)
+                s.p2.isXStrictlyBetween(self.p1, and: self.p2)
             )
         }
         
@@ -152,8 +152,8 @@ extension CGPoint {
         return !self.isVisuallySame(as: p)
     }
     
-    func isXBetween(_ p1: CGPoint, and p2: CGPoint) -> Bool {
+    func isXStrictlyBetween(_ p1: CGPoint, and p2: CGPoint) -> Bool {
         
-        return x >= p1.x && x <= p2.x
+        return x > p1.x && x < p2.x
     }
 }
