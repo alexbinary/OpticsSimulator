@@ -232,16 +232,33 @@ struct Renderer {
     }
     
     func draw(
+        
         _ ray: Ray,
         minX: CGFloat, maxX: CGFloat,
         virtual: Bool = false
+        
     ) {
+        
         let startPoint = ray.point(
             atX: minX
         )
         let endPoint = ray.point(
             atX: maxX
         )
+        
+        drawRay(
+            from: startPoint,
+            to: endPoint,
+            virtual: virtual
+        )
+    }
+    
+    func drawRay(
+        
+        from startPoint: CGPoint, to endPoint: CGPoint,
+        virtual: Bool = false
+        
+    ) {
         
         var path = Path()
         
@@ -1063,19 +1080,11 @@ struct Renderer {
         
         for segment in raySegments {
             
-            let p1 = segment.p1
-            let p2 = segment.p2
-            let virtual = segment.virtual
-            
             if showVirtualRays || !segment.virtual {
                 
-                draw(
-                    Ray(
-                        from: segment.p1,
-                        to: segment.p2
-                    ),
-                    minX: segment.p1.x,
-                    maxX: segment.p2.x,
+                drawRay(
+                    from: segment.p1,
+                    to: segment.p2,
                     virtual: segment.virtual
                 )
             }
