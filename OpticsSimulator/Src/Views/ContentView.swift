@@ -23,7 +23,8 @@ struct ContentView: View {
                 renderer.render(
                     scene,
                     showImages: scene.showImages,
-                    showVirtualImages: scene.showVirtualImages
+                    showVirtualImages: scene.showVirtualImages,
+                    showVirtualRays: scene.showVirtualRays
                 )
             }
             
@@ -95,6 +96,8 @@ struct ContentView: View {
                             
                             Toggle("Show virtual images", isOn: $scene.showVirtualImages)
                                 .disabled(!scene.showImages)
+                            
+                            Toggle("Show virtual rays", isOn: $scene.showVirtualRays)
                         }
                         
                     }.padding()

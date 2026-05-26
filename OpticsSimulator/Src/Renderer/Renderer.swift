@@ -348,7 +348,8 @@ struct Renderer {
         _ scene: OpticsScene,
         
         showImages: Bool,
-        showVirtualImages: Bool
+        showVirtualImages: Bool,
+        showVirtualRays: Bool
     
     ) {
         
@@ -552,7 +553,10 @@ struct Renderer {
                 }
             }
         }
-        drawRays(from: allRayDescriptors)
+        drawRays(
+            from: allRayDescriptors,
+            showVirtualRays: showVirtualRays
+        )
         
         
         
@@ -1021,7 +1025,8 @@ struct Renderer {
     
     func drawRays(
         
-        from rayDescriptors: [RayDescriptor]
+        from rayDescriptors: [RayDescriptor],
+        showVirtualRays: Bool
         
     ) {
         
@@ -1042,13 +1047,17 @@ struct Renderer {
         
         raySegments = deduplicate(raySegments)
         
-        drawRays(from: raySegments)
+        drawRays(
+            from: raySegments,
+            showVirtualRays: showVirtualRays
+        )
     }
     
     
     func drawRays(
     
-        from raySegments: [RaySegment]
+        from raySegments: [RaySegment],
+        showVirtualRays: Bool
         
     ) {
         
@@ -1058,15 +1067,18 @@ struct Renderer {
             let p2 = segment.p2
             let virtual = segment.virtual
             
-            draw(
-                Ray(
-                    from: p1,
-                    to: p2
-                ),
-                minX: p1.x,
-                maxX: p2.x,
-                virtual: virtual
-            )
+            if showVirtualRays || !segment.virtual {
+                
+                draw(
+                    Ray(
+                        from: segment.p1,
+                        to: segment.p2
+                    ),
+                    minX: segment.p1.x,
+                    maxX: segment.p2.x,
+                    virtual: segment.virtual
+                )
+            }
         }
     }
     
