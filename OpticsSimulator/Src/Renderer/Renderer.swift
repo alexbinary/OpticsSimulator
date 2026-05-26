@@ -1104,10 +1104,14 @@ struct Renderer {
             
             let startX: CGFloat? = {
                 
-                var pos: [CGFloat] = [resolvedPos(from: rayDescriptor.source.pos)]
+                var pos: [CGFloat] = []
                 
                 if let deviceBefore = rayDescriptor.deviceBefore {
                     pos.append(resolvedPos(from: deviceBefore.pos))
+                }
+                
+                if rayDescriptor.source is Object {
+                    pos.append(resolvedPos(from: rayDescriptor.source.pos))
                 }
                 
                 return pos.max()
