@@ -13,22 +13,14 @@ enum RayType {
 
 struct RayPoint {
     
-    let p: CGPoint
-    let sourceDevice: OpticsDevice
+    let point: CGPoint
     let hasParallelIncidence: Bool
     
-    let type: RayType
-    let source: ObjectOrImage?
-    
     init(
-        p: CGPoint, type: RayType,
-        sourceDevice: OpticsDevice, source: ObjectOrImage? = nil,
+        point: CGPoint,
         horizontalIncidence: Bool = false
     ) {
-        self.p = p
-        self.type = type
-        self.sourceDevice = sourceDevice
-        self.source = source
+        self.point = point
         self.hasParallelIncidence = horizontalIncidence
     }
 }

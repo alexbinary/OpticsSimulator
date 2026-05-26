@@ -397,127 +397,41 @@ struct Renderer {
                 var rayPointsOnPreviousDevice: [RayPoint] = []
                 var rayPointsOnCurrentDevice: [RayPoint] = []
                 
-                // parallel ray
+                var rays: [(ray: Ray, horizontalIncidence: Bool)] = []
                 
                 if shouldGenerateParallelRay(to: loop.currentDevice!) {
                     
-                    let ray = Ray(
-                        horizontalFrom: loop.currentSourceTop
-                    )
-                    
-                    var pointsForRay: [CGPoint] = [
-                        ray.point(atX: loop.currentDevicePos!),
-                    ]
-                    
-                    if shouldConnectToSource(loop.currentSource, showVirtualImages) {
-                        pointsForRay.append(ray.point(atX: loop.currentSourcePos))
-                    }
-                    
-                    let pointFromRayOnCurrentDevice =
-                    ray.point(
-                        atX: loop.currentDevicePos!
-                    )
-                    
-                    rayPointsOnCurrentDevice.append(RayPoint(
-                        p: pointFromRayOnCurrentDevice,
-                        type: .parallel,
-                        sourceDevice: loop.currentDevice!,
-                        source: loop.currentSource,
+                    rays.append((
+                        ray: Ray(
+                            horizontalFrom: loop.currentSourceTop
+                        ),
                         horizontalIncidence: true
                     ))
-                    
-                    if shouldRetroPropagateRays(from: loop.currentDevice!),
-                       let previousDevicePos = loop.previousDevicePos {
-                        
-                        pointsForRay.append(
-                            ray.point(atX: previousDevicePos)
-                        )
-                        
-                        let pointFromRayOnPreviousDevice =
-                        ray.point(
-                            atX: previousDevicePos
-                        )
-                        
-                        rayPointsOnPreviousDevice.append(RayPoint(
-                            p: pointFromRayOnPreviousDevice,
-                            type: .parallel,
-                            sourceDevice: loop.currentDevice!,
-                            source: loop.currentSource,
-                            horizontalIncidence: true
-                        ))
-                    }
-                    
-                    allRayDescriptors.append(RayDescriptor(
-                        deviceBefore: loop.previousDevice,
-                        deviceAfter: loop.currentDevice!,
-                        points: pointsForRay
-                    ))
                 }
-                
-                // center ray
                 
                 if shouldGenerateCenterRay(to: loop.currentDevice!) {
                     
-                    let ray = Ray(
-                        from: loop.currentSourceTop,
-                        to: loop.currentDeviceCenter!,
-                    )
-                    
-                    var pointsForRay: [CGPoint] = [
-                        ray.point(atX: loop.currentDevicePos!),
-                    ]
-                    
-                    if shouldConnectToSource(loop.currentSource, showVirtualImages) {
-                        pointsForRay.append(ray.point(atX: loop.currentSourcePos))
-                    }
-                    
-                    let pointFromRayOnCurrentDevice =
-                    ray.point(
-                        atX: loop.currentDevicePos!
-                    )
-                    
-                    rayPointsOnCurrentDevice.append(RayPoint(
-                        p: pointFromRayOnCurrentDevice,
-                        type: .center,
-                        sourceDevice: loop.currentDevice!,
-                        source: loop.currentSource
-                    ))
-                    
-                    if shouldRetroPropagateRays(from: loop.currentDevice!),
-                       let previousDevicePos = loop.previousDevicePos {
-                        
-                        pointsForRay.append(
-                            ray.point(atX: previousDevicePos)
-                        )
-                        
-                        let pointFromRayOnPreviousDevice =
-                        ray.point(
-                            atX: previousDevicePos
-                        )
-                        
-                        rayPointsOnPreviousDevice.append(RayPoint(
-                            p: pointFromRayOnPreviousDevice,
-                            type: .center,
-                            sourceDevice: loop.currentDevice!,
-                            source: loop.currentSource
-                        ))
-                    }
-                    
-                    allRayDescriptors.append(RayDescriptor(
-                        deviceBefore: loop.previousDevice,
-                        deviceAfter: loop.currentDevice!,
-                        points: pointsForRay
+                    rays.append((
+                        ray: Ray(
+                            from: loop.currentSourceTop,
+                            to: loop.currentDeviceCenter!,
+                        ),
+                        horizontalIncidence: false
                     ))
                 }
-                
-                // focal ray
                 
                 if shouldGenerateFocalRay(to: loop.currentDevice!) {
                     
-                    let ray = Ray(
-                        from: loop.currentSourceTop,
-                        to: loop.currentDeviceFocalPointBefore!,
-                    )
+                    rays.append((
+                        ray: Ray(
+                            from: loop.currentSourceTop,
+                            to: loop.currentDeviceFocalPointBefore!,
+                        ),
+                        horizontalIncidence: false
+                    ))
+                }
+                
+                for (ray, horizontalIncidence) in rays {
                     
                     var pointsForRay: [CGPoint] = [
                         ray.point(atX: loop.currentDevicePos!),
@@ -533,10 +447,8 @@ struct Renderer {
                     )
                     
                     rayPointsOnCurrentDevice.append(RayPoint(
-                        p: pointFromRayOnCurrentDevice,
-                        type: .focal,
-                        sourceDevice: loop.currentDevice!,
-                        source: loop.currentSource
+                        point: pointFromRayOnCurrentDevice,
+                        horizontalIncidence: horizontalIncidence
                     ))
                     
                     if shouldRetroPropagateRays(from: loop.currentDevice!),
@@ -552,10 +464,8 @@ struct Renderer {
                         )
                         
                         rayPointsOnPreviousDevice.append(RayPoint(
-                            p: pointFromRayOnPreviousDevice,
-                            type: .focal,
-                            sourceDevice: loop.currentDevice!,
-                            source: loop.currentSource
+                            point: pointFromRayOnPreviousDevice,
+                            horizontalIncidence: horizontalIncidence
                         ))
                     }
                     
@@ -566,7 +476,7 @@ struct Renderer {
                     ))
                 }
                 
-                // continue rays forwards through all devices
+                // propagate rays forwards through all devices
                 
                 for rayPoint in rayPointsOnCurrentDevice {
                     
@@ -581,7 +491,7 @@ struct Renderer {
                     allRayDescriptors.append(contentsOf: rays)
                 }
                 
-                // continue rays backwards through all devices
+                // propagate rays backwards through all devices
                 
                 for rayPoint in rayPointsOnPreviousDevice {
                     
@@ -862,13 +772,13 @@ struct Renderer {
             )
             
             let ray = Ray(
-                from: rayPointOnPreviousDevice.p,
+                from: rayPointOnPreviousDevice.point,
                 to: loop.currentSourceTop
             )
             let endX = loop.currentDevicePos ?? renderSize.width
             
             var pointsForRay: [CGPoint] = [
-                ray.point(atX: rayPointOnPreviousDevice.p.x),
+                ray.point(atX: rayPointOnPreviousDevice.point.x),
                 ray.point(atX: endX),
             ]
             
@@ -901,9 +811,7 @@ struct Renderer {
             ))
             
             rayPointOnPreviousDevice = RayPoint(
-                p: ray.point(atX: endX),
-                type: .undefined,
-                sourceDevice: rayPointOnPreviousDevice.sourceDevice
+                point: ray.point(atX: endX)
             )
         }
         
@@ -937,14 +845,14 @@ struct Renderer {
             
             let ray = Ray(
                 from: loop.currentSourceTop,
-                to: rayPointOnCurrentDevice.p
+                to: rayPointOnCurrentDevice.point
             )
             
             let startX = loop.previousDevicePos ?? loop.currentSourcePos
             
             let pointsForRay: [CGPoint] = [
                 ray.point(atX: startX),
-                ray.point(atX: rayPointOnCurrentDevice.p.x),
+                ray.point(atX: rayPointOnCurrentDevice.point.x),
             ]
             
             allRayDescriptors.append(RayDescriptor(
@@ -954,9 +862,7 @@ struct Renderer {
             ))
             
             rayPointOnCurrentDevice = RayPoint(
-                p: ray.point(atX: startX),
-                type: .undefined,
-                sourceDevice: rayPointOnCurrentDevice.sourceDevice
+                point: ray.point(atX: startX)
             )
         }
         
