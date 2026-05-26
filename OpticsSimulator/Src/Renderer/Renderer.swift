@@ -343,7 +343,7 @@ struct Renderer {
         return images
     }
     
-    func render(_ scene: OpticsScene) {
+    func render(_ scene: OpticsScene, showVirtualImages: Bool) {
         
         // compute images and rays
         
@@ -432,9 +432,23 @@ struct Renderer {
                     
                     var pointsForRay: [CGPoint] = [
                         
-                        ray.point(atX: currentSourcePos),
                         ray.point(atX: currentDevicePos),
                     ]
+                    
+                    let connectToSource: Bool = {
+                        if currentSource is Object {
+                            return true
+                        } else {
+                            let image = currentSource as! Image
+                            if showVirtualImages || !image.virtual {
+                                return true
+                            }
+                        }
+                        return false
+                    }()
+                    if connectToSource {
+                        pointsForRay.append(ray.point(atX: currentSourcePos))
+                    }
                     
                     let pointFromRayOnCurrentDevice =
                     ray.point(
@@ -509,9 +523,23 @@ struct Renderer {
                     
                     var pointsForRay: [CGPoint] = [
                         
-                        ray.point(atX: currentSourcePos),
                         ray.point(atX: currentDevicePos),
                     ]
+                    
+                    let connectToSource: Bool = {
+                        if currentSource is Object {
+                            return true
+                        } else {
+                            let image = currentSource as! Image
+                            if showVirtualImages || !image.virtual {
+                                return true
+                            }
+                        }
+                        return false
+                    }()
+                    if connectToSource {
+                        pointsForRay.append(ray.point(atX: currentSourcePos))
+                    }
                     
                     let pointFromRayOnCurrentDevice =
                     ray.point(
@@ -633,6 +661,7 @@ struct Renderer {
                         let iterator = getLoopIterator(
                             for: sources, devices, at: sourceIndexForward
                         )
+                        let currentSource = iterator.currentSource
                         let currentSourcePos = iterator.currentSourcePos
                         let currentSourceTop = iterator.currentSourceTop
                         
@@ -656,9 +685,23 @@ struct Renderer {
                         
                         var pointsForRay: [CGPoint] = [
                             ray.point(atX: rayPointOnPreviousDevice.p.x),
-                            ray.point(atX: currentSourcePos),
                             ray.point(atX: endX),
                         ]
+                        
+                        let connectToSource: Bool = {
+                            if currentSource is Object {
+                                return true
+                            } else {
+                                let image = currentSource as! Image
+                                if showVirtualImages || !image.virtual {
+                                    return true
+                                }
+                            }
+                            return false
+                        }()
+                        if connectToSource {
+                            pointsForRay.append(ray.point(atX: currentSourcePos))
+                        }
                         
                         if let lense = previousDevice as? Lense,
                            lense.type == .divergent,
@@ -760,7 +803,9 @@ struct Renderer {
             draw(screen)
         }
         for image in allImagesOfAllObjects {
-            draw(image, virtual: image.virtual)
+            if showVirtualImages || !image.virtual {
+                draw(image, virtual: image.virtual)
+            }
         }
         drawRays(from: allRayDescriptors)
         

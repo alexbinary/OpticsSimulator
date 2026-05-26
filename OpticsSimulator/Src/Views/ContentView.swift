@@ -5,6 +5,7 @@ struct ContentView: View {
     
     @State private var scene = OpticsScene()
     @State private var activeScenePresetIndex: Int = 0
+    @State private var showVirtualImages: Bool = false
 
     var body: some View {
         
@@ -20,7 +21,10 @@ struct ContentView: View {
                 // render
                 
                 let renderer = Renderer(context: context, renderSize: size)
-                renderer.render(scene)
+                renderer.render(
+                    scene,
+                    showVirtualImages: showVirtualImages
+                )
             }
             
             Divider()
@@ -74,6 +78,23 @@ struct ContentView: View {
                         }
                     }
                     .padding()
+                    
+                    Divider()
+                    
+                    HStack {
+                        
+                        VStack {
+                            
+                            Button {
+                                scene.clear()
+                            } label: {
+                                Text("Clear scene")
+                            }
+                            
+                            Toggle("Show virtual images", isOn: $showVirtualImages)
+                        }
+                        
+                    }.padding()
                     
                     Divider()
                     

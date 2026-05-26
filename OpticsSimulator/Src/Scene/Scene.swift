@@ -86,14 +86,19 @@ class OpticsScene {
         writePresetsToFile()
     }
     
-    func loadPreset(_ preset: ScenePresetDescriptor) {
-
+    func clear() {
+        
         for object in objects {
             delete(object)
         }
         for device in devices {
             delete(device)
         }
+    }
+    
+    func loadPreset(_ preset: ScenePresetDescriptor) {
+
+        clear()
         
         preset.objects.map { descriptor in
             Object(
