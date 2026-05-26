@@ -779,16 +779,7 @@ struct Renderer {
     
     ) -> Bool {
         
-        if source is Object {
-            return true
-        }
-        
-        let image = source as! Image
-        if showVirtualImages || !image.virtual {
-            return true
-        }
-        
-        return false
+        return true
     }
     
     
