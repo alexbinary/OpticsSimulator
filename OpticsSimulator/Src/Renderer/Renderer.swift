@@ -1210,10 +1210,18 @@ struct Renderer {
                 let ray = Ray(from: p1, to: p2)
                 
                 if let deviceBefore = rayDescriptor.deviceBefore {
-                    points.append(ray.point(atX: resolvedPos(from: deviceBefore.pos)))
+                    let resolvedPos = resolvedPos(from: deviceBefore.pos)
+                    
+                    if p1.x < resolvedPos {
+                        points.append(ray.point(atX: resolvedPos))
+                    }
                 }
                 if let deviceAfter = rayDescriptor.deviceAfter {
-                    points.append(ray.point(atX: resolvedPos(from: deviceAfter.pos)))
+                    let resolvedPos = resolvedPos(from: deviceAfter.pos)
+                    
+                    if p2.x > resolvedPos {
+                        points.append(ray.point(atX: resolvedPos))
+                    }
                 }
             }
             
