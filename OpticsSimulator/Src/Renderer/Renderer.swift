@@ -404,7 +404,11 @@ struct Renderer {
                 var rayPointsOnPreviousDevice: [RayPoint] = []
                 var rayPointsOnCurrentDevice: [RayPoint] = []
                 
-                var rays: [(ray: Ray, horizontalIncidence: Bool)] = []
+                var rays: [(
+                    ray: Ray,
+                    horizontalIncidence: Bool,
+                    points: [CGFloat]
+                )] = []
                 
                 if shouldGenerateParallelRay(to: loop.currentDevice!) {
                     
@@ -412,7 +416,8 @@ struct Renderer {
                         ray: Ray(
                             horizontalFrom: loop.currentSourceTop
                         ),
-                        horizontalIncidence: true
+                        horizontalIncidence: true,
+                        points: []
                     ))
                 }
                 
@@ -423,7 +428,8 @@ struct Renderer {
                             from: loop.currentSourceTop,
                             to: loop.currentDeviceCenter!,
                         ),
-                        horizontalIncidence: false
+                        horizontalIncidence: false,
+                        points: []
                     ))
                 }
                 
@@ -434,11 +440,14 @@ struct Renderer {
                             from: loop.currentSourceTop,
                             to: loop.currentDeviceFocalPointBefore!,
                         ),
-                        horizontalIncidence: false
+                        horizontalIncidence: false,
+                        points: [
+                            loop.currentDeviceFocalPointBefore!.x
+                        ]
                     ))
                 }
                 
-                for (ray, horizontalIncidence) in rays {
+                for (ray, horizontalIncidence, points) in rays {
                     
                     var pointsForRay: [CGPoint] = [
                         ray.point(atX: loop.currentDevicePos!),
@@ -457,6 +466,10 @@ struct Renderer {
                         point: pointFromRayOnCurrentDevice,
                         horizontalIncidence: horizontalIncidence
                     ))
+                    
+                    for x in points {
+                        pointsForRay.append(ray.point(atX: x))
+                    }
                     
                     if shouldRetroPropagateRays(from: loop.currentDevice!),
                        let previousDevicePos = loop.previousDevicePos {
@@ -479,6 +492,7 @@ struct Renderer {
                     allRayDescriptors.append(RayDescriptor(
                         deviceBefore: loop.previousDevice,
                         deviceAfter: loop.currentDevice!,
+                        source: loop.currentSource,
                         points: pointsForRay
                     ))
                 }
@@ -816,6 +830,7 @@ struct Renderer {
             allRayDescriptors.append(RayDescriptor(
                 deviceBefore: loop.previousDevice,
                 deviceAfter: loop.currentDevice,
+                source: loop.currentSource,
                 points: pointsForRay
             ))
             
@@ -867,6 +882,7 @@ struct Renderer {
             allRayDescriptors.append(RayDescriptor(
                 deviceBefore: loop.previousDevice,
                 deviceAfter: loop.currentDevice,
+                source: loop.currentSource,
                 points: pointsForRay
             ))
             
@@ -1065,6 +1081,25 @@ struct Renderer {
         
         for rayDescriptor in rayDescriptors {
             
+            let startX: CGFloat? = {
+                
+                var pos: [CGFloat] = [resolvedPos(from: rayDescriptor.source.pos)]
+                
+                if let deviceBefore = rayDescriptor.deviceBefore {
+                    pos.append(resolvedPos(from: deviceBefore.pos))
+                }
+                
+                return pos.max()
+            }()
+            
+            let endX: CGFloat? = {
+                
+                if let deviceAfter = rayDescriptor.deviceAfter {
+                    return resolvedPos(from: deviceAfter.pos)
+                }
+                return nil
+            }()
+            
             var points = rayDescriptor.points
             
             if let p1 = points.first,
@@ -1072,78 +1107,68 @@ struct Renderer {
                 
                 let ray = Ray(from: p1, to: p2)
                 
-                if let deviceBefore = rayDescriptor.deviceBefore {
-                    let resolvedPos = resolvedPos(from: deviceBefore.pos)
-                    
-                    if p1.x < resolvedPos {
-                        points.append(ray.point(atX: resolvedPos))
-                    }
+                if let startX = startX, p1.x < startX {
+                    points.append(ray.point(atX: startX))
                 }
-                if let deviceAfter = rayDescriptor.deviceAfter {
-                    let resolvedPos = resolvedPos(from: deviceAfter.pos)
-                    
-                    if p2.x > resolvedPos {
-                        points.append(ray.point(atX: resolvedPos))
-                    }
+                if let endX = endX, p2.x > endX {
+                    points.append(ray.point(atX: endX))
                 }
             }
             
-            let pointsBeforeDevice = points
-                .filter { pointDescriptor in
-                    if let deviceBefore = rayDescriptor.deviceBefore {
-                        return pointDescriptor.x <= resolvedPos(from: deviceBefore.pos)
-                    }
-                    return false
+            let pointsBefore = points.filter { point in
+                
+                if let startX = startX {
+                    return point.x <= startX
                 }
-                .sorted { $0.x < $1.x }
+                return false
+                
+            }.sorted { $0.x < $1.x }
             
-            let pointsBetweenDevices = points
-                .filter { pointDescriptor in
+            let pointsBetween = points.filter { point in
                     
-                    if let deviceBefore = rayDescriptor.deviceBefore,
-                       let deviceAfter = rayDescriptor.deviceAfter {
-                        
-                        return (
-                            pointDescriptor.x >= resolvedPos(from: deviceBefore.pos)
-                            &&
-                            pointDescriptor.x <= resolvedPos(from: deviceAfter.pos)
-                        )
-                        
-                    } else if let deviceBefore = rayDescriptor.deviceBefore {
-                        
-                        return pointDescriptor.x >= resolvedPos(from: deviceBefore.pos)
-                        
-                    } else if let deviceAfter = rayDescriptor.deviceAfter {
-                        
-                        return pointDescriptor.x <= resolvedPos(from: deviceAfter.pos)
-                    }
-                    return true
+                if let startX = startX, let endX = endX {
+                    
+                    return (
+                        point.x >= startX
+                        &&
+                        point.x <= endX
+                    )
+                    
+                } else if let startX = startX {
+                    
+                    return point.x >= startX
+                    
+                } else if let endX = endX {
+                    
+                    return point.x <= endX
                 }
-                .sorted { $0.x < $1.x }
+                return true
+            }
+            .sorted { $0.x < $1.x }
             
-            let pointsAfterDevice = points
-                .filter { pointDescriptor in
-                    if let deviceAfter = rayDescriptor.deviceAfter {
-                        return pointDescriptor.x >= resolvedPos(from: deviceAfter.pos)
-                    }
-                    return false
+            let pointsAfter = points.filter { point in
+                
+                if let endX = endX {
+                    return point.x >= endX
                 }
-                .sorted { $0.x < $1.x }
+                return false
+            }
+            .sorted { $0.x < $1.x }
             
             if let segment = getRaySegment(
-                from: pointsBeforeDevice, virtual: true
+                from: pointsBefore, virtual: true
             ) {
                 raySegments.append(segment)
             }
             
             if let segment = getRaySegment(
-                from: pointsBetweenDevices, virtual: false
+                from: pointsBetween, virtual: false
             ) {
                 raySegments.append(segment)
             }
             
             if let segment = getRaySegment(
-                from: pointsAfterDevice, virtual: true
+                from: pointsAfter, virtual: true
             ) {
                 raySegments.append(segment)
             }

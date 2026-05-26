@@ -82,7 +82,9 @@ class OpticsScene {
                     pos: screen.pos,
                     name: screen.name
                 )
-            }
+            },
+            showImages: showImages,
+            showVirtualImages: showVirtualImages
         )
         
         presets.append(preset)
@@ -155,6 +157,9 @@ class OpticsScene {
         }.forEach { screen in
             add(screen)
         }
+        
+        showImages = preset.showImages
+        showVirtualImages = preset.showVirtualImages
     }
     
     func deletePreset(_ preset: ScenePresetDescriptor) {
@@ -184,8 +189,6 @@ class OpticsScene {
             
             self.presets = decodedData.presets
             self.activePresetIndex = decodedData.activePresetIndex
-            self.showImages = decodedData.showImages
-            self.showVirtualImages = decodedData.showVirtualImages
             
         } else {
             
@@ -200,9 +203,7 @@ class OpticsScene {
         
         let rawData = try! encoder.encode(FileRoot(
             activePresetIndex: activePresetIndex,
-            presets: presets,
-            showImages: showImages,
-            showVirtualImages: showVirtualImages
+            presets: presets
         ))
         try! rawData.write(to: self.presetsFileUrl)
     }
@@ -264,6 +265,9 @@ struct ScenePresetDescriptor: Codable {
     let lenses: [LenseDescriptor]
     let mirrors: [MirrorDescriptor]
     let screens: [ScreenDescriptor]
+    
+    var showImages: Bool
+    var showVirtualImages: Bool
 }
 
 
@@ -271,7 +275,4 @@ struct FileRoot: Codable {
     
     let activePresetIndex: Int?
     let presets: [ScenePresetDescriptor]
-    
-    var showImages: Bool
-    var showVirtualImages: Bool
 }
