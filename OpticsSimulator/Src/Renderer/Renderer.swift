@@ -410,42 +410,17 @@ struct Renderer {
                 
                 // parallel ray
                 
-                let generateParallelRay: Bool = {
-                    
-                    if let lense = currentDevice as? Lense,
-                       lense.generatesParallelRay {
-                        
-                        return true
-                    }
-                    if currentDevice is Screen {
-                        
-                        return true
-                    }
-                    return false
-                }()
-                if generateParallelRay {
+                if shouldGenerateParallelRay(to: currentDevice) {
                     
                     let ray = Ray(
                         horizontalFrom: currentSourceTop
                     )
                     
                     var pointsForRay: [CGPoint] = [
-                        
                         ray.point(atX: currentDevicePos),
                     ]
                     
-                    let connectToSource: Bool = {
-                        if currentSource is Object {
-                            return true
-                        } else {
-                            let image = currentSource as! Image
-                            if showVirtualImages || !image.virtual {
-                                return true
-                            }
-                        }
-                        return false
-                    }()
-                    if connectToSource {
+                    if shouldConnectToSource(currentSource, showVirtualImages) {
                         pointsForRay.append(ray.point(atX: currentSourcePos))
                     }
                     
@@ -462,15 +437,7 @@ struct Renderer {
                         horizontalIncidence: true
                     ))
                     
-                    let retroPropagateRays: Bool = {
-                        if let lense = currentDevice as? Lense,
-                           lense.retroPropagatesRays {
-                            return true
-                        }
-                        return false
-                    }()
-                    
-                    if retroPropagateRays,
+                    if shouldRetroPropagateRays(from: currentDevice),
                        let previousDevicePos = previousDevicePos {
                         
                         pointsForRay.append(
@@ -500,20 +467,7 @@ struct Renderer {
                 
                 // center ray
                 
-                let generateCenterRay: Bool = {
-                    
-                    if let lense = currentDevice as? Lense,
-                       lense.generatesCenterRay {
-                        
-                        return true
-                    }
-                    if currentDevice is Screen {
-                        
-                        return true
-                    }
-                    return false
-                }()
-                if generateCenterRay {
+                if shouldGenerateCenterRay(to: currentDevice) {
                     
                     let ray = Ray(
                         from: currentSourceTop,
@@ -521,22 +475,10 @@ struct Renderer {
                     )
                     
                     var pointsForRay: [CGPoint] = [
-                        
                         ray.point(atX: currentDevicePos),
                     ]
                     
-                    let connectToSource: Bool = {
-                        if currentSource is Object {
-                            return true
-                        } else {
-                            let image = currentSource as! Image
-                            if showVirtualImages || !image.virtual {
-                                return true
-                            }
-                        }
-                        return false
-                    }()
-                    if connectToSource {
+                    if shouldConnectToSource(currentSource, showVirtualImages) {
                         pointsForRay.append(ray.point(atX: currentSourcePos))
                     }
                     
@@ -552,15 +494,7 @@ struct Renderer {
                         source: currentSource
                     ))
                     
-                    let retroPropagateRays: Bool = {
-                        if let lense = currentDevice as? Lense,
-                           lense.retroPropagatesRays {
-                            return true
-                        }
-                        return false
-                    }()
-                    
-                    if retroPropagateRays,
+                    if shouldRetroPropagateRays(from: currentDevice),
                        let previousDevicePos = previousDevicePos {
                         
                         pointsForRay.append(
@@ -831,6 +765,81 @@ struct Renderer {
     }
     
     
+    func shouldGenerateParallelRay(
+    
+        to device: OpticsDevice
+        
+    ) -> Bool {
+        
+        if let lense = device as? Lense {
+            
+            return lense.generatesParallelRay
+        }
+        
+        if device is Screen {
+            
+            return true
+        }
+        
+        return false
+    }
+    
+    
+    func shouldGenerateCenterRay(
+    
+        to device: OpticsDevice
+        
+    ) -> Bool {
+        
+        if let lense = device as? Lense {
+            
+            return lense.generatesCenterRay
+        }
+        
+        if device is Screen {
+            
+            return true
+        }
+        
+        return false
+    }
+    
+    
+    func shouldRetroPropagateRays(
+        
+        from device: OpticsDevice
+        
+    ) -> Bool {
+        
+        if let lense = device as? Lense {
+            
+            return lense.retroPropagatesRays
+        }
+        
+        return false
+    }
+    
+    
+    func shouldConnectToSource(
+        
+        _ source: ObjectOrImage,
+        _ showVirtualImages: Bool
+    
+    ) -> Bool {
+        
+        if source is Object {
+            return true
+        }
+        
+        let image = source as! Image
+        if showVirtualImages || !image.virtual {
+            return true
+        }
+        
+        return false
+    }
+    
+    
     func propagateRayForwards(
         
         from sourceRayPoint: RayPoint,
@@ -865,18 +874,7 @@ struct Renderer {
                 ray.point(atX: endX),
             ]
             
-            let connectToSource: Bool = {
-                if loop.currentSource is Object {
-                    return true
-                } else {
-                    let image = loop.currentSource as! Image
-                    if showVirtualImages || !image.virtual {
-                        return true
-                    }
-                }
-                return false
-            }()
-            if connectToSource {
+            if shouldConnectToSource(loop.currentSource, showVirtualImages) {
                 pointsForRay.append(ray.point(atX: loop.currentSourcePos))
             }
             
