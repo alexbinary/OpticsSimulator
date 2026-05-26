@@ -650,138 +650,34 @@ struct Renderer {
                 //                    }
                 //                }
                 
-                // continue rays forward through all devices
+                // continue rays forwards through all devices
                 
-                for __rayPoint in rayPointsOnCurrentDevice {
+                for rayPoint in rayPointsOnCurrentDevice {
                     
-                    var rayPointOnPreviousDevice = __rayPoint
+                    let rays = propagateRayForwards(
+                        from: rayPoint,
+                        sources: sources,
+                        devices: devices,
+                        sourceIndex: sourceIndex,
+                        showVirtualImages: showVirtualImages
+                    )
                     
-                    for sourceIndexForward in (sourceIndex+1)..<sources.count {
-                        
-                        let iterator = getLoopIterator(
-                            for: sources, devices, at: sourceIndexForward
-                        )
-                        let currentSource = iterator.currentSource
-                        let currentSourcePos = iterator.currentSourcePos
-                        let currentSourceTop = iterator.currentSourceTop
-                        
-                        let currentDeviceInfo = iterator.currentDeviceInfo
-                        let currentDevice = currentDeviceInfo?.device
-                        let currentDevicePos = currentDeviceInfo?.pos
-                        
-                        let previousDeviceInfo = iterator.previousDeviceInfo!
-                        let previousDevice = previousDeviceInfo.device!
-                        let previousDeviceFocalPointBefore = previousDeviceInfo.focalPointBefore
-                        let previousDeviceFocalPointAfter = previousDeviceInfo.focalPointAfter
-                        
-                        let previousDeviceIsRaySource =
-                        previousDevice.id == rayPointOnPreviousDevice.sourceDevice.id
-                        
-                        let ray = Ray(
-                            from: rayPointOnPreviousDevice.p,
-                            to: currentSourceTop
-                        )
-                        let endX = currentDevicePos ?? renderSize.width
-                        
-                        var pointsForRay: [CGPoint] = [
-                            ray.point(atX: rayPointOnPreviousDevice.p.x),
-                            ray.point(atX: endX),
-                        ]
-                        
-                        let connectToSource: Bool = {
-                            if currentSource is Object {
-                                return true
-                            } else {
-                                let image = currentSource as! Image
-                                if showVirtualImages || !image.virtual {
-                                    return true
-                                }
-                            }
-                            return false
-                        }()
-                        if connectToSource {
-                            pointsForRay.append(ray.point(atX: currentSourcePos))
-                        }
-                        
-                        if let lense = previousDevice as? Lense,
-                           lense.type == .divergent,
-                           rayPointOnPreviousDevice.hasParallelIncidence
-                        {
-                            pointsForRay.append(
-                                ray.point(atX: previousDeviceFocalPointBefore!.x)
-                            )
-                        }
-                        
-//                        if let lense = previousDevice as? Lense,
-//                           lense.type == .convergent,
-//                           rayPointOnPreviousDevice.hasParallelIncidence
-//                        {
-//                            pointsForRay.append(
-//                                ray.point(atX: previousDeviceFocalPointAfter!.x)
-//                            )
-//                        }
-                        
-                        allRayDescriptors.append(RayDescriptor(
-                            deviceBefore: previousDevice,
-                            deviceAfter: currentDevice,
-                            points: pointsForRay
-                        ))
-                        
-                        rayPointOnPreviousDevice = RayPoint(
-                            p: ray.point(atX: endX),
-                            type: .undefined,
-                            sourceDevice: rayPointOnPreviousDevice.sourceDevice
-                        )
-                    }
+                    allRayDescriptors.append(contentsOf: rays)
                 }
                 
                 // continue rays backwards through all devices
                 
-                for __rayPoint in rayPointsOnPreviousDevice {
+                for rayPoint in rayPointsOnPreviousDevice {
                     
-                    var rayPointOnCurrentDevice = __rayPoint
+                    let rays = propagateRayBackwards(
+                        from: rayPoint,
+                        sources: sources,
+                        devices: devices,
+                        sourceIndex: sourceIndex,
+                        showVirtualImages: showVirtualImages
+                    )
                     
-                    for i in 0..<sourceIndex {
-                        let sourceIndexBackwards = sourceIndex-1-i
-                        
-                        let iterator = getLoopIterator(
-                            for: sources, devices, at: sourceIndexBackwards
-                        )
-                        
-                        let currentSourcePos = iterator.currentSourcePos
-                        let currentSourceTop = iterator.currentSourceTop
-                        
-                        let currentDeviceInfo = iterator.currentDeviceInfo!
-                        let currentDevice = currentDeviceInfo.device!
-                        
-                        let previousDeviceInfo = iterator.previousDeviceInfo
-                        let previousDevice = previousDeviceInfo?.device
-                        let previousDevicePos = previousDeviceInfo?.pos
-                        
-                        let ray = Ray(
-                            from: currentSourceTop,
-                            to: rayPointOnCurrentDevice.p
-                        )
-                        
-                        let startX = previousDevicePos ?? currentSourcePos
-                        
-                        let pointsForRay: [CGPoint] = [
-                            ray.point(atX: startX),
-                            ray.point(atX: rayPointOnCurrentDevice.p.x),
-                        ]
-                        
-                        allRayDescriptors.append(RayDescriptor(
-                            deviceBefore: previousDevice,
-                            deviceAfter: currentDevice,
-                            points: pointsForRay
-                        ))
-                        
-                        rayPointOnCurrentDevice = RayPoint(
-                            p: ray.point(atX: startX),
-                            type: .undefined,
-                            sourceDevice: rayPointOnCurrentDevice.sourceDevice
-                        )
-                    }
+                    allRayDescriptors.append(contentsOf: rays)
                 }
             }
         }
@@ -933,6 +829,166 @@ struct Renderer {
                 )
             }
         }
+    }
+    
+    
+    func propagateRayForwards(
+        
+        from sourceRayPoint: RayPoint,
+        
+        sources: [ObjectOrImage],
+        devices: [OpticsDevice],
+        sourceIndex: Int,
+        
+        showVirtualImages: Bool
+        
+    ) -> [RayDescriptor] {
+        
+        var allRayDescriptors: [RayDescriptor] = []
+        
+        var rayPointOnPreviousDevice = sourceRayPoint
+        
+        for sourceIndexForward in (sourceIndex+1)..<sources.count {
+            
+            let iterator = getLoopIterator(
+                for: sources, devices, at: sourceIndexForward
+            )
+            let currentSource = iterator.currentSource
+            let currentSourcePos = iterator.currentSourcePos
+            let currentSourceTop = iterator.currentSourceTop
+            
+            let currentDeviceInfo = iterator.currentDeviceInfo
+            let currentDevice = currentDeviceInfo?.device
+            let currentDevicePos = currentDeviceInfo?.pos
+            
+            let previousDeviceInfo = iterator.previousDeviceInfo!
+            let previousDevice = previousDeviceInfo.device!
+            let previousDeviceFocalPointBefore = previousDeviceInfo.focalPointBefore
+            let previousDeviceFocalPointAfter = previousDeviceInfo.focalPointAfter
+            
+            let previousDeviceIsRaySource =
+            previousDevice.id == rayPointOnPreviousDevice.sourceDevice.id
+            
+            let ray = Ray(
+                from: rayPointOnPreviousDevice.p,
+                to: currentSourceTop
+            )
+            let endX = currentDevicePos ?? renderSize.width
+            
+            var pointsForRay: [CGPoint] = [
+                ray.point(atX: rayPointOnPreviousDevice.p.x),
+                ray.point(atX: endX),
+            ]
+            
+            let connectToSource: Bool = {
+                if currentSource is Object {
+                    return true
+                } else {
+                    let image = currentSource as! Image
+                    if showVirtualImages || !image.virtual {
+                        return true
+                    }
+                }
+                return false
+            }()
+            if connectToSource {
+                pointsForRay.append(ray.point(atX: currentSourcePos))
+            }
+            
+            if let lense = previousDevice as? Lense,
+               lense.type == .divergent,
+               rayPointOnPreviousDevice.hasParallelIncidence
+            {
+                pointsForRay.append(
+                    ray.point(atX: previousDeviceFocalPointBefore!.x)
+                )
+            }
+            
+//                        if let lense = previousDevice as? Lense,
+//                           lense.type == .convergent,
+//                           rayPointOnPreviousDevice.hasParallelIncidence
+//                        {
+//                            pointsForRay.append(
+//                                ray.point(atX: previousDeviceFocalPointAfter!.x)
+//                            )
+//                        }
+            
+            allRayDescriptors.append(RayDescriptor(
+                deviceBefore: previousDevice,
+                deviceAfter: currentDevice,
+                points: pointsForRay
+            ))
+            
+            rayPointOnPreviousDevice = RayPoint(
+                p: ray.point(atX: endX),
+                type: .undefined,
+                sourceDevice: rayPointOnPreviousDevice.sourceDevice
+            )
+        }
+        
+        return allRayDescriptors
+    }
+    
+    
+    func propagateRayBackwards(
+    
+        from sourceRayPoint: RayPoint,
+        
+        sources: [ObjectOrImage],
+        devices: [OpticsDevice],
+        sourceIndex: Int,
+        
+        showVirtualImages: Bool
+        
+    ) -> [RayDescriptor] {
+        
+        var allRayDescriptors: [RayDescriptor] = []
+        
+        var rayPointOnCurrentDevice = sourceRayPoint
+        
+        for i in 0..<sourceIndex {
+            let sourceIndexBackwards = sourceIndex-1-i
+            
+            let iterator = getLoopIterator(
+                for: sources, devices, at: sourceIndexBackwards
+            )
+            
+            let currentSourcePos = iterator.currentSourcePos
+            let currentSourceTop = iterator.currentSourceTop
+            
+            let currentDeviceInfo = iterator.currentDeviceInfo!
+            let currentDevice = currentDeviceInfo.device!
+            
+            let previousDeviceInfo = iterator.previousDeviceInfo
+            let previousDevice = previousDeviceInfo?.device
+            let previousDevicePos = previousDeviceInfo?.pos
+            
+            let ray = Ray(
+                from: currentSourceTop,
+                to: rayPointOnCurrentDevice.p
+            )
+            
+            let startX = previousDevicePos ?? currentSourcePos
+            
+            let pointsForRay: [CGPoint] = [
+                ray.point(atX: startX),
+                ray.point(atX: rayPointOnCurrentDevice.p.x),
+            ]
+            
+            allRayDescriptors.append(RayDescriptor(
+                deviceBefore: previousDevice,
+                deviceAfter: currentDevice,
+                points: pointsForRay
+            ))
+            
+            rayPointOnCurrentDevice = RayPoint(
+                p: ray.point(atX: startX),
+                type: .undefined,
+                sourceDevice: rayPointOnCurrentDevice.sourceDevice
+            )
+        }
+        
+        return allRayDescriptors
     }
     
     
