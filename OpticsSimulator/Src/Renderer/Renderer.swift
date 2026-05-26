@@ -388,57 +388,46 @@ struct Renderer {
                     break
                 }
                 
-                let currentDevice = loop.currentDevice!
-                let currentDevicePos = loop.currentDevicePos!
-                let currentDeviceCenter = loop.currentDeviceCenter!
-                
-                let currentSource = loop.currentSource
-                let currentSourcePos = loop.currentSourcePos
-                let currentSourceTop = loop.currentSourceTop
-                
-                if currentDevice is Screen,
-                   currentSource is Image {
+                if loop.currentDevice! is Screen,
+                   loop.currentSource is Image {
                     
                     break
                 }
-                
-                let previousDevice = loop.previousDevice
-                let previousDevicePos = loop.previousDevicePos
                 
                 var rayPointsOnPreviousDevice: [RayPoint] = []
                 var rayPointsOnCurrentDevice: [RayPoint] = []
                 
                 // parallel ray
                 
-                if shouldGenerateParallelRay(to: currentDevice) {
+                if shouldGenerateParallelRay(to: loop.currentDevice!) {
                     
                     let ray = Ray(
-                        horizontalFrom: currentSourceTop
+                        horizontalFrom: loop.currentSourceTop
                     )
                     
                     var pointsForRay: [CGPoint] = [
-                        ray.point(atX: currentDevicePos),
+                        ray.point(atX: loop.currentDevicePos!),
                     ]
                     
-                    if shouldConnectToSource(currentSource, showVirtualImages) {
-                        pointsForRay.append(ray.point(atX: currentSourcePos))
+                    if shouldConnectToSource(loop.currentSource, showVirtualImages) {
+                        pointsForRay.append(ray.point(atX: loop.currentSourcePos))
                     }
                     
                     let pointFromRayOnCurrentDevice =
                     ray.point(
-                        atX: currentDevicePos
+                        atX: loop.currentDevicePos!
                     )
                     
                     rayPointsOnCurrentDevice.append(RayPoint(
                         p: pointFromRayOnCurrentDevice,
                         type: .parallel,
-                        sourceDevice: currentDevice,
-                        source: currentSource,
+                        sourceDevice: loop.currentDevice!,
+                        source: loop.currentSource,
                         horizontalIncidence: true
                     ))
                     
-                    if shouldRetroPropagateRays(from: currentDevice),
-                       let previousDevicePos = previousDevicePos {
+                    if shouldRetroPropagateRays(from: loop.currentDevice!),
+                       let previousDevicePos = loop.previousDevicePos {
                         
                         pointsForRay.append(
                             ray.point(atX: previousDevicePos)
@@ -452,50 +441,50 @@ struct Renderer {
                         rayPointsOnPreviousDevice.append(RayPoint(
                             p: pointFromRayOnPreviousDevice,
                             type: .parallel,
-                            sourceDevice: currentDevice,
-                            source: currentSource,
+                            sourceDevice: loop.currentDevice!,
+                            source: loop.currentSource,
                             horizontalIncidence: true
                         ))
                     }
                     
                     allRayDescriptors.append(RayDescriptor(
-                        deviceBefore: previousDevice,
-                        deviceAfter: currentDevice,
+                        deviceBefore: loop.previousDevice,
+                        deviceAfter: loop.currentDevice!,
                         points: pointsForRay
                     ))
                 }
                 
                 // center ray
                 
-                if shouldGenerateCenterRay(to: currentDevice) {
+                if shouldGenerateCenterRay(to: loop.currentDevice!) {
                     
                     let ray = Ray(
-                        from: currentSourceTop,
-                        to: currentDeviceCenter,
+                        from: loop.currentSourceTop,
+                        to: loop.currentDeviceCenter!,
                     )
                     
                     var pointsForRay: [CGPoint] = [
-                        ray.point(atX: currentDevicePos),
+                        ray.point(atX: loop.currentDevicePos!),
                     ]
                     
-                    if shouldConnectToSource(currentSource, showVirtualImages) {
-                        pointsForRay.append(ray.point(atX: currentSourcePos))
+                    if shouldConnectToSource(loop.currentSource, showVirtualImages) {
+                        pointsForRay.append(ray.point(atX: loop.currentSourcePos))
                     }
                     
                     let pointFromRayOnCurrentDevice =
                     ray.point(
-                        atX: currentDevicePos
+                        atX: loop.currentDevicePos!
                     )
                     
                     rayPointsOnCurrentDevice.append(RayPoint(
                         p: pointFromRayOnCurrentDevice,
                         type: .center,
-                        sourceDevice: currentDevice,
-                        source: currentSource
+                        sourceDevice: loop.currentDevice!,
+                        source: loop.currentSource
                     ))
                     
-                    if shouldRetroPropagateRays(from: currentDevice),
-                       let previousDevicePos = previousDevicePos {
+                    if shouldRetroPropagateRays(from: loop.currentDevice!),
+                       let previousDevicePos = loop.previousDevicePos {
                         
                         pointsForRay.append(
                             ray.point(atX: previousDevicePos)
@@ -509,79 +498,73 @@ struct Renderer {
                         rayPointsOnPreviousDevice.append(RayPoint(
                             p: pointFromRayOnPreviousDevice,
                             type: .center,
-                            sourceDevice: currentDevice,
-                            source: currentSource
+                            sourceDevice: loop.currentDevice!,
+                            source: loop.currentSource
                         ))
                     }
                     
                     allRayDescriptors.append(RayDescriptor(
-                        deviceBefore: previousDevice,
-                        deviceAfter: currentDevice,
+                        deviceBefore: loop.previousDevice,
+                        deviceAfter: loop.currentDevice!,
                         points: pointsForRay
                     ))
                 }
-                //
-                //                // focal ray
-                //
-                //                if let deviceAfterFocalPoint = deviceAfterFocalPoint {
-                //
-                //                    let focalRay = Ray(
-                //                        from: sourceTop, to: deviceAfterFocalPoint,
-                //                    )
-                //
-                //                    let pointFromFocalPointOnDeviceBefore = focalRay.point(
-                //                        atX: deviceBeforePos ?? currentSource.pos
-                //                    )
-                //
-                //                    let pointFromFocalPointOnDeviceAfter = focalRay.point(
-                //                        atX: deviceAfterPos
-                //                    )
-                //
-                //                    if let lense = deviceAfter as? Lense,
-                //                       lense.generatesFocalRay {
-                //
-                //                        draw(
-                //                            focalRay,
-                //                            betweenX: deviceBeforePos ?? currentSource.pos, andX: deviceAfterPos
-                //                        )
-                //
-                //                        if sourcePos < deviceBeforePos ?? currentSource.pos {
-                //
-                //                            draw(
-                //                                focalRay,
-                //                                betweenX: sourcePos, andX: deviceBeforePos ?? currentSource.pos,
-                //                                virtual: true
-                //                            )
-                //                        }
-                //
-                //                        if sourcePos > deviceAfterFocalPoint.x {
-                //
-                //                            draw(
-                //                                focalRay,
-                //                                betweenX: deviceAfterFocalPoint.x, andX: sourcePos,
-                //                                virtual: true
-                //                            )
-                //                        }
-                //
-                ////                        if let lense = deviceAfter as? Lense,
-                ////                           lense.type == .divergent {
-                ////
-                ////                            drawRay(
-                ////                                from: deviceAfterFocalPoint,
-                ////                                to: pointFromHorizontalOnDeviceAfter,
-                ////                                minX: deviceAfterFocalPoint.x, maxX: deviceAfterPos,
-                ////                                virtual: true
-                ////                            )
-                ////                        }
-                //
-                //                        pointsOnDeviceBefore.append(RayPoint(
-                //                            p: pointFromFocalPointOnDeviceAfter, type: .focal
-                //                        ))
-                //                        pointsOnDeviceAfter.append(RayPoint(
-                //                            p: pointFromFocalPointOnDeviceBefore, type: .focal
-                //                        ))
-                //                    }
-                //                }
+                
+                // focal ray
+                
+                if shouldGenerateFocalRay(to: loop.currentDevice!) {
+                    
+                    let ray = Ray(
+                        from: loop.currentSourceTop,
+                        to: loop.currentDeviceFocalPointBefore!,
+                    )
+                    
+                    var pointsForRay: [CGPoint] = [
+                        ray.point(atX: loop.currentDevicePos!),
+                    ]
+                    
+                    if shouldConnectToSource(loop.currentSource, showVirtualImages) {
+                        pointsForRay.append(ray.point(atX: loop.currentSourcePos))
+                    }
+                    
+                    let pointFromRayOnCurrentDevice =
+                    ray.point(
+                        atX: loop.currentDevicePos!
+                    )
+                    
+                    rayPointsOnCurrentDevice.append(RayPoint(
+                        p: pointFromRayOnCurrentDevice,
+                        type: .focal,
+                        sourceDevice: loop.currentDevice!,
+                        source: loop.currentSource
+                    ))
+                    
+                    if shouldRetroPropagateRays(from: loop.currentDevice!),
+                       let previousDevicePos = loop.previousDevicePos {
+                        
+                        pointsForRay.append(
+                            ray.point(atX: previousDevicePos)
+                        )
+                        
+                        let pointFromRayOnPreviousDevice =
+                        ray.point(
+                            atX: previousDevicePos
+                        )
+                        
+                        rayPointsOnPreviousDevice.append(RayPoint(
+                            p: pointFromRayOnPreviousDevice,
+                            type: .focal,
+                            sourceDevice: loop.currentDevice!,
+                            source: loop.currentSource
+                        ))
+                    }
+                    
+                    allRayDescriptors.append(RayDescriptor(
+                        deviceBefore: loop.previousDevice,
+                        deviceAfter: loop.currentDevice!,
+                        points: pointsForRay
+                    ))
+                }
                 
                 // continue rays forwards through all devices
                 
@@ -799,6 +782,21 @@ struct Renderer {
         if device is Screen {
             
             return true
+        }
+        
+        return false
+    }
+    
+    
+    func shouldGenerateFocalRay(
+    
+        to device: OpticsDevice
+        
+    ) -> Bool {
+        
+        if let lense = device as? Lense {
+            
+            return lense.generatesFocalRay
         }
         
         return false
