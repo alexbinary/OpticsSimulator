@@ -36,16 +36,28 @@ struct RaySegment {
     
     func isVisuallyOverlapping(with s: RaySegment) -> Bool {
         
+        let s1 = self
+        let s2 = s
+        
         if self.isVisuallyColinear(with: s) {
             
             return (
-                self.p1.isXStrictlyBetween(s.p1, and: s.p2)
+                
+                s1.p1.isXStrictlyBetween(s2.p1, and: s2.p2)
                 ||
-                self.p2.isXStrictlyBetween(s.p1, and: s.p2)
+                s1.p2.isXStrictlyBetween(s2.p1, and: s2.p2)
+                
                 ||
-                s.p1.isXStrictlyBetween(self.p1, and: self.p2)
+                
+                s2.p1.isXStrictlyBetween(s1.p1, and: s1.p2)
                 ||
-                s.p2.isXStrictlyBetween(self.p1, and: self.p2)
+                s2.p2.isXStrictlyBetween(s1.p1, and: s1.p2)
+                
+                ||
+                
+                s1.p1.isVisuallySame(as: s2.p1)
+                &&
+                s1.p2.isVisuallySame(as: s2.p2)
             )
         }
         
@@ -245,11 +257,6 @@ func deduplicate(
             )
             
             segments = merge(segments)
-            
-            segments = removeZeroLengthSegments(
-            
-                from: segments
-            )
             
             for segment in segments {
                 

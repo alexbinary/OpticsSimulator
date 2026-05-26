@@ -1105,8 +1105,7 @@ struct Renderer {
 //        if raySegments.count > 2 {
 //            raySegments = [
 //                raySegments[0],
-//                raySegments[1],
-//                raySegments[2],
+//                raySegments[5],
 //            ]
 //        }
         
