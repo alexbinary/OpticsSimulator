@@ -39,18 +39,18 @@ class Lense: OpticsDevice, Identifiable {
     var type: LenseType
     var focalLength: CGFloat
     
-    var generatesParallelRay: Bool = false
-    var generatesCenterRay: Bool = true
-    var generatesFocalRay: Bool = true
+    var generatesParallelRay: Bool
+    var generatesCenterRay: Bool
+    var generatesFocalRay: Bool
     
-    var retroPropagatesRays: Bool = false
+    var retroPropagatesRays: Bool
     
     init(
         name: String, pos: CGFloat, type: LenseType, focalLength: CGFloat,
-        generatesParallelRay: Bool = false,
+        generatesParallelRay: Bool = true,
         generatesCenterRay: Bool = true,
         generatesFocalRay: Bool = true,
-        retroPropagatesRays: Bool = false,
+        retroPropagatesRays: Bool = true,
         enabled: Bool = true, visible: Bool = true
     ) {
         self.name = name

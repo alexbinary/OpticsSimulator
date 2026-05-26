@@ -343,7 +343,14 @@ struct Renderer {
         return images
     }
     
-    func render(_ scene: OpticsScene, showVirtualImages: Bool) {
+    func render(
+        
+        _ scene: OpticsScene,
+        
+        showImages: Bool,
+        showVirtualImages: Bool
+    
+    ) {
         
         // compute images and rays
         
@@ -524,9 +531,11 @@ struct Renderer {
         for screen in scene.screens.filter({ $0.enabled }) {
             draw(screen)
         }
-        for image in allImagesOfAllObjects {
-            if showVirtualImages || !image.virtual {
-                draw(image, virtual: image.virtual)
+        if showImages {
+            for image in allImagesOfAllObjects {
+                if showVirtualImages || !image.virtual {
+                    draw(image, virtual: image.virtual)
+                }
             }
         }
         drawRays(from: allRayDescriptors)

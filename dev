@@ -4,7 +4,10 @@ case "$1" in
 		clear
 		git status
 		;;
+	data)
+		code /Users/alexandrebintz/Library/Containers/io.bintz.OpticsSimulator/Data/data
+		;;
 	*)
-		echo "Usage: dev {open}"
+		echo "Usage: dev {open, data}"
 		;;
 esac

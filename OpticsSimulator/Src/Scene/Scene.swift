@@ -12,6 +12,9 @@ class OpticsScene {
     var mirrors: [SphericalMirror] { devices.compactMap { $0 as? SphericalMirror }}
     var screens: [Screen] { devices.compactMap { $0 as? Screen }}
     
+    var showImages: Bool = true
+    var showVirtualImages: Bool = true
+
     
     func add(_ object: Object) {
         self.objects.append(object)
@@ -168,6 +171,7 @@ class OpticsScene {
     
     let presetsFileUrl: URL = {
         let path = FileManager.default.currentDirectoryPath.appending("/data/data.json5")
+        print(path)
         return URL(fileURLWithPath: path)
     }()
     
@@ -180,6 +184,8 @@ class OpticsScene {
             
             self.presets = decodedData.presets
             self.activePresetIndex = decodedData.activePresetIndex
+            self.showImages = decodedData.showImages
+            self.showVirtualImages = decodedData.showVirtualImages
             
         } else {
             
@@ -193,7 +199,10 @@ class OpticsScene {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         
         let rawData = try! encoder.encode(FileRoot(
-            activePresetIndex: activePresetIndex, presets: presets
+            activePresetIndex: activePresetIndex,
+            presets: presets,
+            showImages: showImages,
+            showVirtualImages: showVirtualImages
         ))
         try! rawData.write(to: self.presetsFileUrl)
     }
@@ -262,4 +271,7 @@ struct FileRoot: Codable {
     
     let activePresetIndex: Int?
     let presets: [ScenePresetDescriptor]
+    
+    var showImages: Bool
+    var showVirtualImages: Bool
 }
