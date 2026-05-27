@@ -220,14 +220,19 @@ struct Renderer {
     }
     
     func drawRay(
+        
         from p1: CGPoint, to p2: CGPoint,
         minX: CGFloat? = nil, maxX: CGFloat? = nil,
-        virtual: Bool = false
+        virtual: Bool = false,
+        lineWidth: CGFloat = 1, opacity: CGFloat = 1
+        
     ) {
+        
         draw(
             Ray(from: p1, to: p2),
             minX: minX ?? p1.x, maxX: maxX ?? p2.x,
-            virtual: virtual
+            virtual: virtual,
+            lineWidth: lineWidth, opacity: opacity
         )
     }
     
@@ -235,7 +240,8 @@ struct Renderer {
         
         _ ray: Ray,
         minX: CGFloat, maxX: CGFloat,
-        virtual: Bool = false
+        virtual: Bool = false,
+        lineWidth: CGFloat = 1, opacity: CGFloat = 1
         
     ) {
         
@@ -246,29 +252,19 @@ struct Renderer {
             atX: maxX
         )
         
-        drawRay(
-            from: startPoint,
-            to: endPoint,
-            virtual: virtual
-        )
-    }
-    
-    func drawRay(
-        
-        from startPoint: CGPoint, to endPoint: CGPoint,
-        virtual: Bool = false, highlighted: Bool = false
-        
-    ) {
-        
         var path = Path()
         
         path.move(to: startPoint)
         path.addLine(to: endPoint)
         
-        context.stroke(path, with: .color(.yellow), style: StrokeStyle(
-            lineWidth: highlighted ? 3 : 1,
-            dash: virtual ? [4, 4] : []
-        ))
+        context.stroke(
+            path,
+            with: .color(.yellow.opacity(opacity)),
+            style: StrokeStyle(
+                lineWidth: lineWidth,
+                dash: virtual ? [4, 4] : []
+            )
+        )
     }
     
     func resolvedPos(from rawPos: CGFloat) -> CGFloat {
@@ -468,6 +464,8 @@ struct Renderer {
                 
                 for (ray, horizontalIncidence, points) in rays {
                     
+                    let rayId = UUID()
+                    
                     var pointsForRay: [CGPoint] = [
                         ray.point(atX: loop.currentDevicePos!),
                     ]
@@ -483,7 +481,9 @@ struct Renderer {
                     
                     rayPointsOnCurrentDevice.append(RayPoint(
                         point: pointFromRayOnCurrentDevice,
-                        horizontalIncidence: horizontalIncidence
+                        rayId: rayId,
+                        horizontalIncidence: horizontalIncidence,
+                        
                     ))
                     
                     for x in points {
@@ -504,6 +504,7 @@ struct Renderer {
                         
                         rayPointsOnPreviousDevice.append(RayPoint(
                             point: pointFromRayOnPreviousDevice,
+                            rayId: rayId,
                             horizontalIncidence: horizontalIncidence
                         ))
                     }
@@ -512,6 +513,7 @@ struct Renderer {
                         deviceBefore: loop.previousDevice,
                         deviceAfter: loop.currentDevice!,
                         source: loop.currentSource,
+                        rayId: rayId,
                         points: pointsForRay
                     ))
                 }
@@ -845,11 +847,13 @@ struct Renderer {
                 deviceBefore: loop.previousDevice,
                 deviceAfter: loop.currentDevice,
                 source: loop.currentSource,
+                rayId: rayPointOnPreviousDevice.rayId,
                 points: pointsForRay
             ))
             
             rayPointOnPreviousDevice = RayPoint(
-                point: ray.point(atX: endX)
+                point: ray.point(atX: endX),
+                rayId: rayPointOnPreviousDevice.rayId
             )
         }
         
@@ -897,11 +901,13 @@ struct Renderer {
                 deviceBefore: loop.previousDevice,
                 deviceAfter: loop.currentDevice,
                 source: loop.currentSource,
+                rayId: rayPointOnCurrentDevice.rayId,
                 points: pointsForRay
             ))
             
             rayPointOnCurrentDevice = RayPoint(
-                point: ray.point(atX: startX)
+                point: ray.point(atX: startX),
+                rayId: rayPointOnCurrentDevice.rayId
             )
         }
         
@@ -1058,11 +1064,33 @@ struct Renderer {
         
         raySegments = deduplicate(raySegments)
         
-        raySegments = highlight(raySegments, from: mouse)
+        let hoverSegment = raySegments.first(where: { segment in
+            
+            let ray = Ray(from: segment.p1, to: segment.p2)
+            
+            return (
+                mouse.distanceTo(ray.point(atX: mouse.x)) < 10
+                && mouse.isXStrictlyBetween(segment.p1, and: segment.p2)
+            )
+        })
+        
+        if let hoverSegment {
+            
+            raySegments = highlight(
+                raySegments,
+                withRayId: hoverSegment.rayId
+            )
+        }
         
         drawRays(
             from: raySegments,
-            showVirtualRays: showVirtualRays
+            showVirtualRays: showVirtualRays,
+            
+            lineWidthDefault: 1,
+            lineWidthHightlighted: 3,
+            
+            opacityDefault: hoverSegment != nil ? 0.2 : 1,
+            opacityHightlighted: 1
         )
     }
     
@@ -1070,7 +1098,7 @@ struct Renderer {
     func highlight(
         
         _ raySegments: [RaySegment],
-        from mouse: CGPoint
+        withRayId rayId: UUID
     
     ) -> [RaySegment] {
         
@@ -1078,16 +1106,12 @@ struct Renderer {
         
         for segment in raySegments {
             
-            let ray = Ray(from: segment.p1, to: segment.p2)
-            
             segments.append(RaySegment(
                 p1: segment.p1,
                 p2: segment.p2,
                 virtual: segment.virtual,
-                highlighted: {
-                    ray.point(atX: mouse.x).distanceTo(mouse) < 10
-                    && mouse.isXStrictlyBetween(segment.p1, and: segment.p2)
-                }()
+                highlighted: segment.rayId == rayId,
+                rayId: segment.rayId
             ))
         }
         
@@ -1098,8 +1122,13 @@ struct Renderer {
     func drawRays(
     
         from raySegments: [RaySegment],
-        showVirtualRays: Bool
+        showVirtualRays: Bool,
         
+        lineWidthDefault: CGFloat,
+        lineWidthHightlighted: CGFloat,
+        
+        opacityDefault: CGFloat,
+        opacityHightlighted: CGFloat,
     ) {
         
         for segment in raySegments {
@@ -1110,7 +1139,12 @@ struct Renderer {
                     from: segment.p1,
                     to: segment.p2,
                     virtual: segment.virtual,
-                    highlighted: segment.highlighted
+                    lineWidth: segment.highlighted
+                        ? lineWidthHightlighted
+                        : lineWidthDefault,
+                    opacity: segment.highlighted
+                        ? opacityHightlighted
+                        : opacityDefault
                 )
             }
         }
@@ -1208,19 +1242,25 @@ struct Renderer {
             }().sorted { $0.x < $1.x }
             
             if let segment = getRaySegment(
-                from: pointsBefore, virtual: true
+                from: pointsBefore,
+                rayId: rayDescriptor.rayId,
+                virtual: true
             ) {
                 raySegments.append(segment)
             }
             
             if let segment = getRaySegment(
-                from: pointsBetween, virtual: false
+                from: pointsBetween,
+                rayId: rayDescriptor.rayId,
+                virtual: false
             ) {
                 raySegments.append(segment)
             }
             
             if let segment = getRaySegment(
-                from: pointsAfter, virtual: true
+                from: pointsAfter,
+                rayId: rayDescriptor.rayId,
+                virtual: true
             ) {
                 raySegments.append(segment)
             }

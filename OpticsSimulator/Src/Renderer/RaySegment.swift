@@ -10,6 +10,19 @@ struct RaySegment {
     let p2: CGPoint
     let virtual: Bool
     let highlighted: Bool
+    let rayId: UUID
+    
+    init(
+        p1: CGPoint, p2: CGPoint,
+        virtual: Bool = false, highlighted: Bool = false,
+        rayId: UUID
+    ) {
+        self.p1 = p1
+        self.p2 = p2
+        self.virtual = virtual
+        self.highlighted = highlighted
+        self.rayId = rayId
+    }
     
     func isVisuallySame(as s: RaySegment) -> Bool {
         
@@ -182,7 +195,9 @@ extension CGPoint {
 
 func getRaySegment(
     
-    from points: [CGPoint], virtual: Bool
+    from points: [CGPoint],
+    rayId: UUID,
+    virtual: Bool
     
 ) -> RaySegment? {
     
@@ -195,7 +210,8 @@ func getRaySegment(
         let raySegment = RaySegment(
             p1: p1, p2: p2,
             virtual: virtual,
-            highlighted: false
+            highlighted: false,
+            rayId: rayId
         )
         
         return raySegment
@@ -258,7 +274,8 @@ func deduplicate(
                     virtual: resolveVirtual(
                         from: s.originalSegments.map { $0.virtual }
                     ),
-                    highlighted: false
+                    highlighted: false,
+                    rayId: candidateSegment.rayId
                 )
             }
             
@@ -309,7 +326,8 @@ func merge(_ segments: [RaySegment]) -> [RaySegment] {
                     p1: draftSegment!.p1,
                     p2: segment.p2,
                     virtual: draftSegment!.virtual,
-                    highlighted: false
+                    highlighted: false,
+                    rayId: segment.rayId
                 )
                 
             } else {
