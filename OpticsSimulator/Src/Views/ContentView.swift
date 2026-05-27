@@ -5,10 +5,14 @@ struct ContentView: View {
     
     @State private var scene = OpticsScene()
     @State private var activeScenePresetIndex: Int = 0
+    
+    @State private var mouse: CGPoint = .zero
 
     var body: some View {
         
         HStack(alignment: .top) {
+            
+            
             
             Canvas { context, size in
                 
@@ -24,9 +28,17 @@ struct ContentView: View {
                     scene,
                     showImages: scene.showImages,
                     showVirtualImages: scene.showVirtualImages,
-                    showVirtualRays: scene.showVirtualRays
+                    showVirtualRays: scene.showVirtualRays,
+                    mouse: mouse.applying(CGAffineTransform(
+                        translationX: 0, y: -size.height/2
+                    ))
                 )
             }
+            .background(
+                MouseTrackingArea { point in
+                    mouse = point
+                }
+            )
             
             Divider()
             

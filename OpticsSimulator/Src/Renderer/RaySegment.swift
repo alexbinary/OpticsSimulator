@@ -9,6 +9,7 @@ struct RaySegment {
     let p1: CGPoint
     let p2: CGPoint
     let virtual: Bool
+    let highlighted: Bool
     
     func isVisuallySame(as s: RaySegment) -> Bool {
         
@@ -152,11 +153,19 @@ struct SubSegment {
 
 extension CGPoint {
     
+    func distanceTo(_ p: CGPoint) -> CGFloat {
+        
+        let p1 = self
+        let p2 = p
+        
+        return sqrt(pow(p1.x-p2.x, 2)+pow(p1.y-p2.y, 2))
+    }
+    
     func isVisuallySame(as p: CGPoint) -> Bool {
         
         let e = 0.01
         
-        return abs(self.x - p.x) < e && abs(self.y - p.y) < e
+        return self.distanceTo(p) < e
     }
     
     func isVisuallyDistinct(from p: CGPoint) -> Bool {
@@ -185,7 +194,8 @@ func getRaySegment(
         
         let raySegment = RaySegment(
             p1: p1, p2: p2,
-            virtual: virtual
+            virtual: virtual,
+            highlighted: false
         )
         
         return raySegment
@@ -247,7 +257,8 @@ func deduplicate(
                     p2: s.p2,
                     virtual: resolveVirtual(
                         from: s.originalSegments.map { $0.virtual }
-                    )
+                    ),
+                    highlighted: false
                 )
             }
             
@@ -297,7 +308,8 @@ func merge(_ segments: [RaySegment]) -> [RaySegment] {
                 draftSegment = RaySegment(
                     p1: draftSegment!.p1,
                     p2: segment.p2,
-                    virtual: draftSegment!.virtual
+                    virtual: draftSegment!.virtual,
+                    highlighted: false
                 )
                 
             } else {

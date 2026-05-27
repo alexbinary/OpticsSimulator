@@ -256,7 +256,7 @@ struct Renderer {
     func drawRay(
         
         from startPoint: CGPoint, to endPoint: CGPoint,
-        virtual: Bool = false
+        virtual: Bool = false, highlighted: Bool = false
         
     ) {
         
@@ -266,7 +266,7 @@ struct Renderer {
         path.addLine(to: endPoint)
         
         context.stroke(path, with: .color(.yellow), style: StrokeStyle(
-            lineWidth: 1,
+            lineWidth: highlighted ? 3 : 1,
             dash: virtual ? [4, 4] : []
         ))
     }
@@ -366,10 +366,11 @@ struct Renderer {
         
         showImages: Bool,
         showVirtualImages: Bool,
-        showVirtualRays: Bool
+        showVirtualRays: Bool,
+        
+        mouse: CGPoint
     
     ) {
-        
         // compute images and rays
         
         let enabledObjects = scene.objects
@@ -572,7 +573,8 @@ struct Renderer {
         }
         drawRays(
             from: allRayDescriptors,
-            showVirtualRays: showVirtualRays
+            showVirtualRays: showVirtualRays,
+            mouse: mouse
         )
         
         
@@ -1034,7 +1036,8 @@ struct Renderer {
     func drawRays(
         
         from rayDescriptors: [RayDescriptor],
-        showVirtualRays: Bool
+        showVirtualRays: Bool,
+        mouse: CGPoint
         
     ) {
         
@@ -1055,10 +1058,40 @@ struct Renderer {
         
         raySegments = deduplicate(raySegments)
         
+        raySegments = highlight(raySegments, from: mouse)
+        
         drawRays(
             from: raySegments,
             showVirtualRays: showVirtualRays
         )
+    }
+    
+    
+    func highlight(
+        
+        _ raySegments: [RaySegment],
+        from mouse: CGPoint
+    
+    ) -> [RaySegment] {
+        
+        var segments: [RaySegment] = []
+        
+        for segment in raySegments {
+            
+            let ray = Ray(from: segment.p1, to: segment.p2)
+            
+            segments.append(RaySegment(
+                p1: segment.p1,
+                p2: segment.p2,
+                virtual: segment.virtual,
+                highlighted: {
+                    ray.point(atX: mouse.x).distanceTo(mouse) < 10
+                    && mouse.isXStrictlyBetween(segment.p1, and: segment.p2)
+                }()
+            ))
+        }
+        
+        return segments
     }
     
     
@@ -1076,7 +1109,8 @@ struct Renderer {
                 drawRay(
                     from: segment.p1,
                     to: segment.p2,
-                    virtual: segment.virtual
+                    virtual: segment.virtual,
+                    highlighted: segment.highlighted
                 )
             }
         }
