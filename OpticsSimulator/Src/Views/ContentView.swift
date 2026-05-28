@@ -60,7 +60,7 @@ struct ContentView: View {
                             Button {
                                 scene.add(Screen(
                                     name: "Screen \(scene.screens.count+1)",
-                                    pos: 0.9
+                                    pos: 0.9, facesLeft: true
                                 ))
                             } label: {
                                 Text("Add screen")
@@ -321,6 +321,11 @@ struct ContentView: View {
                                         Text("Position")
                                     }
                                     Text("\(screen.pos, specifier: "%.2f")")
+                                }
+                                Picker("Direction", selection: $screen.facesLeft) {
+                                    ForEach([true, false], id: \.self) { value in
+                                        Text(value ? "Left" : "Right").tag(value)
+                                    }
                                 }
                             }
                         }

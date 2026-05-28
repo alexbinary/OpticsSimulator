@@ -85,7 +85,8 @@ class OpticsScene {
                     enabled: screen.enabled,
                     visible: screen.visible,
                     pos: screen.pos,
-                    name: screen.name
+                    name: screen.name,
+                    facesLeft: screen.facesLeft
                 )
             },
             showImages: showImages,
@@ -161,6 +162,7 @@ class OpticsScene {
             Screen(
                 name: descriptor.name,
                 pos: descriptor.pos,
+                facesLeft: descriptor.facesLeft,
                 enabled: descriptor.enabled,
                 visible: descriptor.visible
             )
@@ -271,6 +273,7 @@ struct ScreenDescriptor: Codable {
     
     let pos: CGFloat
     let name: String
+    let facesLeft: Bool
 }
 
 struct ScenePresetDescriptor: Codable {

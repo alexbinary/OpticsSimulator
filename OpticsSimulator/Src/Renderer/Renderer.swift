@@ -211,7 +211,12 @@ struct Renderer {
             let hi: CGFloat = -h + CGFloat(i)*2*h/CGFloat(n)
             
             path.move(to: CGPoint(x: x, y: hi))
-            path.addLine(to: CGPoint(x: x+a, y: hi-a))
+            
+            if screen.facesLeft {
+                path.addLine(to: CGPoint(x: x+a, y: hi-a))
+            } else {
+                path.addLine(to: CGPoint(x: x-a, y: hi+a))
+            }
         }
         
         context.stroke(path, with: .color(color), lineWidth: 2)

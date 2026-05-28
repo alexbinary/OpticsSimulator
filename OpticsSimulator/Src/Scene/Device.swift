@@ -119,12 +119,14 @@ class Mirror: OpticsDevice, Identifiable {
 class Screen: OpticsDevice, Identifiable {
     
     var name: String
+    var facesLeft: Bool
     
     init(
-        name: String, pos: CGFloat,
+        name: String, pos: CGFloat, facesLeft: Bool,
         enabled: Bool = true, visible: Bool = true
     ) {
         self.name = name
+        self.facesLeft = facesLeft
         super.init(pos: pos, enabled: enabled, visible: visible)
     }
 }
