@@ -68,12 +68,13 @@ class Lense: OpticsDevice, Identifiable {
 
 enum MirrorType: CaseIterable, Identifiable, Codable {
     
-    case convex, concave
+    case plane, convex, concave
     
     var id: Self { self }
     
     var label: String {
         switch self {
+        case .plane: return "Plan"
         case .convex: return "Convex"
         case .concave: return "Concave"
         }
@@ -81,19 +82,34 @@ enum MirrorType: CaseIterable, Identifiable, Codable {
 }
 
 @Observable
-class SphericalMirror: OpticsDevice, Identifiable {
+class Mirror: OpticsDevice, Identifiable {
     
     var name: String
     var type: MirrorType
     var focalLength: CGFloat
     
+    var generatesParallelRay: Bool
+    var generatesCenterRay: Bool
+    var generatesFocalRay: Bool
+    var generatesCurveCenterRay: Bool
+    
     init(
         name: String, pos: CGFloat, type: MirrorType, focalLength: CGFloat,
+        generatesParallelRay: Bool = true,
+        generatesCenterRay: Bool = true,
+        generatesFocalRay: Bool = true,
+        generatesCurveCenterRay: Bool = true,
         enabled: Bool = true, visible: Bool = true
     ) {
         self.name = name
         self.type = type
         self.focalLength = focalLength
+        
+        self.generatesParallelRay = generatesParallelRay
+        self.generatesCenterRay = generatesCenterRay
+        self.generatesFocalRay = generatesFocalRay
+        self.generatesCurveCenterRay = generatesCurveCenterRay
+        
         super.init(pos: pos, enabled: enabled, visible: visible)
     }
 }

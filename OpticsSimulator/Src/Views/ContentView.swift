@@ -12,8 +12,6 @@ struct ContentView: View {
         
         HStack(alignment: .top) {
             
-            
-            
             Canvas { context, size in
                 
                 // center at middle height, positive up
@@ -81,7 +79,7 @@ struct ContentView: View {
                             }
                             
                             Button {
-                                scene.add(SphericalMirror(
+                                scene.add(Mirror(
                                     name: "Mirror \(scene.mirrors.count+1)",
                                     pos: 0.5, type: .concave, focalLength: 0.1
                                 ))
@@ -285,6 +283,16 @@ struct ContentView: View {
                                 Picker("Type", selection: $mirror.type) {
                                     ForEach(MirrorType.allCases) { type in
                                         Text(type.label).tag(type)
+                                    }
+                                }
+                                LabeledContent("Rays") {
+                                    HStack {
+                                        Toggle("Parallel", isOn: $mirror.generatesParallelRay)
+                                        Toggle("Center", isOn: $mirror.generatesCenterRay)
+                                        Toggle("Focal", isOn: $mirror.generatesFocalRay)
+                                            .disabled(mirror.type != .concave)
+                                        Toggle("Curve center", isOn: $mirror.generatesCurveCenterRay)
+                                            .disabled(mirror.type != .concave)
                                     }
                                 }
                             }

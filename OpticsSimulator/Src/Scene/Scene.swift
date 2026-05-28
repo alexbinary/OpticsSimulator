@@ -9,7 +9,7 @@ class OpticsScene {
     var devices: [OpticsDevice] = []
     
     var lenses: [Lense] { devices.compactMap { $0 as? Lense }}
-    var mirrors: [SphericalMirror] { devices.compactMap { $0 as? SphericalMirror }}
+    var mirrors: [Mirror] { devices.compactMap { $0 as? Mirror }}
     var screens: [Screen] { devices.compactMap { $0 as? Screen }}
     
     var showImages: Bool = true
@@ -73,7 +73,11 @@ class OpticsScene {
                     pos: mirror.pos,
                     focalLength: mirror.focalLength,
                     type: mirror.type,
-                    name: mirror.name
+                    name: mirror.name,
+                    generatesParallelRay: mirror.generatesParallelRay,
+                    generatesCenterRay: mirror.generatesCenterRay,
+                    generatesFocalRay: mirror.generatesFocalRay,
+                    generatesCurveCenterRay: mirror.generatesCurveCenterRay
                 )
             },
             screens: screens.map { screen in
@@ -137,13 +141,17 @@ class OpticsScene {
         }
         
         preset.mirrors.map { descriptor in
-            SphericalMirror(
+            Mirror(
                 name: descriptor.name,
                 pos: descriptor.pos,
                 type: descriptor.type,
                 focalLength: descriptor.focalLength,
+                generatesParallelRay: descriptor.generatesParallelRay,
+                generatesCenterRay: descriptor.generatesCenterRay,
+                generatesFocalRay: descriptor.generatesFocalRay,
+                generatesCurveCenterRay: descriptor.generatesCurveCenterRay,
                 enabled: descriptor.enabled,
-                visible: descriptor.visible
+                visible: descriptor.visible,
             )
         }.forEach { mirror in
             add(mirror)
@@ -249,6 +257,11 @@ struct MirrorDescriptor: Codable {
     let focalLength: CGFloat
     let type: MirrorType
     let name: String
+    
+    var generatesParallelRay: Bool
+    var generatesCenterRay: Bool
+    var generatesFocalRay: Bool
+    var generatesCurveCenterRay: Bool
 }
 
 struct ScreenDescriptor: Codable {

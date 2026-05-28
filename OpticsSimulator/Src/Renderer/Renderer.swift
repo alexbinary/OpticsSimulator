@@ -127,7 +127,7 @@ struct Renderer {
         ))
     }
     
-    func draw(_ mirror: SphericalMirror) {
+    func draw(_ mirror: Mirror) {
         
         let x = resolvedPos(from: mirror.pos)
         let h = renderSize.height/2*0.8
@@ -144,23 +144,6 @@ struct Renderer {
         path.move(to: CGPoint(x: x, y: h))
         path.addLine(to: CGPoint(x: x, y: -h))
         
-        if mirror.type == .concave {
-            
-            path.move(to: CGPoint(x: x-2*a, y: h+2*a))
-            path.addLine(to: CGPoint(x: x, y: h))
-            
-            path.move(to: CGPoint(x: x, y: -h))
-            path.addLine(to: CGPoint(x: x-2*a, y: -h-2*a))
-            
-        } else {
-            
-            path.move(to: CGPoint(x: x, y: h))
-            path.addLine(to: CGPoint(x: x+2*a, y: h+2*a))
-            
-            path.move(to: CGPoint(x: x, y: -h))
-            path.addLine(to: CGPoint(x: x+2*a, y: -h-2*a))
-        }
-        
         let n = 15
         for i in 0...n {
             
@@ -172,6 +155,13 @@ struct Renderer {
         
         if mirror.type == .concave {
             
+            // arrows
+            path.move(to: CGPoint(x: x-2*a, y: h+2*a))
+            path.addLine(to: CGPoint(x: x, y: h))
+            
+            path.move(to: CGPoint(x: x, y: -h))
+            path.addLine(to: CGPoint(x: x-2*a, y: -h-2*a))
+            
             // focal indicator
             path.move(to: CGPoint(x: x-f, y: -m))
             path.addLine(to: CGPoint(x: x-f, y: +m))
@@ -179,8 +169,16 @@ struct Renderer {
             // center indicator
             path.move(to: CGPoint(x: x-2*f, y: -m))
             path.addLine(to: CGPoint(x: x-2*f, y: +m))
+        }
+        
+        if mirror.type == .convex {
             
-        } else {
+            // arrows
+            path.move(to: CGPoint(x: x, y: h))
+            path.addLine(to: CGPoint(x: x+2*a, y: h+2*a))
+            
+            path.move(to: CGPoint(x: x, y: -h))
+            path.addLine(to: CGPoint(x: x+2*a, y: -h-2*a))
             
             // focal indicator
             path.move(to: CGPoint(x: x+f, y: -m))
@@ -301,19 +299,30 @@ struct Renderer {
             return Image(pos: imagePos, size: imageSize)
         }
         
-        if let mirror = device as? SphericalMirror {
+        if let mirror = device as? Mirror {
             
-            // compute image through mirror
-            let posf = mirror.pos + (mirror.type == .convex ? +1 : -1) * mirror.focalLength
-            let fa = object.pos - posf
-            let fa_im = mirror.focalLength*mirror.focalLength / fa
-            imagePos = fa_im + posf
-            let sa = object.pos - mirror.pos
-            let sa_im = imagePos - mirror.pos
-            gamma = sa_im / sa
-            imageSize = -object.size * gamma
+            if mirror.type == .plane {
+                
+                imagePos = mirror.pos + (mirror.pos - object.pos)
+                imageSize = object.size
+                
+                return Image(pos: imagePos, size: imageSize)
+            }
             
-            return Image(pos: imagePos, size: imageSize)
+            if mirror.type == .concave || mirror.type == .convex {
+                
+                // compute image through mirror
+                let posf = mirror.pos + (mirror.type == .convex ? +1 : -1) * mirror.focalLength
+                let fa = object.pos - posf
+                let fa_im = mirror.focalLength*mirror.focalLength / fa
+                imagePos = fa_im + posf
+                let sa = object.pos - mirror.pos
+                let sa_im = imagePos - mirror.pos
+                gamma = sa_im / sa
+                imageSize = -object.size * gamma
+                
+                return Image(pos: imagePos, size: imageSize)
+            }
         }
         
         fatalError()
@@ -346,6 +355,11 @@ struct Renderer {
             
             if let nextDevice = nextDevice,
                image.pos > nextDevice.pos {
+                
+                image.virtual = true
+            }
+            
+            if currentDevice is Mirror {
                 
                 image.virtual = true
             }
@@ -462,6 +476,20 @@ struct Renderer {
                     ))
                 }
                 
+                if shouldGenerateCurveCenterRay(to: loop.currentDevice!) {
+                    
+                    rays.append((
+                        ray: Ray(
+                            from: loop.currentSourceTop,
+                            to: loop.currentDeviceCurveCenterPointBefore!,
+                        ),
+                        horizontalIncidence: false,
+                        points: [
+                            loop.currentDeviceCurveCenterPointBefore!.x
+                        ]
+                    ))
+                }
+                
                 for (ray, horizontalIncidence, points) in rays {
                     
                     let rayId = UUID()
@@ -512,6 +540,7 @@ struct Renderer {
                     allRayDescriptors.append(RayDescriptor(
                         deviceBefore: loop.previousDevice,
                         deviceAfter: loop.currentDevice!,
+                        propagatesRight: true,
                         source: loop.currentSource,
                         rayId: rayId,
                         points: pointsForRay
@@ -591,118 +620,118 @@ struct Renderer {
         
         // draw rays
         
-        let object = scene.objects.first
-        let mirror = scene.mirrors.first
-        let image = allImagesOfAllObjects.first
-        let screen = scene.screens.first
+//        let object = scene.objects.first
+//        let mirror = scene.mirrors.first
+//        let image = allImagesOfAllObjects.first
+//        let screen = scene.screens.first
         
         
-        if let object = object,
-           let mirror = mirror,
-           let image = image,
-           let screen = screen {
-            
-            let objectPos = resolvedPos(from: object.pos)
-            let objectSize = resolvedObjectSize(from: object.size)
-            let objectTop = CGPoint(x: objectPos, y: objectSize)
-            
-            let imagePos = resolvedPos(from: image.pos)
-            let imageSize = resolvedObjectSize(from: image.size)
-            let imageTop = CGPoint(x: imagePos, y: imageSize)
-            
-            let mirrorPos = resolvedPos(from: mirror.pos)
-            let f = resolvedFocalLength(from: mirror.focalLength)
-            let mirrorVertex = CGPoint(x: mirrorPos, y: 0)
-            let mirrorCenter = CGPoint(x: mirrorPos+(mirror.type == .concave ? -1 : +1)*2*f, y: 0)
-            let F = CGPoint(x: mirrorPos+(mirror.type == .concave ? -1 : +1)*f, y: 0)
-            
-            let screenPos = resolvedPos(from: screen.pos)
-            
-            // parallel ray : object > mirror
-            
-            let projectedPointOnMirror = Ray(horizontalFrom: objectTop)
-                .point(atX: mirrorPos)
-            drawRay(from: objectTop, to: projectedPointOnMirror)
-            
-            // parallel ray : mirror > F > image
-            
-            drawRay(
-                from: projectedPointOnMirror, to: F,
-                minX: screenPos, maxX: mirrorPos
-            )
-            
-            if imagePos < screenPos {
-                
-                drawRay(
-                    from: projectedPointOnMirror, to: F,
-                    minX: imagePos, maxX: screenPos,
-                    virtual: true
-                )
-            }
-            
-            if imagePos > mirrorPos {
-                
-                drawRay(
-                    from: projectedPointOnMirror, to: F,
-                    minX: mirrorPos, maxX: [imagePos, F.x].max()!,
-                    virtual: true
-                )
-            }
-            
-            // vertex ray : object > S
-            
-            drawRay(from: objectTop, to: mirrorVertex)
-            
-            // vertex ray : S > image
-            
-            drawRay(
-                from: mirrorVertex, to: imageTop,
-                minX: screenPos, maxX: mirrorPos
-            )
-            
-            if imagePos < screenPos {
-                
-                drawRay(
-                    from: mirrorVertex, to: imageTop,
-                    minX: imagePos, maxX: screenPos,
-                    virtual: true
-                )
-            }
-            
-            if imagePos > mirrorPos {
-                
-                drawRay(
-                    from: mirrorVertex, to: imageTop,
-                    minX: mirrorPos, maxX: imagePos,
-                    virtual: true
-                )
-            }
-            
-            // center ray : object > image
-            
-            drawRay(
-                from: objectTop, to: mirrorCenter,
-                minX: screenPos, maxX: mirrorPos
-            )
-            
-            if imagePos < screenPos {
-                
-                drawRay(
-                    from: objectTop, to: mirrorCenter,
-                    minX: imagePos, maxX: screenPos,
-                    virtual: true
-                )
-            }
-            
-            if imagePos > mirrorPos {
-                
-                drawRay(
-                    from: objectTop, to: mirrorCenter,
-                    minX: mirrorPos, maxX: [imagePos, mirrorCenter.x].max()!,
-                    virtual: true
-                )
-            }
-        }
+//        if let object = object,
+//           let mirror = mirror,
+//           let image = image,
+//           let screen = screen {
+//            
+//            let objectPos = resolvedPos(from: object.pos)
+//            let objectSize = resolvedObjectSize(from: object.size)
+//            let objectTop = CGPoint(x: objectPos, y: objectSize)
+//            
+//            let imagePos = resolvedPos(from: image.pos)
+//            let imageSize = resolvedObjectSize(from: image.size)
+//            let imageTop = CGPoint(x: imagePos, y: imageSize)
+//            
+//            let mirrorPos = resolvedPos(from: mirror.pos)
+//            let f = resolvedFocalLength(from: mirror.focalLength)
+//            let mirrorVertex = CGPoint(x: mirrorPos, y: 0)
+//            let mirrorCenter = CGPoint(x: mirrorPos+(mirror.type == .concave ? -1 : +1)*2*f, y: 0)
+//            let F = CGPoint(x: mirrorPos+(mirror.type == .concave ? -1 : +1)*f, y: 0)
+//            
+//            let screenPos = resolvedPos(from: screen.pos)
+//            
+//            // parallel ray : object > mirror
+//            
+//            let projectedPointOnMirror = Ray(horizontalFrom: objectTop)
+//                .point(atX: mirrorPos)
+//            drawRay(from: objectTop, to: projectedPointOnMirror)
+//            
+//            // parallel ray : mirror > F > image
+//            
+//            drawRay(
+//                from: projectedPointOnMirror, to: F,
+//                minX: screenPos, maxX: mirrorPos
+//            )
+//            
+//            if imagePos < screenPos {
+//                
+//                drawRay(
+//                    from: projectedPointOnMirror, to: F,
+//                    minX: imagePos, maxX: screenPos,
+//                    virtual: true
+//                )
+//            }
+//            
+//            if imagePos > mirrorPos {
+//                
+//                drawRay(
+//                    from: projectedPointOnMirror, to: F,
+//                    minX: mirrorPos, maxX: [imagePos, F.x].max()!,
+//                    virtual: true
+//                )
+//            }
+//            
+//            // vertex ray : object > S
+//            
+//            drawRay(from: objectTop, to: mirrorVertex)
+//            
+//            // vertex ray : S > image
+//            
+//            drawRay(
+//                from: mirrorVertex, to: imageTop,
+//                minX: screenPos, maxX: mirrorPos
+//            )
+//            
+//            if imagePos < screenPos {
+//                
+//                drawRay(
+//                    from: mirrorVertex, to: imageTop,
+//                    minX: imagePos, maxX: screenPos,
+//                    virtual: true
+//                )
+//            }
+//            
+//            if imagePos > mirrorPos {
+//                
+//                drawRay(
+//                    from: mirrorVertex, to: imageTop,
+//                    minX: mirrorPos, maxX: imagePos,
+//                    virtual: true
+//                )
+//            }
+//            
+//            // center ray : object > image
+//            
+//            drawRay(
+//                from: objectTop, to: mirrorCenter,
+//                minX: screenPos, maxX: mirrorPos
+//            )
+//            
+//            if imagePos < screenPos {
+//                
+//                drawRay(
+//                    from: objectTop, to: mirrorCenter,
+//                    minX: imagePos, maxX: screenPos,
+//                    virtual: true
+//                )
+//            }
+//            
+//            if imagePos > mirrorPos {
+//                
+//                drawRay(
+//                    from: objectTop, to: mirrorCenter,
+//                    minX: mirrorPos, maxX: [imagePos, mirrorCenter.x].max()!,
+//                    virtual: true
+//                )
+//            }
+//        }
     }
     
     
@@ -715,6 +744,11 @@ struct Renderer {
         if let lense = device as? Lense {
             
             return lense.generatesParallelRay
+        }
+        
+        if let mirror = device as? Mirror {
+            
+            return mirror.generatesParallelRay
         }
         
         if device is Screen {
@@ -737,6 +771,11 @@ struct Renderer {
             return lense.generatesCenterRay
         }
         
+        if let mirror = device as? Mirror {
+            
+            return mirror.generatesCenterRay
+        }
+        
         if device is Screen {
             
             return true
@@ -755,6 +794,28 @@ struct Renderer {
         if let lense = device as? Lense {
             
             return lense.generatesFocalRay
+        }
+        
+        if let mirror = device as? Mirror,
+           mirror.type == .concave {
+            
+            return mirror.generatesFocalRay
+        }
+        
+        return false
+    }
+    
+    
+    func shouldGenerateCurveCenterRay(
+    
+        to device: OpticsDevice
+        
+    ) -> Bool {
+        
+        if let mirror = device as? Mirror,
+           mirror.type == .concave {
+            
+            return mirror.generatesCurveCenterRay
         }
         
         return false
@@ -814,7 +875,12 @@ struct Renderer {
                 from: rayPointOnPreviousDevice.point,
                 to: loop.currentSourceTop
             )
-            let endX = loop.currentDevicePos ?? renderSize.width
+            
+            let propagatesRight = false
+            
+            let defaultEndX = propagatesRight ? renderSize.width : 0
+            
+            let endX = loop.currentDevicePos ?? defaultEndX
             
             var pointsForRay: [CGPoint] = [
                 ray.point(atX: rayPointOnPreviousDevice.point.x),
@@ -834,18 +900,28 @@ struct Renderer {
                 )
             }
             
-//                        if let lense = previousDevice as? Lense,
-//                           lense.type == .convergent,
-//                           rayPointOnPreviousDevice.hasParallelIncidence
-//                        {
-//                            pointsForRay.append(
-//                                ray.point(atX: previousDeviceFocalPointAfter!.x)
-//                            )
-//                        }
+            if let mirror = loop.previousDevice as? Mirror,
+               mirror.type == .convex,
+               rayPointOnPreviousDevice.hasParallelIncidence
+            {
+                pointsForRay.append(
+                    ray.point(atX: loop.previousDeviceFocalPointAfter!.x)
+                )
+            }
+            
+            //                        if let lense = previousDevice as? Lense,
+            //                           lense.type == .convergent,
+            //                           rayPointOnPreviousDevice.hasParallelIncidence
+            //                        {
+            //                            pointsForRay.append(
+            //                                ray.point(atX: previousDeviceFocalPointAfter!.x)
+            //                            )
+            //                        }
             
             allRayDescriptors.append(RayDescriptor(
                 deviceBefore: loop.previousDevice,
                 deviceAfter: loop.currentDevice,
+                propagatesRight: propagatesRight,
                 source: loop.currentSource,
                 rayId: rayPointOnPreviousDevice.rayId,
                 points: pointsForRay
@@ -900,6 +976,7 @@ struct Renderer {
             allRayDescriptors.append(RayDescriptor(
                 deviceBefore: loop.previousDevice,
                 deviceAfter: loop.currentDevice,
+                propagatesRight: true,
                 source: loop.currentSource,
                 rayId: rayPointOnCurrentDevice.rayId,
                 points: pointsForRay
@@ -987,6 +1064,8 @@ struct Renderer {
             currentDeviceFocalLength: currentDeviceInfo.focalLength,
             currentDeviceFocalPointBefore: currentDeviceInfo.focalPointBefore,
             currentDeviceFocalPointAfter: currentDeviceInfo.focalPointAfter,
+            currentDeviceCurveCenterPointBefore: currentDeviceInfo.curveCenterPointBefore,
+            currentDeviceCurveCenterPointAfter: currentDeviceInfo.curveCenterPointAfter,
             
             previousDevice: previousDevice,
             previousDevicePos: previousDeviceInfo.pos,
@@ -1012,27 +1091,64 @@ struct Renderer {
             x: devicePos!, y: 0
         ) : nil
         
-        let deviceFocalLength = device is Lense
-        ? resolvedFocalLength(
-            from: (device as! Lense).focalLength
-        ) : nil
+        let deviceFocalLength: CGFloat? = {
+            if let lense = device as? Lense {
+                return resolvedFocalLength(
+                    from: lense.focalLength
+                )
+            }
+            if let mirror = device as? Mirror {
+                return resolvedFocalLength(
+                    from: mirror.focalLength
+                )
+            }
+            return nil
+        }()
         
-        let deviceFocalPointBefore = device is Lense
-        ? CGPoint(
-            x: devicePos! - deviceFocalLength!, y: 0
-        ) : nil
+        let deviceFocalPointBefore: CGPoint? = {
+            if device is Lense || device is Mirror {
+                return CGPoint(
+                    x: devicePos! - deviceFocalLength!, y: 0
+                )
+            }
+            return nil
+        }()
         
-        let deviceFocalPointAfter = device is Lense
-        ? CGPoint(
-            x: devicePos! + deviceFocalLength!, y: 0
-        ) : nil
+        let deviceFocalPointAfter: CGPoint? = {
+            if device is Lense || device is Mirror  {
+                return CGPoint(
+                    x: devicePos! + deviceFocalLength!, y: 0
+                )
+            }
+            return nil
+        }()
+        
+        let deviceCurveCenterPointBefore: CGPoint? = {
+            if device is Mirror {
+                return CGPoint(
+                    x: devicePos! - 2*deviceFocalLength!, y: 0
+                )
+            }
+            return nil
+        }()
+        
+        let deviceCurveCenterPointAfter: CGPoint? = {
+            if device is Mirror {
+                return CGPoint(
+                    x: devicePos! + 2*deviceFocalLength!, y: 0
+                )
+            }
+            return nil
+        }()
         
         let info = DeviceInfo(
             pos: devicePos,
             center: deviceCenter,
             focalLength: deviceFocalLength,
             focalPointBefore: deviceFocalPointBefore,
-            focalPointAfter: deviceFocalPointAfter
+            focalPointAfter: deviceFocalPointAfter,
+            curveCenterPointBefore: deviceCurveCenterPointBefore,
+            curveCenterPointAfter: deviceCurveCenterPointAfter
         )
         
         return info
@@ -1161,6 +1277,8 @@ struct Renderer {
         
         for rayDescriptor in rayDescriptors {
             
+            let propagatesRight = rayDescriptor.propagatesRight
+            
             let startX: CGFloat? = {
                 
                 var pos: [CGFloat] = []
@@ -1185,59 +1303,126 @@ struct Renderer {
             }()
             
             var points = rayDescriptor.points.sorted { $0.x < $1.x }
-            
-            if let p1 = points.first,
-               let p2 = points.last {
                 
-                let ray = Ray(from: p1, to: p2)
+            if propagatesRight {
                 
-                if let startX = startX, p1.x < startX {
-                    points.append(ray.point(atX: startX))
+                if let p1 = points.first,
+                   let p2 = points.last {
+                    
+                    let ray = Ray(from: p1, to: p2)
+                    
+                    if let startX = startX, p1.x < startX {
+                        points.append(ray.point(atX: startX))
+                    }
+                    if let endX = endX, p2.x > endX {
+                        points.append(ray.point(atX: endX))
+                    }
                 }
-                if let endX = endX, p2.x > endX {
-                    points.append(ray.point(atX: endX))
+                
+            } else {
+                
+                points = points.reversed()
+                
+                if let p1 = points.first,
+                   let p2 = points.last {
+                    
+                    let ray = Ray(from: p1, to: p2)
+                    
+                    if let startX = startX, p1.x > startX {
+                        points.append(ray.point(atX: startX))
+                    }
+                    if let endX = endX, p2.x < endX {
+                        points.append(ray.point(atX: endX))
+                    }
                 }
             }
             
             let pointsBefore: [CGPoint] = {
                 
-                if let startX = startX {
-                    return points.filter { $0.x <= startX }
+                if propagatesRight {
+                    
+                    if let startX = startX {
+                        return points.filter { $0.x <= startX }
+                    } else {
+                        return []
+                    }
+                    
                 } else {
-                    return []
+                    
+                    if let startX = startX {
+                        return points.filter { $0.x >= startX }
+                    } else {
+                        return []
+                    }
                 }
             }().sorted { $0.x < $1.x }
             
             let pointsBetween: [CGPoint] = {
                 
-                if let startX = startX, let endX = endX {
+                if propagatesRight {
                     
-                    return points.filter { $0.x >= startX && $0.x <= endX }
-                    
-                } else if let startX = startX {
-                    
-                    return points.filter { $0.x >= startX }
-                    
-                } else if let endX = endX {
-                    
-                    return points.filter { $0.x <= endX }
+                    if let startX = startX, let endX = endX {
+                        
+                        return points.filter { $0.x >= startX && $0.x <= endX }
+                        
+                    } else if let startX = startX {
+                        
+                        return points.filter { $0.x >= startX }
+                        
+                    } else if let endX = endX {
+                        
+                        return points.filter { $0.x <= endX }
+                        
+                    } else {
+                        
+                        return points
+                    }
                     
                 } else {
                     
-                    return points
+                    if let startX = startX, let endX = endX {
+                        
+                        return points.filter { $0.x <= startX && $0.x >= endX }
+                        
+                    } else if let startX = startX {
+                        
+                        return points.filter { $0.x <= startX }
+                        
+                    } else if let endX = endX {
+                        
+                        return points.filter { $0.x >= endX }
+                        
+                    } else {
+                        
+                        return points
+                    }
                 }
                 
             }().sorted { $0.x < $1.x }
             
             let pointsAfter: [CGPoint] = {
                 
-                if let endX = endX {
+                if propagatesRight {
                     
-                    return points.filter { $0.x >= endX }
+                    if let endX = endX {
+                        
+                        return points.filter { $0.x >= endX }
+                        
+                    } else {
+                        
+                        return []
+                    }
                     
                 } else {
                     
-                    return []
+                    if let endX = endX {
+                        
+                        return points.filter { $0.x <= endX }
+                        
+                    } else {
+                        
+                        return []
+                    }
                 }
             }().sorted { $0.x < $1.x }
             
@@ -1296,6 +1481,8 @@ struct LoopIterator {
     let currentDeviceFocalLength: CGFloat?
     let currentDeviceFocalPointBefore: CGPoint?
     let currentDeviceFocalPointAfter: CGPoint?
+    let currentDeviceCurveCenterPointBefore: CGPoint?
+    let currentDeviceCurveCenterPointAfter: CGPoint?
     
     let previousDevice: OpticsDevice?
     let previousDevicePos: CGFloat?
@@ -1312,4 +1499,6 @@ struct DeviceInfo {
     let focalLength: CGFloat?
     let focalPointBefore: CGPoint?
     let focalPointAfter: CGPoint?
+    let curveCenterPointBefore: CGPoint?
+    let curveCenterPointAfter: CGPoint?
 }
