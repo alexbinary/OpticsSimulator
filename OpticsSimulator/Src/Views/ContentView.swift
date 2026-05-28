@@ -26,7 +26,7 @@ struct ContentView: View {
                     scene,
                     showImages: scene.showImages,
                     showVirtualImages: scene.showVirtualImages,
-                    showVirtualRays: scene.showVirtualRays,
+                    showConstructionRays: scene.showConstructionRays,
                     mouse: mouse.applying(CGAffineTransform(
                         translationX: 0, y: -size.height/2
                     ))
@@ -107,7 +107,7 @@ struct ContentView: View {
                             Toggle("Show virtual images", isOn: $scene.showVirtualImages)
                                 .disabled(!scene.showImages)
                             
-                            Toggle("Show virtual rays", isOn: $scene.showVirtualRays)
+                            Toggle("Show constructions rays", isOn: $scene.showConstructionRays)
                         }
                         
                     }.padding()

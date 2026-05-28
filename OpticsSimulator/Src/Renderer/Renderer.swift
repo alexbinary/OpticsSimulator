@@ -376,7 +376,7 @@ struct Renderer {
         
         showImages: Bool,
         showVirtualImages: Bool,
-        showVirtualRays: Bool,
+        showConstructionRays: Bool,
         
         mouse: CGPoint
     
@@ -498,7 +498,7 @@ struct Renderer {
                         ray.point(atX: loop.currentDevicePos!),
                     ]
                     
-                    if shouldConnectToSource(loop.currentSource, showVirtualImages) {
+                    if shouldConnectToSource(loop.currentSource, showImages, showVirtualImages) {
                         pointsForRay.append(ray.point(atX: loop.currentSourcePos))
                     }
                     
@@ -556,6 +556,7 @@ struct Renderer {
                         sources: sources,
                         devices: devices,
                         sourceIndex: sourceIndex,
+                        showImages: showImages,
                         showVirtualImages: showVirtualImages
                     )
                     
@@ -604,7 +605,7 @@ struct Renderer {
         }
         drawRays(
             from: allRayDescriptors,
-            showVirtualRays: showVirtualRays,
+            showVirtualRays: showConstructionRays,
             mouse: mouse
         )
         
@@ -840,9 +841,21 @@ struct Renderer {
     func shouldConnectToSource(
         
         _ source: ObjectOrImage,
+        _ showImages: Bool,
         _ showVirtualImages: Bool
     
     ) -> Bool {
+        
+        if let image = source as? Image {
+            
+            if !showImages {
+                return false
+            }
+            
+            if image.virtual {   
+                return showVirtualImages
+            }
+        }
         
         return true
     }
@@ -856,6 +869,7 @@ struct Renderer {
         devices: [OpticsDevice],
         sourceIndex: Int,
         
+        showImages: Bool,
         showVirtualImages: Bool
         
     ) -> [RayDescriptor] {
@@ -887,7 +901,7 @@ struct Renderer {
                 ray.point(atX: endX),
             ]
             
-            if shouldConnectToSource(loop.currentSource, showVirtualImages) {
+            if shouldConnectToSource(loop.currentSource, showImages, showVirtualImages) {
                 pointsForRay.append(ray.point(atX: loop.currentSourcePos))
             }
             
