@@ -49,7 +49,9 @@ class OpticsScene {
                     visible: object.visible,
                     pos: object.pos,
                     size: object.size,
-                    name: object.name
+                    name: object.name,
+                    generatesRight: object.generatesRight,
+                    generatesLeft: object.generatesLeft
                 )
             },
             lenses: lenses.map { lense in
@@ -118,6 +120,8 @@ class OpticsScene {
                 name: descriptor.name,
                 pos: descriptor.pos,
                 size: descriptor.size,
+                generatesRight: descriptor.generatesRight,
+                generatesLeft: descriptor.generatesLeft,
                 enabled: descriptor.enabled,
                 visible: descriptor.visible
             )
@@ -233,6 +237,9 @@ struct ObjectDescriptor: Codable {
     let pos: CGFloat
     let size: CGFloat
     let name: String
+    
+    var generatesRight: Bool
+    var generatesLeft: Bool
 }
 
 struct LenseDescriptor: Codable {

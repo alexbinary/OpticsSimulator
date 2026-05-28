@@ -494,193 +494,203 @@ struct Renderer {
         
         for currentObject in enabledObjects {
             
-            let propagatesRight = false
+            var propagatesRight_values: [Bool] = []
             
-            let relevantDevicesForCurrentObject = devicesSequence(
-                for: currentObject, from: enabledDevicesByPosition,
-                propagatesRight: propagatesRight
-            )
+            if currentObject.generatesRight {
+                propagatesRight_values.append(true)
+            }
+            if currentObject.generatesLeft {
+                propagatesRight_values.append(false)
+            }
             
-            // compute images
-            
-            let allImagesOfCurrentObject = computeImages(
-                of: currentObject, through: relevantDevicesForCurrentObject,
-                propagatesRight: propagatesRight
-            )
-            allImagesOfAllObjects.append(
-                contentsOf: allImagesOfCurrentObject
-            )
-            
-            // compute rays
-            
-            let sources = [currentObject] + allImagesOfCurrentObject
-            let devices = relevantDevicesForCurrentObject
-            
-            for sourceIndex in 0..<sources.count {
+            for propagatesRight in propagatesRight_values {
                 
-                // generate rays from source
-                
-                let loop = getLoopIterator(
-                    for: sources, devices, at: sourceIndex
+                let relevantDevicesForCurrentObject = devicesSequence(
+                    for: currentObject, from: enabledDevicesByPosition,
+                    propagatesRight: propagatesRight
                 )
                 
-                if loop.currentDevice == nil {
-                    break
-                }
+                // compute images
                 
-                if loop.currentDevice! is Screen,
-                   loop.currentSource is Image {
-                    
-                    break
-                }
+                let allImagesOfCurrentObject = computeImages(
+                    of: currentObject, through: relevantDevicesForCurrentObject,
+                    propagatesRight: propagatesRight
+                )
+                allImagesOfAllObjects.append(
+                    contentsOf: allImagesOfCurrentObject
+                )
                 
-                var rayPointsOnPreviousDevice: [RayPoint] = []
-                var rayPointsOnCurrentDevice: [RayPoint] = []
+                // compute rays
                 
-                var rays: [(
-                    ray: Ray,
-                    horizontalIncidence: Bool,
-                    points: [CGFloat]
-                )] = []
+                let sources = [currentObject] + allImagesOfCurrentObject
+                let devices = relevantDevicesForCurrentObject
                 
-                if shouldGenerateParallelRay(to: loop.currentDevice!) {
+                for sourceIndex in 0..<sources.count {
                     
-                    rays.append((
-                        ray: Ray(
-                            horizontalFrom: loop.currentSourceTop
-                        ),
-                        horizontalIncidence: true,
-                        points: []
-                    ))
-                }
-                
-                if shouldGenerateCenterRay(to: loop.currentDevice!) {
+                    // generate rays from source
                     
-                    rays.append((
-                        ray: Ray(
-                            from: loop.currentSourceTop,
-                            to: loop.currentDeviceCenter!,
-                        ),
-                        horizontalIncidence: false,
-                        points: []
-                    ))
-                }
-                
-                if shouldGenerateFocalRay(to: loop.currentDevice!) {
-                    
-                    rays.append((
-                        ray: Ray(
-                            from: loop.currentSourceTop,
-                            to: loop.currentDeviceFocalPointBefore!,
-                        ),
-                        horizontalIncidence: false,
-                        points: [
-                            loop.currentDeviceFocalPointBefore!.x
-                        ]
-                    ))
-                }
-                
-                if shouldGenerateCurveCenterRay(to: loop.currentDevice!) {
-                    
-                    rays.append((
-                        ray: Ray(
-                            from: loop.currentSourceTop,
-                            to: loop.currentDeviceCurveCenterPointBefore!,
-                        ),
-                        horizontalIncidence: false,
-                        points: [
-                            loop.currentDeviceCurveCenterPointBefore!.x
-                        ]
-                    ))
-                }
-                
-                for (ray, horizontalIncidence, points) in rays {
-                    
-                    let rayId = UUID()
-                    
-                    var pointsForRay: [CGPoint] = [
-                        ray.point(atX: loop.currentDevicePos!),
-                    ]
-                    
-                    if shouldConnectToSource(loop.currentSource, showImages, showVirtualImages) {
-                        pointsForRay.append(ray.point(atX: loop.currentSourcePos))
-                    }
-                    
-                    let pointFromRayOnCurrentDevice =
-                    ray.point(
-                        atX: loop.currentDevicePos!
+                    let loop = getLoopIterator(
+                        for: sources, devices, at: sourceIndex
                     )
                     
-                    rayPointsOnCurrentDevice.append(RayPoint(
-                        point: pointFromRayOnCurrentDevice,
-                        rayId: rayId,
-                        horizontalIncidence: horizontalIncidence,
-                        
-                    ))
-                    
-                    for x in points {
-                        pointsForRay.append(ray.point(atX: x))
+                    if loop.currentDevice == nil {
+                        break
                     }
                     
-                    if shouldRetroPropagateRays(from: loop.currentDevice!),
-                       let previousDevicePos = loop.previousDevicePos {
+                    if loop.currentDevice! is Screen,
+                       loop.currentSource is Image {
                         
-                        pointsForRay.append(
-                            ray.point(atX: previousDevicePos)
-                        )
+                        break
+                    }
+                    
+                    var rayPointsOnPreviousDevice: [RayPoint] = []
+                    var rayPointsOnCurrentDevice: [RayPoint] = []
+                    
+                    var rays: [(
+                        ray: Ray,
+                        horizontalIncidence: Bool,
+                        points: [CGFloat]
+                    )] = []
+                    
+                    if shouldGenerateParallelRay(to: loop.currentDevice!) {
                         
-                        let pointFromRayOnPreviousDevice =
-                        ray.point(
-                            atX: previousDevicePos
-                        )
-                        
-                        rayPointsOnPreviousDevice.append(RayPoint(
-                            point: pointFromRayOnPreviousDevice,
-                            rayId: rayId,
-                            horizontalIncidence: horizontalIncidence
+                        rays.append((
+                            ray: Ray(
+                                horizontalFrom: loop.currentSourceTop
+                            ),
+                            horizontalIncidence: true,
+                            points: []
                         ))
                     }
                     
-                    allRayDescriptors.append(RayDescriptor(
-                        deviceBefore: loop.previousDevice,
-                        deviceAfter: loop.currentDevice!,
-                        propagatesRight: propagatesRight,
-                        source: loop.currentSource,
-                        rayId: rayId,
-                        points: pointsForRay
-                    ))
-                }
-                
-                // propagate rays forwards through all devices
-                
-                for rayPoint in rayPointsOnCurrentDevice {
+                    if shouldGenerateCenterRay(to: loop.currentDevice!) {
+                        
+                        rays.append((
+                            ray: Ray(
+                                from: loop.currentSourceTop,
+                                to: loop.currentDeviceCenter!,
+                            ),
+                            horizontalIncidence: false,
+                            points: []
+                        ))
+                    }
                     
-                    let rays = propagateRayForwards(
-                        from: rayPoint,
-                        sources: sources,
-                        devices: devices,
-                        sourceIndex: sourceIndex,
-                        propagatesRight: propagatesRight,
-                        showImages: showImages,
-                        showVirtualImages: showVirtualImages
-                    )
+                    if shouldGenerateFocalRay(to: loop.currentDevice!) {
+                        
+                        rays.append((
+                            ray: Ray(
+                                from: loop.currentSourceTop,
+                                to: loop.currentDeviceFocalPointBefore!,
+                            ),
+                            horizontalIncidence: false,
+                            points: [
+                                loop.currentDeviceFocalPointBefore!.x
+                            ]
+                        ))
+                    }
                     
-                    allRayDescriptors.append(contentsOf: rays)
-                }
-                
-                // propagate rays backwards through all devices
-                
-                for rayPoint in rayPointsOnPreviousDevice {
+                    if shouldGenerateCurveCenterRay(to: loop.currentDevice!) {
+                        
+                        rays.append((
+                            ray: Ray(
+                                from: loop.currentSourceTop,
+                                to: loop.currentDeviceCurveCenterPointBefore!,
+                            ),
+                            horizontalIncidence: false,
+                            points: [
+                                loop.currentDeviceCurveCenterPointBefore!.x
+                            ]
+                        ))
+                    }
                     
-                    let rays = propagateRayBackwards(
-                        from: rayPoint,
-                        sources: sources,
-                        devices: devices,
-                        sourceIndex: sourceIndex,
-                        showVirtualImages: showVirtualImages
-                    )
+                    for (ray, horizontalIncidence, points) in rays {
+                        
+                        let rayId = UUID()
+                        
+                        var pointsForRay: [CGPoint] = [
+                            ray.point(atX: loop.currentDevicePos!),
+                        ]
+                        
+                        if shouldConnectToSource(loop.currentSource, showImages, showVirtualImages) {
+                            pointsForRay.append(ray.point(atX: loop.currentSourcePos))
+                        }
+                        
+                        let pointFromRayOnCurrentDevice =
+                        ray.point(
+                            atX: loop.currentDevicePos!
+                        )
+                        
+                        rayPointsOnCurrentDevice.append(RayPoint(
+                            point: pointFromRayOnCurrentDevice,
+                            rayId: rayId,
+                            horizontalIncidence: horizontalIncidence,
+                            
+                        ))
+                        
+                        for x in points {
+                            pointsForRay.append(ray.point(atX: x))
+                        }
+                        
+                        if shouldRetroPropagateRays(from: loop.currentDevice!),
+                           let previousDevicePos = loop.previousDevicePos {
+                            
+                            pointsForRay.append(
+                                ray.point(atX: previousDevicePos)
+                            )
+                            
+                            let pointFromRayOnPreviousDevice =
+                            ray.point(
+                                atX: previousDevicePos
+                            )
+                            
+                            rayPointsOnPreviousDevice.append(RayPoint(
+                                point: pointFromRayOnPreviousDevice,
+                                rayId: rayId,
+                                horizontalIncidence: horizontalIncidence
+                            ))
+                        }
+                        
+                        allRayDescriptors.append(RayDescriptor(
+                            deviceBefore: loop.previousDevice,
+                            deviceAfter: loop.currentDevice!,
+                            propagatesRight: propagatesRight,
+                            source: loop.currentSource,
+                            rayId: rayId,
+                            points: pointsForRay
+                        ))
+                    }
                     
-                    allRayDescriptors.append(contentsOf: rays)
+                    // propagate rays forwards through all devices
+                    
+                    for rayPoint in rayPointsOnCurrentDevice {
+                        
+                        let rays = propagateRayForwards(
+                            from: rayPoint,
+                            sources: sources,
+                            devices: devices,
+                            sourceIndex: sourceIndex,
+                            propagatesRight: propagatesRight,
+                            showImages: showImages,
+                            showVirtualImages: showVirtualImages
+                        )
+                        
+                        allRayDescriptors.append(contentsOf: rays)
+                    }
+                    
+                    // propagate rays backwards through all devices
+                    
+                    for rayPoint in rayPointsOnPreviousDevice {
+                        
+                        let rays = propagateRayBackwards(
+                            from: rayPoint,
+                            sources: sources,
+                            devices: devices,
+                            sourceIndex: sourceIndex,
+                            showVirtualImages: showVirtualImages
+                        )
+                        
+                        allRayDescriptors.append(contentsOf: rays)
+                    }
                 }
             }
         }

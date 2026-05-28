@@ -202,6 +202,12 @@ struct ContentView: View {
                                     }
                                     Text("\(object.size, specifier: "%.2f")")
                                 }
+                                LabeledContent("Rays") {
+                                    HStack {
+                                        Toggle("Right", isOn: $object.generatesRight)
+                                        Toggle("Left", isOn: $object.generatesLeft)
+                                    }
+                                }
                             }
                         }
                         .padding(.vertical)
