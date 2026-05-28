@@ -74,6 +74,7 @@ class OpticsScene {
                     focalLength: mirror.focalLength,
                     type: mirror.type,
                     name: mirror.name,
+                    facesLeft: mirror.facesLeft,
                     generatesParallelRay: mirror.generatesParallelRay,
                     generatesCenterRay: mirror.generatesCenterRay,
                     generatesFocalRay: mirror.generatesFocalRay,
@@ -147,6 +148,7 @@ class OpticsScene {
                 pos: descriptor.pos,
                 type: descriptor.type,
                 focalLength: descriptor.focalLength,
+                facesLeft: descriptor.facesLeft,
                 generatesParallelRay: descriptor.generatesParallelRay,
                 generatesCenterRay: descriptor.generatesCenterRay,
                 generatesFocalRay: descriptor.generatesFocalRay,
@@ -259,6 +261,7 @@ struct MirrorDescriptor: Codable {
     let focalLength: CGFloat
     let type: MirrorType
     let name: String
+    let facesLeft: Bool
     
     var generatesParallelRay: Bool
     var generatesCenterRay: Bool

@@ -87,6 +87,7 @@ class Mirror: OpticsDevice, Identifiable {
     var name: String
     var type: MirrorType
     var focalLength: CGFloat
+    var facesLeft: Bool
     
     var generatesParallelRay: Bool
     var generatesCenterRay: Bool
@@ -95,6 +96,7 @@ class Mirror: OpticsDevice, Identifiable {
     
     init(
         name: String, pos: CGFloat, type: MirrorType, focalLength: CGFloat,
+        facesLeft: Bool,
         generatesParallelRay: Bool = true,
         generatesCenterRay: Bool = true,
         generatesFocalRay: Bool = true,
@@ -104,6 +106,7 @@ class Mirror: OpticsDevice, Identifiable {
         self.name = name
         self.type = type
         self.focalLength = focalLength
+        self.facesLeft = facesLeft
         
         self.generatesParallelRay = generatesParallelRay
         self.generatesCenterRay = generatesCenterRay

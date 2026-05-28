@@ -81,7 +81,8 @@ struct ContentView: View {
                             Button {
                                 scene.add(Mirror(
                                     name: "Mirror \(scene.mirrors.count+1)",
-                                    pos: 0.5, type: .concave, focalLength: 0.1
+                                    pos: 0.5, type: .concave, focalLength: 0.1,
+                                    facesLeft: true
                                 ))
                             } label: {
                                 Text("Add mirror")
@@ -283,6 +284,11 @@ struct ContentView: View {
                                 Picker("Type", selection: $mirror.type) {
                                     ForEach(MirrorType.allCases) { type in
                                         Text(type.label).tag(type)
+                                    }
+                                }
+                                Picker("Direction", selection: $mirror.facesLeft) {
+                                    ForEach([true, false], id: \.self) { value in
+                                        Text(value ? "Left" : "Right").tag(value)
                                     }
                                 }
                                 LabeledContent("Rays") {

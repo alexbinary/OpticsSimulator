@@ -150,7 +150,12 @@ struct Renderer {
             let hi: CGFloat = -h + CGFloat(i)*2*h/CGFloat(n)
             
             path.move(to: CGPoint(x: x, y: hi))
-            path.addLine(to: CGPoint(x: x+a, y: hi-a))
+            
+            if mirror.facesLeft {
+                path.addLine(to: CGPoint(x: x+a, y: hi-a))
+            } else {
+                path.addLine(to: CGPoint(x: x-a, y: hi+a))
+            }
         }
         
         if mirror.type == .concave {
@@ -341,13 +346,29 @@ struct Renderer {
         
         var images: [Image] = []
         
+        var propagatesRight = true
+        
         for i in 0..<devices.count {
             
             let currentDevice = devices[i]
             let nextDevice = i+1 < devices.count ? devices[i+1] : nil
             
             if currentDevice is Screen {
+                
                 break
+            }
+            
+            if let mirror = currentDevice as? Mirror {
+                
+                if mirror.facesLeft && propagatesRight
+                    || !mirror.facesLeft && !propagatesRight {
+                    
+                    propagatesRight.toggle()
+                    
+                } else {
+                    
+                    break
+                }
             }
             
             let currentSource = images.last ?? object
@@ -406,9 +427,22 @@ struct Renderer {
                 
                 devicesSequence.append(device)
                 
-                if device is Mirror {
+                if device is Screen {
                     
-                    propagatesRight.toggle()
+                    break
+                }
+                
+                if let mirror = device as? Mirror {
+                    
+                    if mirror.facesLeft && propagatesRight
+                        || !mirror.facesLeft && !propagatesRight {
+                        
+                        propagatesRight.toggle()
+                        
+                    } else {
+                        
+                        break
+                    }
                 }
                 
                 if propagatesRight {
