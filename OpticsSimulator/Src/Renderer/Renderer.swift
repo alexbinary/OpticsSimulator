@@ -549,7 +549,9 @@ struct Renderer {
                         points: [CGFloat]
                     )] = []
                     
-                    if shouldGenerateParallelRay(to: loop.currentDevice!) {
+                    if shouldGenerateParallelRay(
+                        to: loop.currentDevice!, propagatesRight: propagatesRight
+                    ) {
                         
                         rays.append((
                             ray: Ray(
@@ -560,7 +562,9 @@ struct Renderer {
                         ))
                     }
                     
-                    if shouldGenerateCenterRay(to: loop.currentDevice!) {
+                    if shouldGenerateCenterRay(
+                        to: loop.currentDevice!, propagatesRight: propagatesRight
+                    ) {
                         
                         rays.append((
                             ray: Ray(
@@ -572,7 +576,9 @@ struct Renderer {
                         ))
                     }
                     
-                    if shouldGenerateFocalRay(to: loop.currentDevice!) {
+                    if shouldGenerateFocalRay(
+                        to: loop.currentDevice!, propagatesRight: propagatesRight
+                    ) {
                         
                         rays.append((
                             ray: Ray(
@@ -586,7 +592,9 @@ struct Renderer {
                         ))
                     }
                     
-                    if shouldGenerateCurveCenterRay(to: loop.currentDevice!) {
+                    if shouldGenerateCurveCenterRay(
+                        to: loop.currentDevice!, propagatesRight: propagatesRight
+                    ) {
                         
                         rays.append((
                             ray: Ray(
@@ -850,7 +858,8 @@ struct Renderer {
     
     func shouldGenerateParallelRay(
     
-        to device: OpticsDevice
+        to device: OpticsDevice,
+        propagatesRight: Bool
         
     ) -> Bool {
         
@@ -875,7 +884,8 @@ struct Renderer {
     
     func shouldGenerateCenterRay(
     
-        to device: OpticsDevice
+        to device: OpticsDevice,
+        propagatesRight: Bool
         
     ) -> Bool {
         
@@ -900,7 +910,8 @@ struct Renderer {
     
     func shouldGenerateFocalRay(
     
-        to device: OpticsDevice
+        to device: OpticsDevice,
+        propagatesRight: Bool
         
     ) -> Bool {
         
@@ -910,7 +921,8 @@ struct Renderer {
         }
         
         if let mirror = device as? Mirror,
-           mirror.type == .concave {
+           mirror.type == .concave,
+           mirror.facesLeft && propagatesRight || !mirror.facesLeft && !propagatesRight {
             
             return mirror.generatesFocalRay
         }
@@ -921,12 +933,14 @@ struct Renderer {
     
     func shouldGenerateCurveCenterRay(
     
-        to device: OpticsDevice
+        to device: OpticsDevice,
+        propagatesRight: Bool
         
     ) -> Bool {
         
         if let mirror = device as? Mirror,
-           mirror.type == .concave {
+           mirror.type == .concave,
+           mirror.facesLeft && propagatesRight || !mirror.facesLeft && !propagatesRight {
             
             return mirror.generatesCurveCenterRay
         }
