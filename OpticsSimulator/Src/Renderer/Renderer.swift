@@ -340,13 +340,14 @@ struct Renderer {
     
     func computeImages(
         
-        of object: Object, through devices: [OpticsDevice]
+        of object: Object, through devices: [OpticsDevice],
+        propagatesRight propagatesRight_start: Bool
         
     ) -> [Image] {
         
         var images: [Image] = []
         
-        var propagatesRight = true
+        var propagatesRight = propagatesRight_start
         
         for i in 0..<devices.count {
             
@@ -400,30 +401,41 @@ struct Renderer {
     func devicesSequence(
         
         for object: Object,
-        from allPossibleDevices: [OpticsDevice]
+        from allPossibleDevices: [OpticsDevice],
+        propagatesRight propagatesRight_start: Bool
     
     ) -> [OpticsDevice] {
         
-        let devicesByPosition = allPossibleDevices
-            .sorted { $0.pos < $1.pos }
-        
         var devicesSequence: [OpticsDevice] = []
         
-        if let i0 = devicesByPosition.firstIndex(where: {
-            device in device.pos > object.pos
-        }) {
+        var propagatesRight = propagatesRight_start
+        
+        var devicesByPositionLeftToRight = allPossibleDevices
+            .sorted { $0.pos < $1.pos }
+        
+        let i0: Int? = {
+            if propagatesRight {
+                return devicesByPositionLeftToRight.firstIndex(where: {
+                    device in device.pos > object.pos
+                })
+            } else {
+                return devicesByPositionLeftToRight.lastIndex(where: {
+                    device in device.pos < object.pos
+                })
+            }
+        }()
+        
+        if let i0 {
             
             var i = i0
             
-            var propagatesRight = true
-            
             while true {
                 
-                if i<0 || i>=devicesByPosition.count {
+                if i<0 || i>=devicesByPositionLeftToRight.count {
                     break
                 }
                 
-                let device = devicesByPosition[i]
+                let device = devicesByPositionLeftToRight[i]
                 
                 devicesSequence.append(device)
                 
@@ -482,14 +494,18 @@ struct Renderer {
         
         for currentObject in enabledObjects {
             
+            let propagatesRight = false
+            
             let relevantDevicesForCurrentObject = devicesSequence(
-                for: currentObject, from: enabledDevicesByPosition
+                for: currentObject, from: enabledDevicesByPosition,
+                propagatesRight: propagatesRight
             )
             
             // compute images
             
             let allImagesOfCurrentObject = computeImages(
-                of: currentObject, through: relevantDevicesForCurrentObject
+                of: currentObject, through: relevantDevicesForCurrentObject,
+                propagatesRight: propagatesRight
             )
             allImagesOfAllObjects.append(
                 contentsOf: allImagesOfCurrentObject
@@ -628,7 +644,7 @@ struct Renderer {
                     allRayDescriptors.append(RayDescriptor(
                         deviceBefore: loop.previousDevice,
                         deviceAfter: loop.currentDevice!,
-                        propagatesRight: true,
+                        propagatesRight: propagatesRight,
                         source: loop.currentSource,
                         rayId: rayId,
                         points: pointsForRay
@@ -644,6 +660,7 @@ struct Renderer {
                         sources: sources,
                         devices: devices,
                         sourceIndex: sourceIndex,
+                        propagatesRight: propagatesRight,
                         showImages: showImages,
                         showVirtualImages: showVirtualImages
                     )
@@ -956,6 +973,7 @@ struct Renderer {
         sources: [ObjectOrImage],
         devices: [OpticsDevice],
         sourceIndex: Int,
+        propagatesRight propagatesRight_start: Bool,
         
         showImages: Bool,
         showVirtualImages: Bool
@@ -966,6 +984,8 @@ struct Renderer {
         
         var rayPointOnPreviousDevice = sourceRayPoint
         
+        var propagatesRight = propagatesRight_start
+        
         for sourceIndexForward in (sourceIndex+1)..<sources.count {
             
             let loop = getLoopIterator(
@@ -973,12 +993,15 @@ struct Renderer {
                 at: sourceIndexForward
             )
             
+            if let mirror = loop.previousDevice as? Mirror,
+               mirror.facesLeft && propagatesRight || !mirror.facesLeft && !propagatesRight {
+                propagatesRight.toggle()
+            }
+            
             let ray = Ray(
                 from: rayPointOnPreviousDevice.point,
                 to: loop.currentSourceTop
             )
-            
-            let propagatesRight = false
             
             let defaultEndX = propagatesRight ? renderSize.width : 0
             
