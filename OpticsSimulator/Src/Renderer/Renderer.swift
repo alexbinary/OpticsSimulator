@@ -370,6 +370,54 @@ struct Renderer {
         return images
     }
     
+    
+    func devicesSequence(
+        
+        for object: Object,
+        from allPossibleDevices: [OpticsDevice]
+    
+    ) -> [OpticsDevice] {
+        
+        let devicesByPosition = allPossibleDevices
+            .sorted { $0.pos < $1.pos }
+        
+        var devicesSequence: [OpticsDevice] = []
+        
+        if let i0 = devicesByPosition.firstIndex(where: {
+            device in device.pos > object.pos
+        }) {
+            
+            var i = i0
+            
+            var propagatesRight = true
+            
+            while true {
+                
+                if i<0 || i>=devicesByPosition.count {
+                    break
+                }
+                
+                let device = devicesByPosition[i]
+                
+                devicesSequence.append(device)
+                
+                if device is Mirror {
+                    
+                    propagatesRight.toggle()
+                }
+                
+                if propagatesRight {
+                    i += 1
+                } else {
+                    i -= 1
+                }
+            }
+        }
+        
+        return devicesSequence
+    }
+    
+    
     func render(
         
         _ scene: OpticsScene,
@@ -395,8 +443,9 @@ struct Renderer {
         
         for currentObject in enabledObjects {
             
-            let relevantDevicesForCurrentObject = enabledDevicesByPosition
-                .filter { device in device.pos > currentObject.pos }
+            let relevantDevicesForCurrentObject = devicesSequence(
+                for: currentObject, from: enabledDevicesByPosition
+            )
             
             // compute images
             
@@ -852,7 +901,7 @@ struct Renderer {
                 return false
             }
             
-            if image.virtual {   
+            if image.virtual {
                 return showVirtualImages
             }
         }
