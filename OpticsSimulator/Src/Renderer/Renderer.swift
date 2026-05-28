@@ -144,54 +144,51 @@ struct Renderer {
         path.move(to: CGPoint(x: x, y: h))
         path.addLine(to: CGPoint(x: x, y: -h))
         
+        let d: CGFloat = mirror.facesLeft ? +1 : -1
+        
         let n = 15
         for i in 0...n {
             
             let hi: CGFloat = -h + CGFloat(i)*2*h/CGFloat(n)
             
             path.move(to: CGPoint(x: x, y: hi))
-            
-            if mirror.facesLeft {
-                path.addLine(to: CGPoint(x: x+a, y: hi-a))
-            } else {
-                path.addLine(to: CGPoint(x: x-a, y: hi+a))
-            }
+            path.addLine(to: CGPoint(x: x+d*a, y: hi-d*a))
         }
         
         if mirror.type == .concave {
             
             // arrows
-            path.move(to: CGPoint(x: x-2*a, y: h+2*a))
             path.addLine(to: CGPoint(x: x, y: h))
+            path.addLine(to: CGPoint(x: x-d*2*a, y: h+2*a))
             
             path.move(to: CGPoint(x: x, y: -h))
-            path.addLine(to: CGPoint(x: x-2*a, y: -h-2*a))
+            path.addLine(to: CGPoint(x: x-d*2*a, y: -h-2*a))
             
             // focal indicator
-            path.move(to: CGPoint(x: x-f, y: -m))
-            path.addLine(to: CGPoint(x: x-f, y: +m))
+            path.move(to: CGPoint(x: x-d*f, y: -m))
+            path.addLine(to: CGPoint(x: x-d*f, y: +m))
             
             // center indicator
-            path.move(to: CGPoint(x: x-2*f, y: -m))
-            path.addLine(to: CGPoint(x: x-2*f, y: +m))
+            path.move(to: CGPoint(x: x-d*2*f, y: -m))
+            path.addLine(to: CGPoint(x: x-d*2*f, y: +m))
         }
         
         if mirror.type == .convex {
             
             // arrows
             path.move(to: CGPoint(x: x, y: h))
-            path.addLine(to: CGPoint(x: x+2*a, y: h+2*a))
+            path.addLine(to: CGPoint(x: x+d*2*a, y: h+2*a))
             
             path.move(to: CGPoint(x: x, y: -h))
-            path.addLine(to: CGPoint(x: x+2*a, y: -h-2*a))
+            path.addLine(to: CGPoint(x: x+d*2*a, y: -h-2*a))
             
             // focal indicator
-            path.move(to: CGPoint(x: x+f, y: -m))
-            path.addLine(to: CGPoint(x: x+f, y: +m))
+            path.move(to: CGPoint(x: x+d*f, y: -m))
+            path.addLine(to: CGPoint(x: x+d*f, y: +m))
             
             // center indicator
-            path.move(to: CGPoint(x: x+2*f, y: -m))
-            path.addLine(to: CGPoint(x: x+2*f, y: +m))
+            path.move(to: CGPoint(x: x+d*2*f, y: -m))
+            path.addLine(to: CGPoint(x: x+d*2*f, y: +m))
         }
         
         context.stroke(path, with: .color(color), lineWidth: 2)
@@ -410,7 +407,7 @@ struct Renderer {
         
         var propagatesRight = propagatesRight_start
         
-        var devicesByPositionLeftToRight = allPossibleDevices
+        let devicesByPositionLeftToRight = allPossibleDevices
             .sorted { $0.pos < $1.pos }
         
         let i0: Int? = {
