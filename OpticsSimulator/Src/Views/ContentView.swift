@@ -304,7 +304,6 @@ struct ContentView: View {
                                         Toggle("Focal", isOn: $mirror.generatesFocalRay)
                                             .disabled(mirror.type != .concave)
                                         Toggle("Curve center", isOn: $mirror.generatesCurveCenterRay)
-                                            .disabled(mirror.type != .concave)
                                     }
                                 }
                             }

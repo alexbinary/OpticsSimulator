@@ -287,7 +287,13 @@ struct Renderer {
         rawSize * renderSize.height/2*0.7
     }
     
-    func image(of object: ObjectOrImage, through device: OpticsDevice) -> Image {
+    func image(
+        
+        of object: ObjectOrImage,
+        through device: OpticsDevice,
+        propagatesRight: Bool
+    
+    ) -> Image {
         
         var imagePos: CGFloat
         var imageSize: CGFloat
@@ -319,7 +325,7 @@ struct Renderer {
             if mirror.type == .concave || mirror.type == .convex {
                 
                 // compute image through mirror
-                let posf = mirror.pos + (mirror.type == .convex ? +1 : -1) * mirror.focalLength
+                let posf = mirror.pos + (mirror.type == .convex ? +1 : -1) * (propagatesRight ? +1 : -1) * mirror.focalLength
                 let fa = object.pos - posf
                 let fa_im = mirror.focalLength*mirror.focalLength / fa
                 imagePos = fa_im + posf
@@ -358,19 +364,29 @@ struct Renderer {
             
             if let mirror = currentDevice as? Mirror {
                 
-                if mirror.facesLeft && propagatesRight
-                    || !mirror.facesLeft && !propagatesRight {
-                    
-                    propagatesRight.toggle()
-                    
-                } else {
+                if mirror.facesLeft && !propagatesRight
+                    || !mirror.facesLeft && propagatesRight {
                     
                     break
                 }
             }
             
             let currentSource = images.last ?? object
-            let image = image(of: currentSource, through: currentDevice)
+            
+            let image = image(
+                of: currentSource,
+                through: currentDevice,
+                propagatesRight: propagatesRight
+            )
+            
+            if let mirror = currentDevice as? Mirror {
+                
+                if mirror.facesLeft && propagatesRight
+                    || !mirror.facesLeft && !propagatesRight {
+                    
+                    propagatesRight.toggle()
+                }
+            }
             
             if image.pos < currentDevice.pos {
                 
@@ -527,7 +543,9 @@ struct Renderer {
                     // generate rays from source
                     
                     let loop = getLoopIterator(
-                        for: sources, devices, at: sourceIndex
+                        for: sources, devices,
+                        at: sourceIndex,
+                        propagatesRight: propagatesRight
                     )
                     
                     if loop.currentDevice == nil {
@@ -596,14 +614,20 @@ struct Renderer {
                         to: loop.currentDevice!, propagatesRight: propagatesRight
                     ) {
                         
+                        let mirror = loop.currentDevice as! Mirror
+                        
+                        let focalPoint = mirror.type == .convex
+                            ? loop.currentDeviceCurveCenterPointAfter!
+                            : loop.currentDeviceCurveCenterPointBefore!
+                        
                         rays.append((
                             ray: Ray(
                                 from: loop.currentSourceTop,
-                                to: loop.currentDeviceCurveCenterPointBefore!,
+                                to: focalPoint,
                             ),
                             horizontalIncidence: false,
                             points: [
-                                loop.currentDeviceCurveCenterPointBefore!.x
+                                focalPoint.x
                             ]
                         ))
                     }
@@ -691,6 +715,7 @@ struct Renderer {
                             sources: sources,
                             devices: devices,
                             sourceIndex: sourceIndex,
+                            propagatesRight: propagatesRight,
                             showVirtualImages: showVirtualImages
                         )
                         
@@ -728,131 +753,6 @@ struct Renderer {
             showVirtualRays: showConstructionRays,
             mouse: mouse
         )
-        
-        
-        
-        
-        //        if let object = scene.objects.first,
-        //           let mirror = scene.mirrors.first {
-        //
-        //            images.append(image(of: object, through: mirror))
-        //        }
-        
-        
-        // draw rays
-        
-//        let object = scene.objects.first
-//        let mirror = scene.mirrors.first
-//        let image = allImagesOfAllObjects.first
-//        let screen = scene.screens.first
-        
-        
-//        if let object = object,
-//           let mirror = mirror,
-//           let image = image,
-//           let screen = screen {
-//            
-//            let objectPos = resolvedPos(from: object.pos)
-//            let objectSize = resolvedObjectSize(from: object.size)
-//            let objectTop = CGPoint(x: objectPos, y: objectSize)
-//            
-//            let imagePos = resolvedPos(from: image.pos)
-//            let imageSize = resolvedObjectSize(from: image.size)
-//            let imageTop = CGPoint(x: imagePos, y: imageSize)
-//            
-//            let mirrorPos = resolvedPos(from: mirror.pos)
-//            let f = resolvedFocalLength(from: mirror.focalLength)
-//            let mirrorVertex = CGPoint(x: mirrorPos, y: 0)
-//            let mirrorCenter = CGPoint(x: mirrorPos+(mirror.type == .concave ? -1 : +1)*2*f, y: 0)
-//            let F = CGPoint(x: mirrorPos+(mirror.type == .concave ? -1 : +1)*f, y: 0)
-//            
-//            let screenPos = resolvedPos(from: screen.pos)
-//            
-//            // parallel ray : object > mirror
-//            
-//            let projectedPointOnMirror = Ray(horizontalFrom: objectTop)
-//                .point(atX: mirrorPos)
-//            drawRay(from: objectTop, to: projectedPointOnMirror)
-//            
-//            // parallel ray : mirror > F > image
-//            
-//            drawRay(
-//                from: projectedPointOnMirror, to: F,
-//                minX: screenPos, maxX: mirrorPos
-//            )
-//            
-//            if imagePos < screenPos {
-//                
-//                drawRay(
-//                    from: projectedPointOnMirror, to: F,
-//                    minX: imagePos, maxX: screenPos,
-//                    virtual: true
-//                )
-//            }
-//            
-//            if imagePos > mirrorPos {
-//                
-//                drawRay(
-//                    from: projectedPointOnMirror, to: F,
-//                    minX: mirrorPos, maxX: [imagePos, F.x].max()!,
-//                    virtual: true
-//                )
-//            }
-//            
-//            // vertex ray : object > S
-//            
-//            drawRay(from: objectTop, to: mirrorVertex)
-//            
-//            // vertex ray : S > image
-//            
-//            drawRay(
-//                from: mirrorVertex, to: imageTop,
-//                minX: screenPos, maxX: mirrorPos
-//            )
-//            
-//            if imagePos < screenPos {
-//                
-//                drawRay(
-//                    from: mirrorVertex, to: imageTop,
-//                    minX: imagePos, maxX: screenPos,
-//                    virtual: true
-//                )
-//            }
-//            
-//            if imagePos > mirrorPos {
-//                
-//                drawRay(
-//                    from: mirrorVertex, to: imageTop,
-//                    minX: mirrorPos, maxX: imagePos,
-//                    virtual: true
-//                )
-//            }
-//            
-//            // center ray : object > image
-//            
-//            drawRay(
-//                from: objectTop, to: mirrorCenter,
-//                minX: screenPos, maxX: mirrorPos
-//            )
-//            
-//            if imagePos < screenPos {
-//                
-//                drawRay(
-//                    from: objectTop, to: mirrorCenter,
-//                    minX: imagePos, maxX: screenPos,
-//                    virtual: true
-//                )
-//            }
-//            
-//            if imagePos > mirrorPos {
-//                
-//                drawRay(
-//                    from: objectTop, to: mirrorCenter,
-//                    minX: mirrorPos, maxX: [imagePos, mirrorCenter.x].max()!,
-//                    virtual: true
-//                )
-//            }
-//        }
     }
     
     
@@ -939,7 +839,6 @@ struct Renderer {
     ) -> Bool {
         
         if let mirror = device as? Mirror,
-           mirror.type == .concave,
            mirror.facesLeft && propagatesRight || !mirror.facesLeft && !propagatesRight {
             
             return mirror.generatesCurveCenterRay
@@ -1011,7 +910,8 @@ struct Renderer {
             
             let loop = getLoopIterator(
                 for: sources, devices,
-                at: sourceIndexForward
+                at: sourceIndexForward,
+                propagatesRight: propagatesRight
             )
             
             if let mirror = loop.previousDevice as? Mirror,
@@ -1090,6 +990,7 @@ struct Renderer {
         sources: [ObjectOrImage],
         devices: [OpticsDevice],
         sourceIndex: Int,
+        propagatesRight: Bool,
         
         showVirtualImages: Bool
         
@@ -1104,7 +1005,8 @@ struct Renderer {
             
             let loop = getLoopIterator(
                 for: sources, devices,
-                at: sourceIndexBackwards
+                at: sourceIndexBackwards,
+                propagatesRight: propagatesRight
             )
             
             let ray = Ray(
@@ -1122,7 +1024,7 @@ struct Renderer {
             allRayDescriptors.append(RayDescriptor(
                 deviceBefore: loop.previousDevice,
                 deviceAfter: loop.currentDevice,
-                propagatesRight: true,
+                propagatesRight: propagatesRight,
                 source: loop.currentSource,
                 rayId: rayPointOnCurrentDevice.rayId,
                 points: pointsForRay
@@ -1141,7 +1043,8 @@ struct Renderer {
     func getLoopIterator(
         
         for sources: [ObjectOrImage], _ devices: [OpticsDevice],
-        at sourceIndex: Int
+        at sourceIndex: Int,
+        propagatesRight: Bool
         
     ) -> LoopIterator {
         
@@ -1182,13 +1085,19 @@ struct Renderer {
         
         let currentDevice = sourceIndex < devices.count ? devices[sourceIndex] : nil
         
-        let currentDeviceInfo = getDeviceInfo(currentDevice)
+        let currentDeviceInfo = getDeviceInfo(
+            for: currentDevice,
+            propagatesRight: propagatesRight
+        )
         
         // previous device
         
         let previousDevice = (sourceIndex-1) >= 0 ? devices[sourceIndex-1] : nil
         
-        let previousDeviceInfo = getDeviceInfo(previousDevice)
+        let previousDeviceInfo = getDeviceInfo(
+            for: previousDevice,
+            propagatesRight: propagatesRight
+        )
         
         //
         
@@ -1225,7 +1134,12 @@ struct Renderer {
     }
     
     
-    func getDeviceInfo(_ device: OpticsDevice?) -> DeviceInfo {
+    func getDeviceInfo(
+        
+        for device: OpticsDevice?,
+        propagatesRight: Bool
+    
+    ) -> DeviceInfo {
         
         let devicePos = device != nil
         ? resolvedPos(
@@ -1251,10 +1165,12 @@ struct Renderer {
             return nil
         }()
         
+        let d: CGFloat = propagatesRight ? +1 : -1
+        
         let deviceFocalPointBefore: CGPoint? = {
             if device is Lense || device is Mirror {
                 return CGPoint(
-                    x: devicePos! - deviceFocalLength!, y: 0
+                    x: devicePos! - d*deviceFocalLength!, y: 0
                 )
             }
             return nil
@@ -1263,7 +1179,7 @@ struct Renderer {
         let deviceFocalPointAfter: CGPoint? = {
             if device is Lense || device is Mirror  {
                 return CGPoint(
-                    x: devicePos! + deviceFocalLength!, y: 0
+                    x: devicePos! + d*deviceFocalLength!, y: 0
                 )
             }
             return nil
@@ -1272,7 +1188,7 @@ struct Renderer {
         let deviceCurveCenterPointBefore: CGPoint? = {
             if device is Mirror {
                 return CGPoint(
-                    x: devicePos! - 2*deviceFocalLength!, y: 0
+                    x: devicePos! - d*2*deviceFocalLength!, y: 0
                 )
             }
             return nil
@@ -1281,7 +1197,7 @@ struct Renderer {
         let deviceCurveCenterPointAfter: CGPoint? = {
             if device is Mirror {
                 return CGPoint(
-                    x: devicePos! + 2*deviceFocalLength!, y: 0
+                    x: devicePos! + d*2*deviceFocalLength!, y: 0
                 )
             }
             return nil
