@@ -304,8 +304,11 @@ struct Renderer {
             if let object = object as? Object,
                object.atInfinity {
                 
-                let f = lense.focalLength * (lense.type == .convergent ? +1 : -1)
-                let distO = lense.pos - object.pos
+                let objectPos: CGFloat = propagatesRight ? 0 : 1
+                let d: CGFloat = propagatesRight ? +1 : -1
+                
+                let f = lense.focalLength * d*(lense.type == .convergent ? +1 : -1)
+                let distO = lense.pos - objectPos
                 gamma = f / distO
                 imagePos = lense.pos + f
                 imageSize = -object.size * gamma
@@ -401,15 +404,31 @@ struct Renderer {
                 }
             }
             
-            if image.pos < currentDevice.pos {
+            if propagatesRight {
                 
-                image.virtual = true
-            }
-            
-            if let nextDevice = nextDevice,
-               image.pos > nextDevice.pos {
+                if image.pos < currentDevice.pos {
+                    
+                    image.virtual = true
+                }
                 
-                image.virtual = true
+                if let nextDevice = nextDevice,
+                   image.pos > nextDevice.pos {
+                    
+                    image.virtual = true
+                }
+                
+            } else {
+                
+                if image.pos > currentDevice.pos {
+                    
+                    image.virtual = true
+                }
+                
+                if let nextDevice = nextDevice,
+                   image.pos < nextDevice.pos {
+                    
+                    image.virtual = true
+                }
             }
             
             if currentDevice is Mirror {
@@ -439,14 +458,16 @@ struct Renderer {
         let devicesByPositionLeftToRight = allPossibleDevices
             .sorted { $0.pos < $1.pos }
         
+        let objectPos = propagatesRight ? 0 : renderSize.width
+        
         let i0: Int? = {
             if propagatesRight {
                 return devicesByPositionLeftToRight.firstIndex(where: {
-                    device in device.pos > object.pos
+                    device in device.pos > objectPos
                 })
             } else {
                 return devicesByPositionLeftToRight.lastIndex(where: {
-                    device in device.pos < object.pos
+                    device in device.pos < objectPos
                 })
             }
         }()
@@ -1100,9 +1121,15 @@ struct Renderer {
         
         let currentSource = sources[sourceIndex]
         
-        let currentSourcePos = resolvedPos(
-            from: currentSource.pos
-        )
+        let currentSourcePos: CGFloat = {
+            if let object = currentSource as? Object,
+               object.atInfinity {
+                return propagatesRight ? 0 : renderSize.width
+            }
+            return resolvedPos(
+                from: currentSource.pos
+            )
+        }()
         let currentSourceSize = resolvedObjectSize(
             from: currentSource.size
         )
@@ -1391,6 +1418,12 @@ struct Renderer {
             
             let startX: CGFloat? = {
                 
+                if let object = rayDescriptor.source as? Object,
+                   object.atInfinity {
+                    
+                    return propagatesRight ? 0 : renderSize.width
+                }
+                
                 var pos: [CGFloat] = []
 
                 if let deviceBefore = rayDescriptor.deviceBefore {
@@ -1421,8 +1454,16 @@ struct Renderer {
                     
                     let ray = Ray(from: p1, to: p2)
                     
-                    if let startX = startX, p1.x < startX {
-                        points.append(ray.point(atX: startX))
+                    if let startX = startX {
+                        
+                        if let object = rayDescriptor.source as? Object,
+                           object.atInfinity {
+                            
+                            points.append(ray.point(atX: startX))
+                        }
+                        if p1.x < startX {
+                            points.append(ray.point(atX: startX))
+                        }
                     }
                     if let endX = endX, p2.x > endX {
                         points.append(ray.point(atX: endX))
