@@ -50,6 +50,7 @@ class OpticsScene {
                     pos: object.pos,
                     size: object.size,
                     name: object.name,
+                    atInfinity: object.atInfinity,
                     generatesRight: object.generatesRight,
                     generatesLeft: object.generatesLeft
                 )
@@ -122,6 +123,7 @@ class OpticsScene {
                 size: descriptor.size,
                 generatesRight: descriptor.generatesRight,
                 generatesLeft: descriptor.generatesLeft,
+                atInfinity: descriptor.atInfinity,
                 enabled: descriptor.enabled,
                 visible: descriptor.visible
             )
@@ -237,9 +239,10 @@ struct ObjectDescriptor: Codable {
     let pos: CGFloat
     let size: CGFloat
     let name: String
+    let atInfinity: Bool
     
-    var generatesRight: Bool
-    var generatesLeft: Bool
+    let generatesRight: Bool
+    let generatesLeft: Bool
 }
 
 struct LenseDescriptor: Codable {
@@ -252,11 +255,11 @@ struct LenseDescriptor: Codable {
     let type: LenseType
     let name: String
     
-    var generatesParallelRay: Bool
-    var generatesCenterRay: Bool
-    var generatesFocalRay: Bool
+    let generatesParallelRay: Bool
+    let generatesCenterRay: Bool
+    let generatesFocalRay: Bool
     
-    var retroPropagatesRays: Bool
+    let retroPropagatesRays: Bool
 }
 
 struct MirrorDescriptor: Codable {
@@ -270,10 +273,10 @@ struct MirrorDescriptor: Codable {
     let name: String
     let facesLeft: Bool
     
-    var generatesParallelRay: Bool
-    var generatesCenterRay: Bool
-    var generatesFocalRay: Bool
-    var generatesCurveCenterRay: Bool
+    let generatesParallelRay: Bool
+    let generatesCenterRay: Bool
+    let generatesFocalRay: Bool
+    let generatesCurveCenterRay: Bool
 }
 
 struct ScreenDescriptor: Codable {
@@ -295,9 +298,9 @@ struct ScenePresetDescriptor: Codable {
     let mirrors: [MirrorDescriptor]
     let screens: [ScreenDescriptor]
     
-    var showImages: Bool
-    var showVirtualImages: Bool
-    var showVirtualRays: Bool
+    let showImages: Bool
+    let showVirtualImages: Bool
+    let showVirtualRays: Bool
 }
 
 

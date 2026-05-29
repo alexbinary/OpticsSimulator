@@ -22,6 +22,7 @@ class Object: ObjectOrImage, Identifiable {
     var name: String
     var generatesRight: Bool
     var generatesLeft: Bool
+    var atInfinity: Bool
     
     var enabled: Bool
     var visible: Bool
@@ -30,11 +31,13 @@ class Object: ObjectOrImage, Identifiable {
         name: String, pos: CGFloat, size: CGFloat,
         generatesRight: Bool = true,
         generatesLeft: Bool = false,
+        atInfinity: Bool = false,
         enabled: Bool = true, visible: Bool = true
     ) {
         self.name = name
         self.generatesLeft = generatesLeft
         self.generatesRight = generatesRight
+        self.atInfinity = atInfinity
         self.enabled = enabled
         self.visible = visible
         super.init(pos: pos, size: size)

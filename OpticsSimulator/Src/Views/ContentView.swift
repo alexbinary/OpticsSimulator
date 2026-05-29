@@ -202,6 +202,9 @@ struct ContentView: View {
                                     }
                                     Text("\(object.size, specifier: "%.2f")")
                                 }
+                                LabeledContent("At infinity") {
+                                    Toggle(" ", isOn: $object.atInfinity)
+                                }
                                 LabeledContent("Rays") {
                                     HStack {
                                         Toggle("Right", isOn: $object.generatesRight)

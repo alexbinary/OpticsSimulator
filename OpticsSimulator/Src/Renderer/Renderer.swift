@@ -301,15 +301,28 @@ struct Renderer {
         
         if let lense = device as? Lense {
             
-            // compute image through lense
-            let f = lense.focalLength * (lense.type == .convergent ? +1 : -1)
-            let distO = lense.pos - object.pos
-            gamma = f / (distO - f)
-            let distI = distO * gamma
-            imagePos = lense.pos + distI
-            imageSize = -object.size * gamma
-            
-            return Image(pos: imagePos, size: imageSize)
+            if let object = object as? Object,
+               object.atInfinity {
+                
+                let f = lense.focalLength * (lense.type == .convergent ? +1 : -1)
+                let distO = lense.pos - object.pos
+                gamma = f / distO
+                imagePos = lense.pos + f
+                imageSize = -object.size * gamma
+                
+                return Image(pos: imagePos, size: imageSize)
+                
+            } else {
+                
+                let f = lense.focalLength * (lense.type == .convergent ? +1 : -1)
+                let distO = lense.pos - object.pos
+                gamma = f / (distO - f)
+                let distI = distO * gamma
+                imagePos = lense.pos + distI
+                imageSize = -object.size * gamma
+                
+                return Image(pos: imagePos, size: imageSize)
+            }
         }
         
         if let mirror = device as? Mirror {
@@ -567,69 +580,102 @@ struct Renderer {
                         points: [CGFloat]
                     )] = []
                     
-                    if shouldGenerateParallelRay(
-                        to: loop.currentDevice!, propagatesRight: propagatesRight
-                    ) {
-                        
-                        rays.append((
-                            ray: Ray(
-                                horizontalFrom: loop.currentSourceTop
-                            ),
-                            horizontalIncidence: true,
-                            points: []
-                        ))
-                    }
                     
-                    if shouldGenerateCenterRay(
-                        to: loop.currentDevice!, propagatesRight: propagatesRight
-                    ) {
+                    // infinite rays
+                    
+                    if let object = loop.currentSource as? Object,
+                       object.atInfinity {
                         
                         rays.append((
                             ray: Ray(
                                 from: loop.currentSourceTop,
-                                to: loop.currentDeviceCenter!,
+                                to: loop.currentDeviceCenter!
                             ),
                             horizontalIncidence: false,
                             points: []
                         ))
-                    }
-                    
-                    if shouldGenerateFocalRay(
-                        to: loop.currentDevice!, propagatesRight: propagatesRight
-                    ) {
                         
-                        rays.append((
-                            ray: Ray(
-                                from: loop.currentSourceTop,
-                                to: loop.currentDeviceFocalPointBefore!,
-                            ),
-                            horizontalIncidence: false,
-                            points: [
-                                loop.currentDeviceFocalPointBefore!.x
-                            ]
-                        ))
-                    }
-                    
-                    if shouldGenerateCurveCenterRay(
-                        to: loop.currentDevice!, propagatesRight: propagatesRight
-                    ) {
+                        if let lense = loop.currentDevice as? Lense,
+                           lense.type == .convergent {
+                            
+                            rays.append((
+                                ray: Ray(
+                                    from: loop.currentSourceTop,
+                                    to: loop.currentDeviceCenter!,
+                                    anchor: loop.currentDeviceFocalPointBefore
+                                ),
+                                horizontalIncidence: false,
+                                points: []
+                            ))
+                        }
                         
-                        let mirror = loop.currentDevice as! Mirror
+                    } else {
                         
-                        let focalPoint = mirror.type == .convex
+                        
+                        if shouldGenerateParallelRay(
+                            to: loop.currentDevice!, propagatesRight: propagatesRight
+                        ) {
+                            
+                            rays.append((
+                                ray: Ray(
+                                    horizontalFrom: loop.currentSourceTop
+                                ),
+                                horizontalIncidence: true,
+                                points: []
+                            ))
+                        }
+                        
+                        if shouldGenerateCenterRay(
+                            to: loop.currentDevice!, propagatesRight: propagatesRight
+                        ) {
+                            
+                            rays.append((
+                                ray: Ray(
+                                    from: loop.currentSourceTop,
+                                    to: loop.currentDeviceCenter!,
+                                ),
+                                horizontalIncidence: false,
+                                points: []
+                            ))
+                        }
+                        
+                        if shouldGenerateFocalRay(
+                            to: loop.currentDevice!, propagatesRight: propagatesRight
+                        ) {
+                            
+                            rays.append((
+                                ray: Ray(
+                                    from: loop.currentSourceTop,
+                                    to: loop.currentDeviceFocalPointBefore!,
+                                ),
+                                horizontalIncidence: false,
+                                points: [
+                                    loop.currentDeviceFocalPointBefore!.x
+                                ]
+                            ))
+                        }
+                        
+                        if shouldGenerateCurveCenterRay(
+                            to: loop.currentDevice!, propagatesRight: propagatesRight
+                        ) {
+                            
+                            let mirror = loop.currentDevice as! Mirror
+                            
+                            let focalPoint = mirror.type == .convex
                             ? loop.currentDeviceCurveCenterPointAfter!
                             : loop.currentDeviceCurveCenterPointBefore!
-                        
-                        rays.append((
-                            ray: Ray(
-                                from: loop.currentSourceTop,
-                                to: focalPoint,
-                            ),
-                            horizontalIncidence: false,
-                            points: [
-                                focalPoint.x
-                            ]
-                        ))
+                            
+                            rays.append((
+                                ray: Ray(
+                                    from: loop.currentSourceTop,
+                                    to: focalPoint,
+                                ),
+                                horizontalIncidence: false,
+                                points: [
+                                    focalPoint.x
+                                ]
+                            ))
+                        }
                     }
                     
                     for (ray, horizontalIncidence, points) in rays {
@@ -730,7 +776,9 @@ struct Renderer {
         drawAxis()
         
         for object in scene.objects.filter({ $0.enabled }) {
-            draw(object)
+            if !object.atInfinity {
+                draw(object)
+            }
         }
         for lense in scene.lenses.filter({ $0.enabled }) {
             draw(lense)
