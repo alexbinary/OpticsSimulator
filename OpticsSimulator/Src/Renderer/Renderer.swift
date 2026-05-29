@@ -360,17 +360,38 @@ struct Renderer {
             
             if mirror.type == .concave || mirror.type == .convex {
                 
-                // compute image through mirror
-                let posf = mirror.pos + (mirror.type == .convex ? +1 : -1) * (propagatesRight ? +1 : -1) * mirror.focalLength
-                let fa = object.pos - posf
-                let fa_im = mirror.focalLength*mirror.focalLength / fa
-                imagePos = fa_im + posf
-                let sa = object.pos - mirror.pos
-                let sa_im = imagePos - mirror.pos
-                gamma = sa_im / sa
-                imageSize = -object.size * gamma
-                
-                return Image(pos: imagePos, size: imageSize)
+                if let object = object as? Object,
+                   object.atInfinity {
+                    
+                    let f = resolvedFocalLength(
+                        from: mirror.focalLength
+                    ) * (mirror.type == .convex ? +1 : -1)
+                    * (propagatesRight ? +1 : -1)
+                    
+                    let d: CGFloat = object.infinityFacesRight ? +1 : -1
+                    let angle = d*resolvedInfinityAngle(from: object.infinityAngle)
+                    
+                    let resolvedImageSize = -f*tan(angle)
+                    let resolvedImagePos = resolvedPos(from: mirror.pos) + f
+                    
+                    imagePos = rawPos(from: resolvedImagePos)
+                    imageSize = rawObjectSize(from: resolvedImageSize)
+                    
+                    return Image(pos: imagePos, size: imageSize)
+                    
+                } else {
+                    
+                    let posf = mirror.pos + (mirror.type == .convex ? +1 : -1) * (propagatesRight ? +1 : -1) * mirror.focalLength
+                    let fa = object.pos - posf
+                    let fa_im = mirror.focalLength*mirror.focalLength / fa
+                    imagePos = fa_im + posf
+                    let sa = object.pos - mirror.pos
+                    let sa_im = imagePos - mirror.pos
+                    gamma = sa_im / sa
+                    imageSize = -object.size * gamma
+                    
+                    return Image(pos: imagePos, size: imageSize)
+                }
             }
         }
         
@@ -424,37 +445,43 @@ struct Renderer {
                 }
             }
             
-            if propagatesRight {
-                
-                if image.pos < currentDevice.pos {
+            image.virtual = {
+               
+                if let mirror = currentDevice as? Mirror,
+                   mirror.type == .plane {
                     
-                    image.virtual = true
+                    return true
+                }
+                    
+                if propagatesRight {
+                    
+                    if image.pos < currentDevice.pos {
+                        
+                        return true
+                    }
+                    
+                    if let nextDevice = nextDevice,
+                       image.pos > nextDevice.pos {
+                        
+                        return true
+                    }
+                    
+                } else {
+                    
+                    if image.pos > currentDevice.pos {
+                        
+                        return true
+                    }
+                    
+                    if let nextDevice = nextDevice,
+                       image.pos < nextDevice.pos {
+                        
+                        return true
+                    }
                 }
                 
-                if let nextDevice = nextDevice,
-                   image.pos > nextDevice.pos {
-                    
-                    image.virtual = true
-                }
-                
-            } else {
-                
-                if image.pos > currentDevice.pos {
-                    
-                    image.virtual = true
-                }
-                
-                if let nextDevice = nextDevice,
-                   image.pos < nextDevice.pos {
-                    
-                    image.virtual = true
-                }
-            }
-            
-            if currentDevice is Mirror {
-                
-                image.virtual = true
-            }
+                return false
+            }()
             
             images.append(image)
         }
@@ -638,24 +665,61 @@ struct Renderer {
                     if let object = loop.currentSource as? Object,
                        object.atInfinity {
                         
-                        var anchorPoints: [CGPoint] = []
+                        var anchorPoints: [(anchor: CGPoint, points: [CGFloat])] = []
                         
-                        anchorPoints.append(loop.currentDeviceCenter!)
+                        anchorPoints.append((
+                            anchor: loop.currentDeviceCenter!,
+                            points: []
+                        ))
                         
                         if let lense = loop.currentDevice as? Lense,
                            lense.type == .convergent {
                             
-                            anchorPoints.append(loop.currentDeviceFocalPointBefore!)
+                            anchorPoints.append((
+                                anchor: loop.currentDeviceFocalPointBefore!,
+                                points: []
+                            ))
+                            
+                        } else if let mirror = loop.currentDevice as? Mirror,
+                                  mirror.type == .concave {
+                                
+                            anchorPoints.append((
+                                anchor: loop.currentDeviceFocalPointBefore!,
+                                points: []
+                            ))
+                            anchorPoints.append((
+                                anchor: loop.currentDeviceCurveCenterPointBefore!,
+                                points: []
+                            ))
+                            
+                        } else if let mirror = loop.currentDevice as? Mirror,
+                                  mirror.type == .convex {
+                                
+                            anchorPoints.append((
+                                anchor: loop.currentDeviceFocalPointAfter!,
+                                points: [
+                                    loop.currentDeviceFocalPointAfter!.x
+                                ]
+                            ))
+                            anchorPoints.append((
+                                anchor: loop.currentDeviceCurveCenterPointAfter!,
+                                points: [
+                                    loop.currentDeviceCurveCenterPointAfter!.x
+                                ]
+                            ))
                             
                         } else {
                             
-                            anchorPoints.append(CGPoint(
-                                x: loop.currentDeviceCenter!.x,
-                                y: loop.currentDeviceCenter!.y-100
+                            anchorPoints.append((
+                                anchor: CGPoint(
+                                    x: loop.currentDeviceCenter!.x,
+                                    y: loop.currentDeviceCenter!.y-100
+                                ),
+                                points: []
                             ))
                         }
                         
-                        for point in anchorPoints {
+                        for (point, points) in anchorPoints {
                             
                             rays.append((
                                 ray: Ray(
@@ -663,7 +727,7 @@ struct Renderer {
                                     anchor: point
                                 ),
                                 horizontalIncidence: false,
-                                points: []
+                                points: points
                             ))
                         }
                         
