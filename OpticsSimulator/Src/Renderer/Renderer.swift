@@ -661,14 +661,14 @@ struct Renderer {
                         propagatesRight: propagatesRight
                     )
                     
-                    if loop.currentDevice == nil {
-                        if let object = loop.currentSource as? Object,
-                           object.atInfinity {
-                            
-                        } else {
-                            break
-                        }
-                    }
+//                    if loop.currentDevice == nil {
+//                        if let object = loop.currentSource as? Object,
+//                           object.atInfinity {
+//                            
+//                        } else {
+//                            break
+//                        }
+//                    }
                     
                     if loop.currentDevice is Screen,
                        loop.currentSource is Image {
@@ -825,69 +825,93 @@ struct Renderer {
                         
                     } else {
                         
-                        if shouldGenerateParallelRay(
-                            to: loop.currentDevice!, propagatesRight: propagatesRight
-                        ) {
+                        if genericRays {
                             
-                            rays.append((
-                                ray: Ray(
-                                    horizontalWithAnchorAt: loop.currentSourceTop
-                                ),
-                                horizontalIncidence: true,
-                                points: []
-                            ))
-                        }
-                        
-                        if shouldGenerateCenterRay(
-                            to: loop.currentDevice!, propagatesRight: propagatesRight
-                        ) {
+                            let angle: CGFloat = .pi/16
                             
-                            rays.append((
-                                ray: Ray(
-                                    from: loop.currentSourceTop,
-                                    to: loop.currentDeviceCenter!,
-                                ),
-                                horizontalIncidence: false,
-                                points: []
-                            ))
-                        }
-                        
-                        if shouldGenerateFocalRay(
-                            to: loop.currentDevice!, propagatesRight: propagatesRight
-                        ) {
+                            var angles: [CGFloat] = []
                             
-                            rays.append((
-                                ray: Ray(
-                                    from: loop.currentSourceTop,
-                                    to: loop.currentDeviceFocalPointBefore!,
-                                ),
-                                horizontalIncidence: false,
-                                points: [
-                                    loop.currentDeviceFocalPointBefore!.x
-                                ]
-                            ))
-                        }
-                        
-                        if shouldGenerateCurveCenterRay(
-                            to: loop.currentDevice!, propagatesRight: propagatesRight
-                        ) {
+                            angles.append(angle)
+                            angles.append(-angle)
                             
-                            let mirror = loop.currentDevice as! Mirror
+                            for angle: CGFloat in angles {
+                                
+                                rays.append((
+                                    ray: Ray(
+                                        angle: .pi + angle,
+                                        anchor: loop.currentSourceTop
+                                    ),
+                                    horizontalIncidence: false,
+                                    points: []
+                                ))
+                            }
                             
-                            let focalPoint = mirror.type == .convex
-                            ? loop.currentDeviceCurveCenterPointAfter!
-                            : loop.currentDeviceCurveCenterPointBefore!
+                        } else if loop.currentDevice != nil {
                             
-                            rays.append((
-                                ray: Ray(
-                                    from: loop.currentSourceTop,
-                                    to: focalPoint,
-                                ),
-                                horizontalIncidence: false,
-                                points: [
-                                    focalPoint.x
-                                ]
-                            ))
+                            if shouldGenerateParallelRay(
+                                to: loop.currentDevice!, propagatesRight: propagatesRight
+                            ) {
+                                
+                                rays.append((
+                                    ray: Ray(
+                                        horizontalWithAnchorAt: loop.currentSourceTop
+                                    ),
+                                    horizontalIncidence: true,
+                                    points: []
+                                ))
+                            }
+                            
+                            if shouldGenerateCenterRay(
+                                to: loop.currentDevice!, propagatesRight: propagatesRight
+                            ) {
+                                
+                                rays.append((
+                                    ray: Ray(
+                                        from: loop.currentSourceTop,
+                                        to: loop.currentDeviceCenter!,
+                                    ),
+                                    horizontalIncidence: false,
+                                    points: []
+                                ))
+                            }
+                            
+                            if shouldGenerateFocalRay(
+                                to: loop.currentDevice!, propagatesRight: propagatesRight
+                            ) {
+                                
+                                rays.append((
+                                    ray: Ray(
+                                        from: loop.currentSourceTop,
+                                        to: loop.currentDeviceFocalPointBefore!,
+                                    ),
+                                    horizontalIncidence: false,
+                                    points: [
+                                        loop.currentDeviceFocalPointBefore!.x
+                                    ]
+                                ))
+                            }
+                            
+                            if shouldGenerateCurveCenterRay(
+                                to: loop.currentDevice!, propagatesRight: propagatesRight
+                            ) {
+                                
+                                let mirror = loop.currentDevice as! Mirror
+                                
+                                let focalPoint = mirror.type == .convex
+                                ? loop.currentDeviceCurveCenterPointAfter!
+                                : loop.currentDeviceCurveCenterPointBefore!
+                                
+                                rays.append((
+                                    ray: Ray(
+                                        from: loop.currentSourceTop,
+                                        to: focalPoint,
+                                    ),
+                                    horizontalIncidence: false,
+                                    points: [
+                                        focalPoint.x
+                                    ]
+                                ))
+                            }
                         }
                     }
                         
