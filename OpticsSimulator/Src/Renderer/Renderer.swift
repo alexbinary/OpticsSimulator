@@ -322,8 +322,10 @@ struct Renderer {
                 let f = resolvedFocalLength(
                     from: lense.focalLength
                 ) * (lense.type == .convergent ? +1 : -1)
+                * (propagatesRight ? +1 : -1)
                 
-                let angle = resolvedInfinityAngle(from: object.infinityAngle)
+                let d: CGFloat = object.infinityFacesRight ? +1 : -1
+                let angle = d*resolvedInfinityAngle(from: object.infinityAngle)
                 
                 let resolvedImageSize = f*tan(angle)
                 let resolvedImagePos = resolvedPos(from: lense.pos) + f
@@ -1173,7 +1175,8 @@ struct Renderer {
         let currentSourceInfinityAngle: CGFloat? = {
             if let object = currentSource as? Object,
                object.atInfinity {
-                return resolvedInfinityAngle(from: object.infinityAngle)
+                let d: CGFloat = object.infinityFacesRight ? +1 : -1
+                return d*resolvedInfinityAngle(from: object.infinityAngle)
             }
             return nil
         }()
