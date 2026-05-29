@@ -27,6 +27,7 @@ struct ContentView: View {
                     showImages: scene.showImages,
                     showVirtualImages: scene.showVirtualImages,
                     showConstructionRays: scene.showConstructionRays,
+                    genericRays: scene.genericRays,
                     mouse: mouse.applying(CGAffineTransform(
                         translationX: 0, y: -size.height/2
                     ))
@@ -109,6 +110,8 @@ struct ContentView: View {
                                 .disabled(!scene.showImages)
                             
                             Toggle("Show constructions rays", isOn: $scene.showConstructionRays)
+                            
+                            Toggle("Use generic rays", isOn: $scene.genericRays)
                         }
                         
                     }.padding()

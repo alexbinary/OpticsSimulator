@@ -592,6 +592,7 @@ struct Renderer {
         showImages: Bool,
         showVirtualImages: Bool,
         showConstructionRays: Bool,
+        genericRays: Bool,
         
         mouse: CGPoint
     
@@ -689,22 +690,46 @@ struct Renderer {
                         
                         var anchorPoints: [(anchor: CGPoint, points: [CGFloat])] = []
                         
-                        if loop.currentDevice == nil {
+                        if loop.currentDevice == nil || genericRays {
+                            
+                            var points: [CGFloat] = []
+                            var x: CGFloat
+                            
+                            if object.infinityFacesRight {
+                                
+                                x = 0
+                                
+                                points.append(0)
+                                
+                                if loop.currentDevice == nil {
+                                    points.append(renderSize.width)
+                                }
+                                
+                            } else {
+                                
+                                x = renderSize.width
+                                
+                                points.append(renderSize.width)
+                                
+                                if loop.currentDevice == nil {
+                                    points.append(0)
+                                }
+                            }
                             
                             anchorPoints.append((
                                 anchor: CGPoint(
-                                    x: 0,
+                                    x: x,
                                     y: renderSize.height/8
                                 ),
-                                points: [0, renderSize.width]
+                                points: points
                             ))
                             
                             anchorPoints.append((
                                 anchor: CGPoint(
-                                    x: 0,
+                                    x: x,
                                     y: -renderSize.height/8
                                 ),
-                                points: [0, renderSize.width]
+                                points: points
                             ))
                             
                         } else {

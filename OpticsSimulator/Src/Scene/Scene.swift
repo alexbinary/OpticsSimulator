@@ -15,6 +15,7 @@ class OpticsScene {
     var showImages: Bool = true
     var showVirtualImages: Bool = true
     var showConstructionRays: Bool = true
+    var genericRays: Bool = true
 
     
     func add(_ object: Object) {
@@ -97,7 +98,8 @@ class OpticsScene {
             },
             showImages: showImages,
             showVirtualImages: showVirtualImages,
-            showVirtualRays: showConstructionRays
+            showVirtualRays: showConstructionRays,
+            genericRays: genericRays
         )
         
         presets.append(preset)
@@ -185,6 +187,7 @@ class OpticsScene {
         showImages = preset.showImages
         showVirtualImages = preset.showVirtualImages
         showConstructionRays = preset.showVirtualRays
+        genericRays = preset.genericRays
     }
     
     func deletePreset(_ preset: ScenePresetDescriptor) {
@@ -308,6 +311,7 @@ struct ScenePresetDescriptor: Codable {
     let showImages: Bool
     let showVirtualImages: Bool
     let showVirtualRays: Bool
+    let genericRays: Bool
 }
 
 
