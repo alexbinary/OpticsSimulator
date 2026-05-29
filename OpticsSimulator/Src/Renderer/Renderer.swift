@@ -277,6 +277,11 @@ struct Renderer {
         rawPos * renderSize.width
     }
     
+    func rawPos(from resolvedPos: CGFloat) -> CGFloat {
+        
+        resolvedPos / renderSize.width
+    }
+    
     func resolvedFocalLength(from rawFocalLength: CGFloat) -> CGFloat {
         
         rawFocalLength * renderSize.width
@@ -285,6 +290,16 @@ struct Renderer {
     func resolvedObjectSize(from rawSize: CGFloat) -> CGFloat {
         
         rawSize * renderSize.height/2*0.7
+    }
+    
+    func rawObjectSize(from resolvedSize: CGFloat) -> CGFloat {
+        
+        resolvedSize / renderSize.height*2/0.7
+    }
+    
+    func resolvedInfinityAngle(from rawAngle: CGFloat) -> CGFloat {
+        
+        (rawAngle - 0.5) * .pi * 0.9
     }
     
     func image(
@@ -304,14 +319,17 @@ struct Renderer {
             if let object = object as? Object,
                object.atInfinity {
                 
-                let objectPos: CGFloat = propagatesRight ? 0 : 1
-                let d: CGFloat = propagatesRight ? +1 : -1
+                let f = resolvedFocalLength(
+                    from: lense.focalLength
+                ) * (lense.type == .convergent ? +1 : -1)
                 
-                let f = lense.focalLength * d*(lense.type == .convergent ? +1 : -1)
-                let distO = lense.pos - objectPos
-                gamma = f / distO
-                imagePos = lense.pos + f
-                imageSize = -object.size * gamma
+                let angle = resolvedInfinityAngle(from: object.infinityAngle)
+                
+                let resolvedImageSize = f*tan(angle)
+                let resolvedImagePos = resolvedPos(from: lense.pos) + f
+                
+                imagePos = rawPos(from: resolvedImagePos)
+                imageSize = rawObjectSize(from: resolvedImageSize)
                 
                 return Image(pos: imagePos, size: imageSize)
                 
@@ -458,7 +476,12 @@ struct Renderer {
         let devicesByPositionLeftToRight = allPossibleDevices
             .sorted { $0.pos < $1.pos }
         
-        let objectPos = propagatesRight ? 0 : renderSize.width
+        let objectPos: CGFloat = {
+            if object.atInfinity {
+                return object.infinityFacesRight ? 0 : renderSize.width
+            }
+            return object.pos
+        }()
         
         let i0: Int? = {
             if propagatesRight {
@@ -543,10 +566,19 @@ struct Renderer {
             
             var propagatesRight_values: [Bool] = []
             
-            if currentObject.generatesRight {
+            if currentObject.atInfinity {
+                if currentObject.infinityFacesRight {
+                    propagatesRight_values.append(true)
+                }
+            } else if currentObject.generatesRight {
                 propagatesRight_values.append(true)
             }
-            if currentObject.generatesLeft {
+            
+            if currentObject.atInfinity {
+                if !currentObject.infinityFacesRight {
+                    propagatesRight_values.append(false)
+                }
+            } else if currentObject.generatesLeft {
                 propagatesRight_values.append(false)
             }
             
@@ -601,16 +633,13 @@ struct Renderer {
                         points: [CGFloat]
                     )] = []
                     
-                    
-                    // infinite rays
-                    
                     if let object = loop.currentSource as? Object,
                        object.atInfinity {
                         
                         rays.append((
                             ray: Ray(
-                                from: loop.currentSourceTop,
-                                to: loop.currentDeviceCenter!
+                                angle: loop.currentSourceInfinityAngle!,
+                                anchor: loop.currentDeviceCenter!
                             ),
                             horizontalIncidence: false,
                             points: []
@@ -621,9 +650,22 @@ struct Renderer {
                             
                             rays.append((
                                 ray: Ray(
-                                    from: loop.currentSourceTop,
-                                    to: loop.currentDeviceCenter!,
-                                    anchor: loop.currentDeviceFocalPointBefore
+                                    angle: loop.currentSourceInfinityAngle!,
+                                    anchor: loop.currentDeviceFocalPointBefore!
+                                ),
+                                horizontalIncidence: false,
+                                points: []
+                            ))
+                            
+                        } else {
+                            
+                            rays.append((
+                                ray: Ray(
+                                    angle: loop.currentSourceInfinityAngle!,
+                                    anchor: CGPoint(
+                                        x: loop.currentDeviceCenter!.x,
+                                        y: loop.currentDeviceCenter!.y-100
+                                    )
                                 ),
                                 horizontalIncidence: false,
                                 points: []
@@ -632,14 +674,13 @@ struct Renderer {
                         
                     } else {
                         
-                        
                         if shouldGenerateParallelRay(
                             to: loop.currentDevice!, propagatesRight: propagatesRight
                         ) {
                             
                             rays.append((
                                 ray: Ray(
-                                    horizontalFrom: loop.currentSourceTop
+                                    horizontalWithAnchorAt: loop.currentSourceTop
                                 ),
                                 horizontalIncidence: true,
                                 points: []
@@ -1124,7 +1165,7 @@ struct Renderer {
         let currentSourcePos: CGFloat = {
             if let object = currentSource as? Object,
                object.atInfinity {
-                return propagatesRight ? 0 : renderSize.width
+                return object.infinityFacesRight ? 0 : renderSize.width
             }
             return resolvedPos(
                 from: currentSource.pos
@@ -1136,6 +1177,13 @@ struct Renderer {
         let currentSourceTop = CGPoint(
             x: currentSourcePos, y: currentSourceSize
         )
+        let currentSourceInfinityAngle: CGFloat? = {
+            if let object = currentSource as? Object,
+               object.atInfinity {
+                return resolvedInfinityAngle(from: object.infinityAngle)
+            }
+            return nil
+        }()
         
         // previous source
         
@@ -1182,6 +1230,7 @@ struct Renderer {
             currentSourcePos: currentSourcePos,
             currentSourceSize: currentSourceSize,
             currentSourceTop: currentSourceTop,
+            currentSourceInfinityAngle: currentSourceInfinityAngle,
             
             previousSource: previousSource,
             previousSourcePos: previousSourcePos,
@@ -1421,7 +1470,7 @@ struct Renderer {
                 if let object = rayDescriptor.source as? Object,
                    object.atInfinity {
                     
-                    return propagatesRight ? 0 : renderSize.width
+                    return object.infinityFacesRight ? 0 : renderSize.width
                 }
                 
                 var pos: [CGFloat] = []
@@ -1620,6 +1669,7 @@ struct LoopIterator {
     let currentSourcePos: CGFloat
     let currentSourceSize: CGFloat
     let currentSourceTop: CGPoint
+    let currentSourceInfinityAngle: CGFloat?
     
     let previousSource: ObjectOrImage?
     let previousSourcePos: CGFloat?

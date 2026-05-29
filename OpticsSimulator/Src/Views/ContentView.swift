@@ -190,25 +190,42 @@ struct ContentView: View {
                                 Toggle("Visible", isOn: $object.visible)
                             }
                             Form {
-                                HStack {
-                                    Slider(value: $object.pos, in: 0...1) {
-                                        Text("Position")
-                                    }
-                                    Text("\(object.pos, specifier: "%.2f")")
-                                }
-                                HStack {
-                                    Slider(value: $object.size, in: 0...1) {
-                                        Text("Size")
-                                    }
-                                    Text("\(object.size, specifier: "%.2f")")
-                                }
                                 LabeledContent("At infinity") {
                                     Toggle(" ", isOn: $object.atInfinity)
                                 }
-                                LabeledContent("Rays") {
+                                if object.atInfinity {
+                                    
                                     HStack {
-                                        Toggle("Right", isOn: $object.generatesRight)
-                                        Toggle("Left", isOn: $object.generatesLeft)
+                                        Slider(value: $object.infinityAngle, in: 0...1) {
+                                            Text("Angle")
+                                        }
+                                        Text("\(object.infinityAngle, specifier: "%.2f")")
+                                    }
+                                    Picker("Origin", selection: $object.infinityFacesRight) {
+                                        ForEach([true, false], id: \.self) { value in
+                                            Text(value ? "Left" : "Right").tag(value)
+                                        }
+                                    }
+                                    
+                                } else {
+                                    
+                                    HStack {
+                                        Slider(value: $object.pos, in: 0...1) {
+                                            Text("Position")
+                                        }
+                                        Text("\(object.pos, specifier: "%.2f")")
+                                    }
+                                    HStack {
+                                        Slider(value: $object.size, in: 0...1) {
+                                            Text("Size")
+                                        }
+                                        Text("\(object.size, specifier: "%.2f")")
+                                    }
+                                    LabeledContent("Rays") {
+                                        HStack {
+                                            Toggle("Right", isOn: $object.generatesRight)
+                                            Toggle("Left", isOn: $object.generatesLeft)
+                                        }
                                     }
                                 }
                             }

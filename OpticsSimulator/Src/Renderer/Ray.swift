@@ -11,18 +11,25 @@ struct Ray {
     let dy: CGFloat
     
     
-    init(from p1: CGPoint, to p2: CGPoint, anchor: CGPoint? = nil) {
+    init(from p1: CGPoint, to p2: CGPoint) {
         
-        self.anchor = anchor ?? p1
+        self.anchor = p1
         self.dx = p2.x - p1.x
         self.dy = p2.y - p1.y
     }
     
-    init(horizontalFrom p1: CGPoint) {
+    init(horizontalWithAnchorAt anchor: CGPoint) {
         
-        self.anchor = p1
+        self.anchor = anchor
         self.dx = 1
         self.dy = 0
+    }
+    
+    init(angle: CGFloat, anchor: CGPoint) {
+        
+        self.anchor = anchor
+        self.dx = cos(angle)
+        self.dy = sin(angle)
     }
     
     

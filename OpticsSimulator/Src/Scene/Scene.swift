@@ -50,9 +50,11 @@ class OpticsScene {
                     pos: object.pos,
                     size: object.size,
                     name: object.name,
-                    atInfinity: object.atInfinity,
                     generatesRight: object.generatesRight,
-                    generatesLeft: object.generatesLeft
+                    generatesLeft: object.generatesLeft,
+                    atInfinity: object.atInfinity,
+                    infinityAngle: object.infinityAngle,
+                    infinityFacesRight: object.infinityFacesRight
                 )
             },
             lenses: lenses.map { lense in
@@ -124,6 +126,8 @@ class OpticsScene {
                 generatesRight: descriptor.generatesRight,
                 generatesLeft: descriptor.generatesLeft,
                 atInfinity: descriptor.atInfinity,
+                infinityAngle: descriptor.infinityAngle,
+                infinityFacesRight: descriptor.infinityFacesRight,
                 enabled: descriptor.enabled,
                 visible: descriptor.visible
             )
@@ -239,10 +243,13 @@ struct ObjectDescriptor: Codable {
     let pos: CGFloat
     let size: CGFloat
     let name: String
-    let atInfinity: Bool
     
     let generatesRight: Bool
     let generatesLeft: Bool
+    
+    let atInfinity: Bool
+    let infinityAngle: CGFloat
+    let infinityFacesRight: Bool
 }
 
 struct LenseDescriptor: Codable {
