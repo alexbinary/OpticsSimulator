@@ -672,43 +672,67 @@ struct Renderer {
                             points: []
                         ))
                         
-                        if let lense = loop.currentDevice as? Lense,
-                           lense.type == .convergent {
+                        let nonTransmittingDevice: Bool = {
                             
-                            anchorPoints.append((
-                                anchor: loop.currentDeviceFocalPointBefore!,
-                                points: []
-                            ))
+                            if loop.currentDevice is Screen {
+                                return true
+                            }
                             
-                        } else if let mirror = loop.currentDevice as? Mirror,
-                                  mirror.type == .concave {
-                                
-                            anchorPoints.append((
-                                anchor: loop.currentDeviceFocalPointBefore!,
-                                points: []
-                            ))
-                            anchorPoints.append((
-                                anchor: loop.currentDeviceCurveCenterPointBefore!,
-                                points: []
-                            ))
+                            if let mirror = loop.currentDevice as? Mirror {
+                                if propagatesRight && !mirror.facesLeft {
+                                    return true
+                                }
+                                if !propagatesRight && mirror.facesLeft {
+                                    return true
+                                }
+                            }
                             
-                        } else if let mirror = loop.currentDevice as? Mirror,
-                                  mirror.type == .convex {
-                                
-                            anchorPoints.append((
-                                anchor: loop.currentDeviceFocalPointAfter!,
-                                points: [
-                                    loop.currentDeviceFocalPointAfter!.x
-                                ]
-                            ))
-                            anchorPoints.append((
-                                anchor: loop.currentDeviceCurveCenterPointAfter!,
-                                points: [
-                                    loop.currentDeviceCurveCenterPointAfter!.x
-                                ]
-                            ))
+                            return false
+                        }()
+                        
+                        if nonTransmittingDevice {
                             
                         } else {
+                        
+                            if let lense = loop.currentDevice as? Lense,
+                               lense.type == .convergent {
+                                
+                                anchorPoints.append((
+                                    anchor: loop.currentDeviceFocalPointBefore!,
+                                    points: []
+                                ))
+                                
+                            } else if let mirror = loop.currentDevice as? Mirror,
+                                      mirror.type == .concave {
+                                
+                                anchorPoints.append((
+                                    anchor: loop.currentDeviceFocalPointBefore!,
+                                    points: []
+                                ))
+                                anchorPoints.append((
+                                    anchor: loop.currentDeviceCurveCenterPointBefore!,
+                                    points: []
+                                ))
+                                
+                            } else if let mirror = loop.currentDevice as? Mirror,
+                                      mirror.type == .convex {
+                                
+                                anchorPoints.append((
+                                    anchor: loop.currentDeviceFocalPointAfter!,
+                                    points: [
+                                        loop.currentDeviceFocalPointAfter!.x
+                                    ]
+                                ))
+                                anchorPoints.append((
+                                    anchor: loop.currentDeviceCurveCenterPointAfter!,
+                                    points: [
+                                        loop.currentDeviceCurveCenterPointAfter!.x
+                                    ]
+                                ))
+                            }
+                        }
+                        
+                        if anchorPoints.count == 1 {
                             
                             anchorPoints.append((
                                 anchor: CGPoint(
