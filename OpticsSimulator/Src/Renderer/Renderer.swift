@@ -661,10 +661,15 @@ struct Renderer {
                     )
                     
                     if loop.currentDevice == nil {
-                        break
+                        if let object = loop.currentSource as? Object,
+                           object.atInfinity {
+                            
+                        } else {
+                            break
+                        }
                     }
                     
-                    if loop.currentDevice! is Screen,
+                    if loop.currentDevice is Screen,
                        loop.currentSource is Image {
                         
                         break
@@ -684,80 +689,101 @@ struct Renderer {
                         
                         var anchorPoints: [(anchor: CGPoint, points: [CGFloat])] = []
                         
-                        anchorPoints.append((
-                            anchor: loop.currentDeviceCenter!,
-                            points: []
-                        ))
-                        
-                        let nonTransmittingDevice: Bool = {
-                            
-                            if loop.currentDevice is Screen {
-                                return true
-                            }
-                            
-                            if let mirror = loop.currentDevice as? Mirror {
-                                if propagatesRight && !mirror.facesLeft {
-                                    return true
-                                }
-                                if !propagatesRight && mirror.facesLeft {
-                                    return true
-                                }
-                            }
-                            
-                            return false
-                        }()
-                        
-                        if nonTransmittingDevice {
-                            
-                        } else {
-                        
-                            if let lense = loop.currentDevice as? Lense,
-                               lense.type == .convergent {
-                                
-                                anchorPoints.append((
-                                    anchor: loop.currentDeviceFocalPointBefore!,
-                                    points: []
-                                ))
-                                
-                            } else if let mirror = loop.currentDevice as? Mirror,
-                                      mirror.type == .concave {
-                                
-                                anchorPoints.append((
-                                    anchor: loop.currentDeviceFocalPointBefore!,
-                                    points: []
-                                ))
-                                anchorPoints.append((
-                                    anchor: loop.currentDeviceCurveCenterPointBefore!,
-                                    points: []
-                                ))
-                                
-                            } else if let mirror = loop.currentDevice as? Mirror,
-                                      mirror.type == .convex {
-                                
-                                anchorPoints.append((
-                                    anchor: loop.currentDeviceFocalPointAfter!,
-                                    points: [
-                                        loop.currentDeviceFocalPointAfter!.x
-                                    ]
-                                ))
-                                anchorPoints.append((
-                                    anchor: loop.currentDeviceCurveCenterPointAfter!,
-                                    points: [
-                                        loop.currentDeviceCurveCenterPointAfter!.x
-                                    ]
-                                ))
-                            }
-                        }
-                        
-                        if anchorPoints.count == 1 {
+                        if loop.currentDevice == nil {
                             
                             anchorPoints.append((
                                 anchor: CGPoint(
-                                    x: loop.currentDeviceCenter!.x,
-                                    y: loop.currentDeviceCenter!.y-100
+                                    x: 0,
+                                    y: renderSize.height/8
                                 ),
+                                points: [0, renderSize.width]
+                            ))
+                            
+                            anchorPoints.append((
+                                anchor: CGPoint(
+                                    x: 0,
+                                    y: -renderSize.height/8
+                                ),
+                                points: [0, renderSize.width]
+                            ))
+                            
+                        } else {
+                            
+                            anchorPoints.append((
+                                anchor: loop.currentDeviceCenter!,
                                 points: []
                             ))
+                            
+                            let nonTransmittingDevice: Bool = {
+                                
+                                if loop.currentDevice is Screen {
+                                    return true
+                                }
+                                
+                                if let mirror = loop.currentDevice as? Mirror {
+                                    if propagatesRight && !mirror.facesLeft {
+                                        return true
+                                    }
+                                    if !propagatesRight && mirror.facesLeft {
+                                        return true
+                                    }
+                                }
+                                
+                                return false
+                            }()
+                            
+                            if nonTransmittingDevice {
+                                
+                            } else {
+                                
+                                if let lense = loop.currentDevice as? Lense,
+                                   lense.type == .convergent {
+                                    
+                                    anchorPoints.append((
+                                        anchor: loop.currentDeviceFocalPointBefore!,
+                                        points: []
+                                    ))
+                                    
+                                } else if let mirror = loop.currentDevice as? Mirror,
+                                          mirror.type == .concave {
+                                    
+                                    anchorPoints.append((
+                                        anchor: loop.currentDeviceFocalPointBefore!,
+                                        points: []
+                                    ))
+                                    anchorPoints.append((
+                                        anchor: loop.currentDeviceCurveCenterPointBefore!,
+                                        points: []
+                                    ))
+                                    
+                                } else if let mirror = loop.currentDevice as? Mirror,
+                                          mirror.type == .convex {
+                                    
+                                    anchorPoints.append((
+                                        anchor: loop.currentDeviceFocalPointAfter!,
+                                        points: [
+                                            loop.currentDeviceFocalPointAfter!.x
+                                        ]
+                                    ))
+                                    anchorPoints.append((
+                                        anchor: loop.currentDeviceCurveCenterPointAfter!,
+                                        points: [
+                                            loop.currentDeviceCurveCenterPointAfter!.x
+                                        ]
+                                    ))
+                                }
+                            }
+                            
+                            if anchorPoints.count == 1 {
+                                
+                                anchorPoints.append((
+                                    anchor: CGPoint(
+                                        x: loop.currentDeviceCenter!.x,
+                                        y: loop.currentDeviceCenter!.y-100
+                                    ),
+                                    points: []
+                                ))
+                            }
                         }
                         
                         for (point, points) in anchorPoints {
@@ -839,62 +865,76 @@ struct Renderer {
                             ))
                         }
                     }
-                    
+                        
                     for (ray, horizontalIncidence, points) in rays {
                         
                         let rayId = UUID()
                         
-                        var pointsForRay: [CGPoint] = [
-                            ray.point(atX: loop.currentDevicePos!),
-                        ]
-                        
-                        if shouldConnectToSource(loop.currentSource, showImages, showVirtualImages) {
-                            pointsForRay.append(ray.point(atX: loop.currentSourcePos))
-                        }
-                        
-                        let pointFromRayOnCurrentDevice =
-                        ray.point(
-                            atX: loop.currentDevicePos!
-                        )
-                        
-                        rayPointsOnCurrentDevice.append(RayPoint(
-                            point: pointFromRayOnCurrentDevice,
-                            rayId: rayId,
-                            horizontalIncidence: horizontalIncidence,
+                        if loop.currentDevice == nil {
                             
-                        ))
-                        
-                        for x in points {
-                            pointsForRay.append(ray.point(atX: x))
-                        }
-                        
-                        if shouldRetroPropagateRays(from: loop.currentDevice!),
-                           let previousDevicePos = loop.previousDevicePos {
-                            
-                            pointsForRay.append(
-                                ray.point(atX: previousDevicePos)
-                            )
-                            
-                            let pointFromRayOnPreviousDevice =
-                            ray.point(
-                                atX: previousDevicePos
-                            )
-                            
-                            rayPointsOnPreviousDevice.append(RayPoint(
-                                point: pointFromRayOnPreviousDevice,
+                            allRayDescriptors.append(RayDescriptor(
+                                deviceBefore: nil,
+                                deviceAfter: nil,
+                                propagatesRight: propagatesRight,
+                                source: loop.currentSource,
                                 rayId: rayId,
-                                horizontalIncidence: horizontalIncidence
+                                points: points.map { ray.point(atX: $0) }
+                            ))
+                            
+                        } else {
+                            
+                            var pointsForRay: [CGPoint] = [
+                                ray.point(atX: loop.currentDevicePos!),
+                            ]
+                            
+                            if shouldConnectToSource(loop.currentSource, showImages, showVirtualImages) {
+                                pointsForRay.append(ray.point(atX: loop.currentSourcePos))
+                            }
+                            
+                            let pointFromRayOnCurrentDevice =
+                            ray.point(
+                                atX: loop.currentDevicePos!
+                            )
+                            
+                            rayPointsOnCurrentDevice.append(RayPoint(
+                                point: pointFromRayOnCurrentDevice,
+                                rayId: rayId,
+                                horizontalIncidence: horizontalIncidence,
+                                
+                            ))
+                            
+                            for x in points {
+                                pointsForRay.append(ray.point(atX: x))
+                            }
+                            
+                            if shouldRetroPropagateRays(from: loop.currentDevice!),
+                               let previousDevicePos = loop.previousDevicePos {
+                                
+                                pointsForRay.append(
+                                    ray.point(atX: previousDevicePos)
+                                )
+                                
+                                let pointFromRayOnPreviousDevice =
+                                ray.point(
+                                    atX: previousDevicePos
+                                )
+                                
+                                rayPointsOnPreviousDevice.append(RayPoint(
+                                    point: pointFromRayOnPreviousDevice,
+                                    rayId: rayId,
+                                    horizontalIncidence: horizontalIncidence
+                                ))
+                            }
+                            
+                            allRayDescriptors.append(RayDescriptor(
+                                deviceBefore: loop.previousDevice,
+                                deviceAfter: loop.currentDevice!,
+                                propagatesRight: propagatesRight,
+                                source: loop.currentSource,
+                                rayId: rayId,
+                                points: pointsForRay
                             ))
                         }
-                        
-                        allRayDescriptors.append(RayDescriptor(
-                            deviceBefore: loop.previousDevice,
-                            deviceAfter: loop.currentDevice!,
-                            propagatesRight: propagatesRight,
-                            source: loop.currentSource,
-                            rayId: rayId,
-                            points: pointsForRay
-                        ))
                     }
                     
                     // propagate rays forwards through all devices
