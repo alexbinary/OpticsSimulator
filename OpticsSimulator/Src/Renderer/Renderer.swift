@@ -734,10 +734,15 @@ struct Renderer {
                             
                         } else {
                             
-                            anchorPoints.append((
-                                anchor: loop.currentDeviceCenter!,
-                                points: []
-                            ))
+                            if shouldGenerateCenterRay(
+                                to: loop.currentDevice!, propagatesRight: propagatesRight
+                            ) {
+                                
+                                anchorPoints.append((
+                                    anchor: loop.currentDeviceCenter!,
+                                    points: []
+                                ))
+                            }
                             
                             let nonTransmittingDevice: Bool = {
                                 
@@ -764,10 +769,32 @@ struct Renderer {
                                 if let lense = loop.currentDevice as? Lense,
                                    lense.type == .convergent {
                                     
-                                    anchorPoints.append((
-                                        anchor: loop.currentDeviceFocalPointBefore!,
-                                        points: []
-                                    ))
+                                    if shouldGenerateFocalRay(
+                                        to: loop.currentDevice!,
+                                        propagatesRight: propagatesRight
+                                    ) {
+                                        
+                                        anchorPoints.append((
+                                            anchor: loop.currentDeviceFocalPointBefore!,
+                                            points: []
+                                        ))
+                                    }
+                                    
+                                } else if let lense = loop.currentDevice as? Lense,
+                                          lense.type == .divergent {
+                                    
+                                    if shouldGenerateFocalRay(
+                                        to: loop.currentDevice!,
+                                        propagatesRight: propagatesRight
+                                    ) {
+                                        
+                                        anchorPoints.append((
+                                            anchor: loop.currentDeviceFocalPointAfter!,
+                                            points: [
+                                                loop.currentDeviceFocalPointAfter!.x
+                                            ]
+                                        ))
+                                    }
                                     
                                 } else if let mirror = loop.currentDevice as? Mirror,
                                           mirror.type == .concave {
@@ -799,12 +826,12 @@ struct Renderer {
                                 }
                             }
                             
-                            if anchorPoints.count == 1 {
+                            if loop.currentDevice == nil && anchorPoints.count == 1 {
                                 
                                 anchorPoints.append((
                                     anchor: CGPoint(
                                         x: loop.currentDeviceCenter!.x,
-                                        y: loop.currentDeviceCenter!.y-100
+                                        y: loop.currentDeviceCenter!.y-150
                                     ),
                                     points: []
                                 ))
@@ -1308,10 +1335,23 @@ struct Renderer {
                 propagatesRight: propagatesRight
             )
             
-            let ray = Ray(
-                from: loop.currentSourceTop,
-                to: rayPointOnCurrentDevice.point
-            )
+            var ray: Ray
+            
+            if let object = loop.currentSource as? Object,
+               object.atInfinity {
+            
+                ray = Ray(
+                    angle: loop.currentSourceInfinityAngle!,
+                    anchor: rayPointOnCurrentDevice.point
+                )
+                
+            } else {
+                
+                ray = Ray(
+                    from: loop.currentSourceTop,
+                    to: rayPointOnCurrentDevice.point
+                )
+            }
             
             let startX = loop.previousDevicePos ?? loop.currentSourcePos
             
