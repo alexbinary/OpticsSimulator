@@ -28,6 +28,7 @@ struct ContentView: View {
                     showVirtualImages: scene.showVirtualImages,
                     showConstructionRays: scene.showConstructionRays,
                     genericRays: scene.genericRays,
+                    newRaysForEachImage: scene.newRaysForEachImage,
                     mouse: mouse.applying(CGAffineTransform(
                         translationX: 0, y: -size.height/2
                     ))
@@ -46,6 +47,14 @@ struct ContentView: View {
                 HStack {
                     
                     Grid {
+                        
+                        Button {
+                            scene.clear()
+                        } label: {
+                            Text("Clear scene")
+                        }
+                        
+                        Divider()
                         
                         GridRow {
                             
@@ -96,13 +105,7 @@ struct ContentView: View {
                     
                     HStack {
                         
-                        VStack {
-                            
-                            Button {
-                                scene.clear()
-                            } label: {
-                                Text("Clear scene")
-                            }
+                        VStack(alignment: .leading) {
                             
                             Toggle("Show images", isOn: $scene.showImages)
                             
@@ -112,6 +115,8 @@ struct ContentView: View {
                             Toggle("Show constructions rays", isOn: $scene.showConstructionRays)
                             
                             Toggle("Use generic rays", isOn: $scene.genericRays)
+                            
+                            Toggle("New rays for each image", isOn: $scene.newRaysForEachImage)
                         }
                         
                     }.padding()

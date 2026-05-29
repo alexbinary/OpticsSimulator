@@ -593,6 +593,7 @@ struct Renderer {
         showVirtualImages: Bool,
         showConstructionRays: Bool,
         genericRays: Bool,
+        newRaysForEachImage: Bool,
         
         mouse: CGPoint
     
@@ -661,14 +662,10 @@ struct Renderer {
                         propagatesRight: propagatesRight
                     )
                     
-//                    if loop.currentDevice == nil {
-//                        if let object = loop.currentSource as? Object,
-//                           object.atInfinity {
-//                            
-//                        } else {
-//                            break
-//                        }
-//                    }
+                    if loop.currentSource is Object || newRaysForEachImage {
+                    } else {
+                        break
+                    }
                     
                     if loop.currentDevice is Screen,
                        loop.currentSource is Image {
