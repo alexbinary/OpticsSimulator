@@ -636,36 +636,29 @@ struct Renderer {
                     if let object = loop.currentSource as? Object,
                        object.atInfinity {
                         
-                        rays.append((
-                            ray: Ray(
-                                angle: loop.currentSourceInfinityAngle!,
-                                anchor: loop.currentDeviceCenter!
-                            ),
-                            horizontalIncidence: false,
-                            points: []
-                        ))
+                        var anchorPoints: [CGPoint] = []
+                        
+                        anchorPoints.append(loop.currentDeviceCenter!)
                         
                         if let lense = loop.currentDevice as? Lense,
                            lense.type == .convergent {
                             
-                            rays.append((
-                                ray: Ray(
-                                    angle: loop.currentSourceInfinityAngle!,
-                                    anchor: loop.currentDeviceFocalPointBefore!
-                                ),
-                                horizontalIncidence: false,
-                                points: []
-                            ))
+                            anchorPoints.append(loop.currentDeviceFocalPointBefore!)
                             
                         } else {
                             
+                            anchorPoints.append(CGPoint(
+                                x: loop.currentDeviceCenter!.x,
+                                y: loop.currentDeviceCenter!.y-100
+                            ))
+                        }
+                        
+                        for point in anchorPoints {
+                            
                             rays.append((
                                 ray: Ray(
                                     angle: loop.currentSourceInfinityAngle!,
-                                    anchor: CGPoint(
-                                        x: loop.currentDeviceCenter!.x,
-                                        y: loop.currentDeviceCenter!.y-100
-                                    )
+                                    anchor: point
                                 ),
                                 horizontalIncidence: false,
                                 points: []
