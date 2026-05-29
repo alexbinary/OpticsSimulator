@@ -352,10 +352,27 @@ struct Renderer {
             
             if mirror.type == .plane {
                 
-                imagePos = mirror.pos + (mirror.pos - object.pos)
-                imageSize = object.size
-                
-                return Image(pos: imagePos, size: imageSize)
+                if let object = object as? Object,
+                   object.atInfinity {
+                    
+                    let d: CGFloat = object.infinityFacesRight ? +1 : -1
+                    let angle = d*resolvedInfinityAngle(from: object.infinityAngle)
+
+                    let resolvedImageSize = -sin(angle)*10_000
+                    let resolvedImagePos = cos(angle)*10_000
+                    
+                    imagePos = rawPos(from: resolvedImagePos)
+                    imageSize = rawObjectSize(from: resolvedImageSize)
+                    
+                    return Image(pos: imagePos, size: imageSize)
+                    
+                } else {
+                    
+                    imagePos = mirror.pos + (mirror.pos - object.pos)
+                    imageSize = object.size
+                    
+                    return Image(pos: imagePos, size: imageSize)
+                }
             }
             
             if mirror.type == .concave || mirror.type == .convex {
