@@ -1,5 +1,6 @@
 case "$1" in
 	open)
+		open .
 		open OpticsSimulator.xcodeproj
 		clear
 		git status
