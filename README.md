@@ -2,4 +2,4 @@
 
 A small SwiftUI optics simulator.
 
-![Screenshot](screenshot.png)
+![Screenshot](screenshot2.png)
