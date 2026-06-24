@@ -8,7 +8,16 @@ case "$1" in
 	data)
 		code /Users/alexandrebintz/Library/Containers/io.bintz.OpticsSimulator/Data/data
 		;;
+	gif)
+		ffmpeg -i $2 -vf "fps=15,scale=640:-1:flags=lanczos,palettegen" palette.png
+		ffmpeg -i $2 -i palette.png -filter_complex "fps=15,scale=640:-1:flags=lanczos[x];[x][1:v]paletteuse" $2.gif
+		rm palette.png
+		;;
+	video)
+		ffmpeg -i $2 -an -c:v libx264 -crf 30 -preset slow -vf "fps=15,scale=1040:-2" -movflags +faststart $2.mp4
+		rm $2
+		;;
 	*)
-		echo "Usage: dev {open, data}"
+		echo "Usage: dev {open, data, gif, video}"
 		;;
 esac
