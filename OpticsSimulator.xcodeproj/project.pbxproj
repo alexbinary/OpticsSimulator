@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		2947A9D22F8A6FCB0000DF21 /* OpticsSimulator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpticsSimulator.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2947A9D22F8A6FCB0000DF21 /* App1.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App1.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		2947A9D42F8A6FCB0000DF21 /* OpticsSimulator */ = {
+		2947A9D42F8A6FCB0000DF21 /* App1 */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = OpticsSimulator;
+			path = App1;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		2947A9C92F8A6FCB0000DF21 = {
 			isa = PBXGroup;
 			children = (
-				2947A9D42F8A6FCB0000DF21 /* OpticsSimulator */,
+				2947A9D42F8A6FCB0000DF21 /* App1 */,
 				2947A9D32F8A6FCB0000DF21 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +40,7 @@
 		2947A9D32F8A6FCB0000DF21 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2947A9D22F8A6FCB0000DF21 /* OpticsSimulator.app */,
+				2947A9D22F8A6FCB0000DF21 /* App1.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		2947A9D12F8A6FCB0000DF21 /* OpticsSimulator */ = {
+		2947A9D12F8A6FCB0000DF21 /* App1 */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 2947A9DD2F8A6FCD0000DF21 /* Build configuration list for PBXNativeTarget "OpticsSimulator" */;
+			buildConfigurationList = 2947A9DD2F8A6FCD0000DF21 /* Build configuration list for PBXNativeTarget "App1" */;
 			buildPhases = (
 				2947A9CE2F8A6FCB0000DF21 /* Sources */,
 				2947A9CF2F8A6FCB0000DF21 /* Frameworks */,
@@ -61,13 +61,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				2947A9D42F8A6FCB0000DF21 /* OpticsSimulator */,
+				2947A9D42F8A6FCB0000DF21 /* App1 */,
 			);
-			name = OpticsSimulator;
+			name = App1;
 			packageProductDependencies = (
 			);
 			productName = OpticsSimulator;
-			productReference = 2947A9D22F8A6FCB0000DF21 /* OpticsSimulator.app */;
+			productReference = 2947A9D22F8A6FCB0000DF21 /* App1.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				2947A9D12F8A6FCB0000DF21 /* OpticsSimulator */,
+				2947A9D12F8A6FCB0000DF21 /* App1 */,
 			);
 		};
 /* End PBXProject section */
@@ -349,7 +349,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		2947A9DD2F8A6FCD0000DF21 /* Build configuration list for PBXNativeTarget "OpticsSimulator" */ = {
+		2947A9DD2F8A6FCD0000DF21 /* Build configuration list for PBXNativeTarget "App1" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2947A9DE2F8A6FCD0000DF21 /* Debug */,
