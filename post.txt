@@ -1,9 +1,0 @@
-A small optics simulator I've been building as a side project.
-
-This demo shows a simple model of myopia: parallel rays from a distant object focus before the retina, and a diverging lens (glasses) shifts the focus back onto the retina.
-
-My goal is to create an interactive optics sandbox where you can drag lenses, mirrors, screens, and eventually entire mechanisms around and immediately see the optical consequences.
-
-Code on Github (still rough)
-
-Feedback and ideas are welcome!
