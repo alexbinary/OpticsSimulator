@@ -179,6 +179,7 @@ class Renderer {
         context.rotate(by: viewportRotation)
         context.scaleBy(x: viewportZoom, y: viewportZoom)
         drawAxis()
+        drawGrid()
 
         draw(lense)
         
@@ -196,6 +197,54 @@ class Renderer {
         
         path.move(to: CGPoint(x: 0, y: viewportBounds.minY))
         path.addLine(to: CGPoint(x: 0, y: viewportBounds.maxY))
+        
+        context.stroke(path, with: .color(color), lineWidth: lineWidth(1))
+    }
+    
+    
+    func align(_ n: CGFloat, on ref: CGFloat) -> CGFloat {
+        
+        return ceil(n/ref)*ref
+    }
+    
+    
+    func drawGrid() {
+        
+        var path = Path()
+        let color: Color = .white
+        
+        let spacing: CGFloat = 100
+        let r: CGFloat = 10
+        
+        let minX = viewportBounds.minX
+        let maxX = viewportBounds.maxX
+        let minY = viewportBounds.minY
+        let maxY = viewportBounds.maxY
+        
+        let span = max(maxX - minX, maxY - minY)
+        let n = span/spacing
+        
+        let startX = align(
+            -n/2*spacing + minX + (maxX-minX)/2,
+            on: spacing
+        )
+        let startY = align(
+            -n/2*spacing + minY + (maxY-minY)/2,
+             on: spacing
+        )
+        
+        for ix in 1...Int(n) {
+            for iy in 1...Int(n) {
+                
+                path.addArc(
+                    center: CGPoint(
+                        x: startX + CGFloat(ix)*spacing,
+                        y: startY + CGFloat(iy)*spacing
+                    ), radius: r,
+                    startAngle: .zero, endAngle: .degrees(360), clockwise: true
+                )
+            }
+        }
         
         context.stroke(path, with: .color(color), lineWidth: lineWidth(1))
     }
