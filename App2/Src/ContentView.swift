@@ -27,6 +27,7 @@ struct ContentView: View {
                         viewportCenter: viewportCenter,
                         viewportRotation: viewportRotation,
                         viewportZoom: viewportZoom,
+                        spacing: spacing,
                         mouse: localMouse
                     )
                     renderer.render(
@@ -72,7 +73,7 @@ struct ContentView: View {
                 )
             }
             
-            Text("\(localMouse.x); \(localMouse.y)")
+            Text("\(localMouse.x); \(localMouse.y)").monospacedDigit()
         }
         .frame(minWidth: 1600, minHeight: 800)
     }
@@ -80,7 +81,7 @@ struct ContentView: View {
     
     var localMouse: CGPoint {
         
-        return mouse
+        let mouse = mouse
             .applying(.init(
                 translationX: -canvasSize.width/2, y: -canvasSize.height/2)
             )
@@ -93,11 +94,35 @@ struct ContentView: View {
             .applying(.init(
                 scaleX: 1/viewportZoom, y: 1/viewportZoom)
             )
+        
+        return CGPoint(
+            x: snap(mouse.x, onMultiplesOf: spacing/10),
+            y: snap(mouse.y, onMultiplesOf: spacing/10)
+        )
+    }
+    
+    
+    var spacing: CGFloat {
+        
+        return snap(20/viewportZoom, onPowersOf: 10)
     }
 }
 
 #Preview {
     ContentView()
+}
+
+
+
+func snap(_ n: CGFloat, onMultiplesOf ref: CGFloat) -> CGFloat {
+    
+    return ceil(n/ref)*ref
+}
+
+
+func snap(_ n: CGFloat, onPowersOf ref: CGFloat) -> CGFloat {
+    
+    return pow(ref, ceil(log(n)/log(ref)))
 }
 
 
@@ -126,9 +151,11 @@ class Renderer {
     let viewportCenter: CGPoint
     let viewportRotation: Angle
     let viewportZoom: CGFloat
+    let spacing: CGFloat
     
     let mouse: CGPoint
-    let viewportBounds: CGRect
+    
+    private let viewportBounds: CGRect
     
     
     init(
@@ -137,6 +164,7 @@ class Renderer {
         viewportCenter: CGPoint,
         viewportRotation: Angle,
         viewportZoom: CGFloat,
+        spacing: CGFloat,
         mouse: CGPoint
     ) {
         self.context = context
@@ -144,9 +172,16 @@ class Renderer {
         self.viewportCenter = viewportCenter
         self.viewportRotation = viewportRotation
         self.viewportZoom = viewportZoom
-        self.mouse = mouse
+        self.spacing = spacing
         
-        let center = viewportCenter.applying(.init(rotationAngle: -viewportRotation.radians))
+        self.mouse = CGPoint(
+            x: snap(mouse.x, onMultiplesOf: spacing/10),
+            y: snap(mouse.y, onMultiplesOf: spacing/10)
+        )
+        
+        let center = viewportCenter.applying(.init(
+            rotationAngle: -viewportRotation.radians
+        ))
         
         let dim = max(canvasSize.width, canvasSize.height)
         
@@ -202,26 +237,12 @@ class Renderer {
     }
     
     
-    func align(_ n: CGFloat, on ref: CGFloat) -> CGFloat {
-        
-        return ceil(n/ref)*ref
-    }
-    
-    
-    func alignLog(_ n: CGFloat, on ref: CGFloat) -> CGFloat {
-        
-        return pow(ref, ceil(log(n)/log(ref)))
-    }
-    
-    
     func drawGrid() {
         
         var path = Path()
         let color: Color = .white
         
         let r: CGFloat = 1/viewportZoom
-        
-        let spacing: CGFloat = alignLog(r*20, on: 10)
         
         let minX = viewportBounds.minX
         let maxX = viewportBounds.maxX
@@ -231,13 +252,13 @@ class Renderer {
         let span = max(maxX - minX, maxY - minY)
         let n = span/spacing
         
-        let startX = align(
+        let startX = snap(
             -n/2*spacing + minX + (maxX-minX)/2,
-            on: spacing
+            onMultiplesOf: spacing
         )
-        let startY = align(
+        let startY = snap(
             -n/2*spacing + minY + (maxY-minY)/2,
-             on: spacing
+             onMultiplesOf: spacing
         )
         
         for ix in 1...Int(n) {
