@@ -15,7 +15,7 @@ struct ContentView: View {
     
     var body: some View {
         
-        VStack {
+        VStack(alignment: .trailing) {
             
             ZStack {
                 
@@ -27,7 +27,7 @@ struct ContentView: View {
                         viewportCenter: viewportCenter,
                         viewportRotation: viewportRotation,
                         viewportZoom: viewportZoom,
-                        spacing: spacing,
+                        spacing: gridSnapSize,
                         mouse: localMouse
                     )
                     renderer.render(
@@ -73,7 +73,10 @@ struct ContentView: View {
                 )
             }
             
-            Text("\(localMouse.x); \(localMouse.y)").monospacedDigit()
+            Text("\(localMouse.x); \(localMouse.y)")
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .padding(.horizontal)
         }
         .frame(minWidth: 1600, minHeight: 800)
     }
@@ -81,30 +84,33 @@ struct ContentView: View {
     
     var localMouse: CGPoint {
         
-        let mouse = mouse
-            .applying(.init(
-                translationX: -canvasSize.width/2, y: -canvasSize.height/2)
-            )
-            .applying(.init(
-                translationX: -viewportCenter.x, y: -viewportCenter.y)
-            )
-            .applying(.init(
-                rotationAngle: -viewportRotation.radians)
-            )
-            .applying(.init(
-                scaleX: 1/viewportZoom, y: 1/viewportZoom)
-            )
+        let mouse = mouse.applying(inverseViewportTransform)
         
-        return CGPoint(
-            x: snap(mouse.x, onMultiplesOf: spacing/10),
-            y: snap(mouse.y, onMultiplesOf: spacing/10)
-        )
+        return snap(mouse, onMultipleOf: gridSnapSize/10)
     }
     
     
-    var spacing: CGFloat {
+    var inverseViewportTransform: CGAffineTransform {
         
-        return snap(20/viewportZoom, onPowersOf: 10)
+        CGAffineTransform.identity
+            .concatenating(.init(
+                translationX: -canvasSize.width/2, y: -canvasSize.height/2)
+            )
+            .concatenating(.init(
+                translationX: -viewportCenter.x, y: -viewportCenter.y)
+            )
+            .concatenating(.init(
+                rotationAngle: -viewportRotation.radians)
+            )
+            .concatenating(.init(
+                scaleX: 1/viewportZoom, y: 1/viewportZoom)
+            )
+    }
+    
+    
+    var gridSnapSize: CGFloat {
+        
+        return snap(20/viewportZoom, onPowerOf: 10)
     }
 }
 
@@ -114,13 +120,22 @@ struct ContentView: View {
 
 
 
-func snap(_ n: CGFloat, onMultiplesOf ref: CGFloat) -> CGFloat {
+func snap(_ n: CGFloat, onMultipleOf ref: CGFloat) -> CGFloat {
     
     return ceil(n/ref)*ref
 }
 
 
-func snap(_ n: CGFloat, onPowersOf ref: CGFloat) -> CGFloat {
+func snap(_ p: CGPoint, onMultipleOf ref: CGFloat) -> CGPoint {
+    
+    return CGPoint(
+        x: snap(p.x, onMultipleOf: ref),
+        y: snap(p.y, onMultipleOf: ref)
+    )
+}
+
+
+func snap(_ n: CGFloat, onPowerOf ref: CGFloat) -> CGFloat {
     
     return pow(ref, ceil(log(n)/log(ref)))
 }
@@ -175,8 +190,8 @@ class Renderer {
         self.spacing = spacing
         
         self.mouse = CGPoint(
-            x: snap(mouse.x, onMultiplesOf: spacing/10),
-            y: snap(mouse.y, onMultiplesOf: spacing/10)
+            x: snap(mouse.x, onMultipleOf: spacing/10),
+            y: snap(mouse.y, onMultipleOf: spacing/10)
         )
         
         let center = viewportCenter.applying(.init(
@@ -213,27 +228,11 @@ class Renderer {
         context.translateBy(x: viewportCenter.x, y: viewportCenter.y)
         context.rotate(by: viewportRotation)
         context.scaleBy(x: viewportZoom, y: viewportZoom)
-        drawAxis()
         drawGrid()
 
         draw(lense)
         
         drawCursor()
-    }
-    
-    
-    func drawAxis() {
-        
-        var path = Path()
-        let color: Color = .white
-        
-        path.move(to: CGPoint(x: viewportBounds.minX, y: 0))
-        path.addLine(to: CGPoint(x: viewportBounds.maxX, y: 0))
-        
-        path.move(to: CGPoint(x: 0, y: viewportBounds.minY))
-        path.addLine(to: CGPoint(x: 0, y: viewportBounds.maxY))
-        
-        context.stroke(path, with: .color(color), lineWidth: lineWidth(1))
     }
     
     
@@ -254,11 +253,11 @@ class Renderer {
         
         let startX = snap(
             -n/2*spacing + minX + (maxX-minX)/2,
-            onMultiplesOf: spacing
+            onMultipleOf: spacing
         )
         let startY = snap(
             -n/2*spacing + minY + (maxY-minY)/2,
-             onMultiplesOf: spacing
+             onMultipleOf: spacing
         )
         
         for ix in 1...Int(n) {
