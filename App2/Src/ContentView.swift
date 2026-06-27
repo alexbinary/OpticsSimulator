@@ -5,6 +5,18 @@ import SwiftUI
 struct ContentView: View {
     
     
+    @State private var scene: OpticsScene = {
+        let scene = OpticsScene()
+        scene.add(Lense(
+            type: .convergent,
+            diameter: 100,
+            focalLength: 10,
+            position: CGPoint(x: 0, y: 0),
+            rotation: .degrees(45)
+        ))
+        return scene
+    }()
+    
     @State private var canvasSize: CGSize = .zero
     @State private var mouse: CGPoint = .zero
     
@@ -24,21 +36,16 @@ struct ContentView: View {
                     let renderer = Renderer(
                         context: context,
                         canvasSize: size,
-                        viewportCenter: viewportCenter,
-                        viewportRotation: viewportRotation,
-                        viewportZoom: viewportZoom,
-                        spacing: gridSnapSize,
-                        mouse: localMouse
+                        viewport: Viewport(
+                            center: viewportCenter,
+                            rotation: viewportRotation,
+                            zoom: viewportZoom
+                        ),
+                        gridSnapSize: gridSnapSize,
+                        mouse: localMouse,
+                        sceneBoundingRect: scene.boundingRect
                     )
-                    renderer.render(
-                        lense: Lense(
-                            type: .convergent,
-                            diameter: 100,
-                            focalLength: 10,
-                            position: CGPoint(x: 0, y: 0),
-                            rotation: .degrees(45)
-                        )
-                    )
+                    renderer.render(scene)
                 }
                 .background(
                     GeometryReader { proxy in
@@ -79,6 +86,18 @@ struct ContentView: View {
                 .padding(.horizontal)
         }
         .frame(minWidth: 1600, minHeight: 800)
+        .toolbar {
+            ToolbarItem {
+                Button("􀐩") {
+                    fitViewport()
+                }
+            }
+            ToolbarItem {
+                Button("􂣾") {
+                    resetViewport()
+                }
+            }
+        }
     }
     
     
@@ -112,6 +131,30 @@ struct ContentView: View {
         
         return snap(20/viewportZoom, onPowerOf: 10)
     }
+    
+    
+    func resetViewport() {
+        
+        viewportCenter = .zero
+        viewportRotation = .zero
+        viewportZoom = 1
+    }
+    
+    
+    func fitViewport() {
+        
+        let rect = scene.boundingRect
+        
+        viewportCenter = CGPoint(
+            x: (rect.maxX + rect.minX)/2,
+            y: (rect.maxY + rect.minY)/2
+        )
+        
+        let size = max(rect.width, rect.height)
+        let window = min(canvasSize.width, canvasSize.height)*0.6
+        
+        viewportZoom = window/size
+    }
 }
 
 #Preview {
@@ -138,201 +181,4 @@ func snap(_ p: CGPoint, onMultipleOf ref: CGFloat) -> CGPoint {
 func snap(_ n: CGFloat, onPowerOf ref: CGFloat) -> CGFloat {
     
     return pow(ref, ceil(log(n)/log(ref)))
-}
-
-
-
-enum LenseType {
-    
-    case convergent, divergent
-}
-
-struct Lense {
-    
-    var type: LenseType
-    var diameter: CGFloat
-    var focalLength: CGFloat
-    var position: CGPoint
-    var rotation: Angle
-}
-
-
-
-class Renderer {
-    
-    var context: GraphicsContext
-    let canvasSize: CGSize
-    
-    let viewportCenter: CGPoint
-    let viewportRotation: Angle
-    let viewportZoom: CGFloat
-    let spacing: CGFloat
-    
-    let mouse: CGPoint
-    
-    private let viewportBounds: CGRect
-    
-    
-    init(
-        context: GraphicsContext,
-        canvasSize: CGSize,
-        viewportCenter: CGPoint,
-        viewportRotation: Angle,
-        viewportZoom: CGFloat,
-        spacing: CGFloat,
-        mouse: CGPoint
-    ) {
-        self.context = context
-        self.canvasSize = canvasSize
-        self.viewportCenter = viewportCenter
-        self.viewportRotation = viewportRotation
-        self.viewportZoom = viewportZoom
-        self.spacing = spacing
-        
-        self.mouse = CGPoint(
-            x: snap(mouse.x, onMultipleOf: spacing/10),
-            y: snap(mouse.y, onMultipleOf: spacing/10)
-        )
-        
-        let center = viewportCenter.applying(.init(
-            rotationAngle: -viewportRotation.radians
-        ))
-        
-        let dim = max(canvasSize.width, canvasSize.height)
-        
-        let minX: CGFloat = (-dim-center.x)/viewportZoom
-        let maxX: CGFloat = (dim-center.x)/viewportZoom
-        
-        let minY: CGFloat = (-dim-center.y)/viewportZoom
-        let maxY: CGFloat = (dim-center.y)/viewportZoom
-        
-        self.viewportBounds = CGRect(
-            origin: CGPoint(x: minX, y: minY),
-            size: CGSize(width: maxX-minX, height: maxY-minY)
-        )
-    }
-    
-    
-    func lineWidth(_ width: CGFloat) -> CGFloat {
-        
-        return width/viewportZoom
-    }
-    
-    
-    func render(lense: Lense) {
-        
-        context.scaleBy(x: 1, y: -1)
-        context.translateBy(x: 0, y: -canvasSize.height)
-        context.translateBy(x: canvasSize.width/2, y: canvasSize.height/2)
-        
-        context.translateBy(x: viewportCenter.x, y: viewportCenter.y)
-        context.rotate(by: viewportRotation)
-        context.scaleBy(x: viewportZoom, y: viewportZoom)
-        drawGrid()
-
-        draw(lense)
-        
-        drawCursor()
-    }
-    
-    
-    func drawGrid() {
-        
-        var path = Path()
-        let color: Color = .white
-        
-        let r: CGFloat = 1/viewportZoom
-        
-        let minX = viewportBounds.minX
-        let maxX = viewportBounds.maxX
-        let minY = viewportBounds.minY
-        let maxY = viewportBounds.maxY
-        
-        let span = max(maxX - minX, maxY - minY)
-        let n = span/spacing
-        
-        let startX = snap(
-            -n/2*spacing + minX + (maxX-minX)/2,
-            onMultipleOf: spacing
-        )
-        let startY = snap(
-            -n/2*spacing + minY + (maxY-minY)/2,
-             onMultipleOf: spacing
-        )
-        
-        for ix in 1...Int(n) {
-            for iy in 1...Int(n) {
-                
-                path.addArc(
-                    center: CGPoint(
-                        x: startX + CGFloat(ix)*spacing,
-                        y: startY + CGFloat(iy)*spacing
-                    ), radius: r,
-                    startAngle: .zero, endAngle: .degrees(360), clockwise: true
-                )
-            }
-        }
-        
-        context.stroke(path, with: .color(color), lineWidth: lineWidth(1))
-    }
-    
-    
-    func drawCursor() {
-        
-        var path = Path()
-        let color: Color = .white
-        
-        path.move(to: CGPoint(x: viewportBounds.minX, y: mouse.y))
-        path.addLine(to: CGPoint(x: viewportBounds.maxX, y: mouse.y))
-        
-        path.move(to: CGPoint(x: mouse.x, y: viewportBounds.minY))
-        path.addLine(to: CGPoint(x: mouse.x, y: viewportBounds.maxY))
-        
-        context.stroke(path, with: .color(color), lineWidth: lineWidth(1))
-    }
-    
-    
-    func draw(_ lense: Lense) {
-        
-        var context = context
-        context.translateBy(x: lense.position.x, y: lense.position.y)
-        context.rotate(by: lense.rotation)
-        
-        let h: CGFloat = lense.diameter/2
-        let f: CGFloat = lense.focalLength
-        let a: CGFloat = 5
-
-        var path = Path()
-        let color: Color = .red
-        
-        // lense body
-        path.move(to: CGPoint(x: 0, y: h))
-        path.addLine(to: CGPoint(x: 0, y: -h))
-        
-        // arrow top
-        path.move(to: CGPoint(x: 0, y: h))
-        path.addLine(to: CGPoint(x: a, y: h-a))
-        path.move(to: CGPoint(x: 0, y: h))
-        path.addLine(to: CGPoint(x: -a, y: h-a))
-        
-        // arrow bottom
-        path.move(to: CGPoint(x: 0, y: -h))
-        path.addLine(to: CGPoint(x: a, y: -h+a))
-        path.move(to: CGPoint(x: 0, y: -h))
-        path.addLine(to: CGPoint(x: -a, y: -h+a))
-        
-        context.stroke(path, with: .color(color), lineWidth: lineWidth(2))
-        
-        // connect focal points
-        path.move(to: CGPoint(x: 0, y: h))
-        path.addLine(to: CGPoint(x: -f, y: 0))
-        path.addLine(to: CGPoint(x: 0, y: -h))
-        path.addLine(to: CGPoint(x: f, y: 0))
-        path.addLine(to: CGPoint(x: 0, y: h))
-        
-        context.stroke(path, with: .color(color), style: StrokeStyle(
-            lineWidth: lineWidth(1),
-            dash: [4, 4]
-        ))
-    }
 }
