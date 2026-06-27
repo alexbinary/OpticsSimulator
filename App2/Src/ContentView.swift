@@ -208,13 +208,20 @@ class Renderer {
     }
     
     
+    func alignLog(_ n: CGFloat, on ref: CGFloat) -> CGFloat {
+        
+        return pow(ref, ceil(log(n)/log(ref)))
+    }
+    
+    
     func drawGrid() {
         
         var path = Path()
         let color: Color = .white
         
-        let spacing: CGFloat = 100
-        let r: CGFloat = 10
+        let r: CGFloat = 1/viewportZoom
+        
+        let spacing: CGFloat = alignLog(r*20, on: 10)
         
         let minX = viewportBounds.minX
         let maxX = viewportBounds.maxX
