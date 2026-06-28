@@ -5,18 +5,26 @@ import SwiftUI
 
 struct MouseEventsArea: NSViewRepresentable {
 
-    var onMove: (CGPoint) -> Void
+    var onMouseMove: (CGPoint) -> Void
+    var onMouseDown: (CGPoint) -> Void
+    var onMouseUp: (CGPoint) -> Void
+    var onMouseDrag: (CGPoint) -> Void
     var onScroll: (CGFloat, CGFloat, NSEvent.ModifierFlags, NSEvent.Phase, NSEvent.Phase) -> Void
     var onRotate: (Angle, CGPoint) -> Void
     var onPinch: (CGFloat, CGPoint) -> Void
+    
 
     func makeNSView(context: Context) -> NSView {
 
         let view = MouseEventView()
-        view.onMove = onMove
+        view.onMouseMove = onMouseMove
+        view.onMouseDown = onMouseDown
+        view.onMouseUp = onMouseUp
+        view.onMouseDrag = onMouseDrag
         view.onScroll = onScroll
         view.onRotate = onRotate
         view.onPinch = onPinch
+        
         return view
     }
 
@@ -27,10 +35,14 @@ struct MouseEventsArea: NSViewRepresentable {
 final class MouseEventView: NSView {
 
     var trackingArea: NSTrackingArea?
-    var onMove: ((CGPoint) -> Void)?
+    var onMouseMove: ((CGPoint) -> Void)?
+    var onMouseDown: ((CGPoint) -> Void)?
+    var onMouseUp: ((CGPoint) -> Void)?
+    var onMouseDrag: ((CGPoint) -> Void)?
     var onScroll: ((CGFloat, CGFloat, NSEvent.ModifierFlags, NSEvent.Phase, NSEvent.Phase) -> Void)?
     var onRotate: ((Angle, CGPoint) -> Void)?
     var onPinch: ((CGFloat, CGPoint) -> Void)?
+    
     
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
@@ -57,7 +69,22 @@ final class MouseEventView: NSView {
 
     override func mouseMoved(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
-        onMove?(point)
+        onMouseMove?(point)
+    }
+    
+    override func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        onMouseDown?(point)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        onMouseUp?(point)
+    }
+    
+    override func mouseDragged(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        onMouseDrag?(point)
     }
     
     override func scrollWheel(with event: NSEvent) {

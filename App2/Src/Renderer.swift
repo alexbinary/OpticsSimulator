@@ -21,10 +21,10 @@ class Renderer {
     let gridSnapSize: CGFloat
     
     let mouse: CGPoint
+    let mouseSnapped: CGPoint
+    let hoveringLense: Lense?
     
     private let viewportBounds: CGRect
-    
-    let sceneBoundingRect: CGRect
     
     
     init(
@@ -33,15 +33,17 @@ class Renderer {
         viewport: Viewport,
         gridSnapSize: CGFloat,
         mouse: CGPoint,
-        sceneBoundingRect: CGRect
+        mouseSnapped: CGPoint,
+        hoveringLense: Lense?
     ) {
         self.context = context
         self.canvasSize = canvasSize
         self.viewport = viewport
         self.gridSnapSize = gridSnapSize
-        self.sceneBoundingRect = sceneBoundingRect
         
-        self.mouse = snap(mouse, onMultipleOf: gridSnapSize/10)
+        self.mouse = mouse
+        self.mouseSnapped = mouseSnapped
+        self.hoveringLense = hoveringLense
         
         let center = viewport.center.applying(.init(
             rotationAngle: -viewport.rotation.radians
@@ -79,7 +81,8 @@ class Renderer {
         context.scaleBy(x: viewport.zoom, y: viewport.zoom)
         drawGrid()
 
-        draw(scene.lenses.first!)
+        let lense = scene.lenses.first!
+        draw(lense, highlighted: self.hoveringLense != nil)
         
         drawCursor()
     }
@@ -90,7 +93,7 @@ class Renderer {
         var path = Path()
         let color: Color = .white
         
-        let r: CGFloat = 1/viewport.zoom
+        let r: CGFloat = 0.1/viewport.zoom
         
         let minX = viewportBounds.minX
         let maxX = viewportBounds.maxX
@@ -122,17 +125,13 @@ class Renderer {
             }
         }
         
-        context.stroke(path, with: .color(color), lineWidth: lineWidth(1))
-        
-        path = Path()
-        
-        path.addRect(sceneBoundingRect)
-        
-        context.stroke(path, with: .color(.yellow), lineWidth: lineWidth(1))
+        context.stroke(path, with: .color(color.opacity(0.5)), lineWidth: lineWidth(1))
     }
     
     
     func drawCursor() {
+        
+        let mouse = mouseSnapped
         
         var path = Path()
         let color: Color = .white
@@ -147,7 +146,7 @@ class Renderer {
     }
     
     
-    func draw(_ lense: Lense) {
+    func draw(_ lense: Lense, highlighted: Bool = false) {
         
         var context = context
         context.translateBy(x: lense.position.x, y: lense.position.y)
@@ -176,7 +175,7 @@ class Renderer {
         path.move(to: CGPoint(x: 0, y: -h))
         path.addLine(to: CGPoint(x: -a, y: -h+a))
         
-        context.stroke(path, with: .color(color), lineWidth: lineWidth(2))
+        context.stroke(path, with: .color(color), lineWidth: lineWidth(highlighted ? 4 : 2))
         
         // connect focal points
         path.move(to: CGPoint(x: 0, y: h))

@@ -11,11 +11,13 @@ struct ContentView: View {
             type: .convergent,
             diameter: 100,
             focalLength: 10,
-            position: CGPoint(x: 0, y: 0),
+            position: CGPoint(x: 100, y: 100),
             rotation: .degrees(45)
         ))
         return scene
     }()
+    
+    @State private var selectedLense: Lense? = nil
     
     @State private var canvasSize: CGSize = .zero
     @State private var mouse: CGPoint = .zero
@@ -43,7 +45,8 @@ struct ContentView: View {
                         ),
                         gridSnapSize: gridSnapSize,
                         mouse: localMouse,
-                        sceneBoundingRect: scene.boundingRect
+                        mouseSnapped: localMouseSnapped,
+                        hoveringLense: scene.hoveringLense
                     )
                     renderer.render(scene)
                 }
@@ -56,8 +59,18 @@ struct ContentView: View {
                     }
                 )
                 MouseEventsArea(
-                    onMove: { point in
+                    onMouseMove: { point in
                         mouse = point
+                        scene.setMouse(localMouse, zoom: viewportZoom)
+                    },
+                    onMouseDown: { point in
+                        selectedLense = scene.hoveringLense
+                    },
+                    onMouseUp: { point in
+                        selectedLense = nil
+                    },
+                    onMouseDrag: { point in
+                        selectedLense?.position = localMouseSnapped
                     },
                     onScroll: { dx, dy, modifiers, phase, momentumPhase in
                         if modifiers.contains(.option) {
@@ -76,11 +89,11 @@ struct ContentView: View {
                     },
                     onPinch: { delta, point in
                         viewportZoom += delta*viewportZoom*0.5
-                    }
+                    },
                 )
             }
             
-            Text("\(localMouse.x); \(localMouse.y)")
+            Text("\(localMouseSnapped.x); \(localMouseSnapped.y)")
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .padding(.horizontal)
@@ -103,9 +116,13 @@ struct ContentView: View {
     
     var localMouse: CGPoint {
         
-        let mouse = mouse.applying(inverseViewportTransform)
+        mouse.applying(inverseViewportTransform)
+    }
+    
+    
+    var localMouseSnapped: CGPoint {
         
-        return snap(mouse, onMultipleOf: gridSnapSize/10)
+        return snap(localMouse, onMultipleOf: gridSnapSize/10)
     }
     
     
@@ -159,26 +176,4 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-}
-
-
-
-func snap(_ n: CGFloat, onMultipleOf ref: CGFloat) -> CGFloat {
-    
-    return ceil(n/ref)*ref
-}
-
-
-func snap(_ p: CGPoint, onMultipleOf ref: CGFloat) -> CGPoint {
-    
-    return CGPoint(
-        x: snap(p.x, onMultipleOf: ref),
-        y: snap(p.y, onMultipleOf: ref)
-    )
-}
-
-
-func snap(_ n: CGFloat, onPowerOf ref: CGFloat) -> CGFloat {
-    
-    return pow(ref, ceil(log(n)/log(ref)))
 }
