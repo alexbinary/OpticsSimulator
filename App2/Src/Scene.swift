@@ -8,6 +8,8 @@ enum LenseType {
     case convergent, divergent
 }
 
+
+@Observable
 class Lense {
     
     var type: LenseType
@@ -118,8 +120,10 @@ class OpticsScene {
     }
     
     
-    func setMouse(_ mouse: CGPoint, viewportTransform: ViewportTransform) {
-        
+    func updateMouse(
+        newTransformedPosition mouse: CGPoint,
+        viewportTransform: ViewportTransform
+    ) {
         hoveringLense = nil
         
         for lense in lenses {

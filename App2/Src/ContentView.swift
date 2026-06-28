@@ -56,8 +56,7 @@ struct ContentView: View {
                 )
                 MouseEventsArea(
                     onMouseMove: { point in
-                        viewMouse = point
-                        scene.setMouse(transformedMouse, viewportTransform: viewportTransform)
+                        updateMouse(newPosition: point)
                     },
                     onMouseDown: { point in
                         selectedLense = scene.hoveringLense
@@ -66,6 +65,7 @@ struct ContentView: View {
                         selectedLense = nil
                     },
                     onMouseDrag: { point in
+                        updateMouse(newPosition: point)
                         selectedLense?.position = transformedMouseSnapped
                     },
                     onScroll: { dx, dy, modifiers, phase, momentumPhase in
@@ -128,6 +128,17 @@ struct ContentView: View {
             .concatenating(.init(
                 scaleX: 1/viewportTransform.scale, y: 1/viewportTransform.scale)
             )
+    }
+    
+    
+    func updateMouse(newPosition point: CGPoint) {
+        
+        viewMouse = point
+        
+        scene.updateMouse(
+            newTransformedPosition: transformedMouse,
+            viewportTransform: viewportTransform
+        )
     }
     
     
