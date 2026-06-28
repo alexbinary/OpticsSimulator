@@ -13,7 +13,7 @@ class Renderer {
     
     let transformedMouse: CGPoint
     let transformedMouseSnapped: CGPoint
-    let hoveringLense: Lense?
+    let hoveringObject: Lense?
     
     private let visibleBounds: CGRect
     
@@ -25,7 +25,7 @@ class Renderer {
         gridSnapSize: CGFloat,
         transformedMouse: CGPoint,
         transformedMouseSnapped: CGPoint,
-        hoveringLense: Lense?
+        hoveringObject: Lense?
     ) {
         self.context = context
         self.canvasSize = canvasSize
@@ -34,7 +34,7 @@ class Renderer {
         
         self.transformedMouse = transformedMouse
         self.transformedMouseSnapped = transformedMouseSnapped
-        self.hoveringLense = hoveringLense
+        self.hoveringObject = hoveringObject
         
         let center = CGPoint(
             x: viewportTransform.translation.dx,
@@ -85,7 +85,7 @@ class Renderer {
         drawGrid()
 
         let lense = scene.lenses.first!
-        draw(lense, highlighted: self.hoveringLense != nil)
+        draw(lense, highlighted: self.hoveringObject != nil)
         drawDebugRect(lense.bounds)
         
 //        drawCursor()

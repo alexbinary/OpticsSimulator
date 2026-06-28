@@ -8,7 +8,9 @@ class OpticsScene {
     
     
     var lenses: [Lense] = []
-    var hoveringLense: Lense? = nil
+    
+    var hoverObject: Lense? = nil
+    var hoverObjectOffset: Vector? = nil
     
     
     func add(_ lense: Lense) {
@@ -21,14 +23,16 @@ class OpticsScene {
         newTransformedPosition mouse: CGPoint,
         viewportTransform: ViewportTransform
     ) {
-        hoveringLense = nil
+        hoverObject = nil
+        hoverObjectOffset = nil
         
         for lense in lenses {
             
             if let distance = distance(between: mouse, and: lense.mainSegment),
                distance < 5/viewportTransform.scale {
                 
-                hoveringLense = lense
+                hoverObject = lense
+                hoverObjectOffset = Vector(from: lense.position, to: mouse)
                 break
             }
         }

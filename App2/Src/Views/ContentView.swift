@@ -17,14 +17,16 @@ struct ContentView: View {
         return scene
     }()
     
-    @State private var selectedLense: Lense? = nil
-    
     @State private var canvasSize: CGSize = .zero
-    @State private var viewMouse: CGPoint = .zero
     
     @State private var viewportTransform = ViewportTransform(
         translation: .zero, rotation: .zero, scale: 1
     )
+    
+    @State private var viewMouse: CGPoint = .zero
+    
+    @State private var draggingObject: Lense? = nil
+    @State private var draggingObjectOffset: Vector? = nil
     
     
     var body: some View {
@@ -42,7 +44,7 @@ struct ContentView: View {
                         gridSnapSize: gridSnapSize,
                         transformedMouse: transformedMouse,
                         transformedMouseSnapped: transformedMouseSnapped,
-                        hoveringLense: scene.hoveringLense
+                                                hoveringObject: scene.hoverObject
                     )
                     renderer.render(scene)
                 }
@@ -59,14 +61,14 @@ struct ContentView: View {
                         updateMouse(newPosition: point)
                     },
                     onMouseDown: { point in
-                        selectedLense = scene.hoveringLense
+                        draggingObject = scene.hoverObject
+                        draggingObjectOffset = scene.hoverObjectOffset
                     },
                     onMouseUp: { point in
-                        selectedLense = nil
+                        draggingObject = nil
                     },
                     onMouseDrag: { point in
-                        updateMouse(newPosition: point)
-                        selectedLense?.position = transformedMouseSnapped
+                        updateMouse(newPosition: point, dragging: true)
                     },
                     onScroll: { dx, dy, modifiers, phase, momentumPhase in
                         if modifiers.contains(.option) {
@@ -131,7 +133,7 @@ struct ContentView: View {
     }
     
     
-    func updateMouse(newPosition point: CGPoint) {
+    func updateMouse(newPosition point: CGPoint, dragging: Bool = false) {
         
         viewMouse = point
         
@@ -139,6 +141,17 @@ struct ContentView: View {
             newTransformedPosition: transformedMouse,
             viewportTransform: viewportTransform
         )
+        
+        if let object = draggingObject,
+           let offset = draggingObjectOffset {
+            
+            let target = transformedMouseSnapped
+            
+            object.position = CGPoint(
+                x: target.x - offset.dx,
+                y: target.y - offset.dy
+            )
+        }
     }
     
     
