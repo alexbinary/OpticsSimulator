@@ -28,6 +28,8 @@ struct ContentView: View {
     @State private var draggingObject: Lense? = nil
     @State private var draggingObjectOffset: Vector? = nil
     
+    @State private var scrollZooms: Bool = false
+    
     
     var body: some View {
         
@@ -71,7 +73,11 @@ struct ContentView: View {
                         updateMouse(newPosition: point, dragging: true)
                     },
                     onScroll: { dx, dy, modifiers, phase, momentumPhase in
-                        if modifiers.contains(.option) {
+                        
+                        if phase == .began {
+                            scrollZooms = modifiers.contains(.option)
+                        }
+                        if scrollZooms {
                             if momentumPhase == [] {
                                 zoomViewport(by: dy*0.01)
                             }
