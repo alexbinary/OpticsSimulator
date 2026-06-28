@@ -31,6 +31,25 @@ struct Vector {
         self.dx = p2.x - p1.x
         self.dy = p2.y - p1.y
     }
+    
+    static let zero = Vector(dx: 0, dy: 0)
+    
+    func applying(_ transform: CGAffineTransform) -> Vector {
+        let p = CGPoint(x: dx, y: dy).applying(transform)
+        return Vector(dx: p.x, dy: p.y)
+    }
+}
+
+
+func +(_ v1: Vector, _ v2: Vector) -> Vector {
+ 
+    return Vector(dx: v1.dx + v2.dx, dy: v1.dy + v2.dy)
+}
+
+
+func +=(_ v1: inout Vector, _ v2: Vector) {
+ 
+    v1 = v1 + v2
 }
 
 

@@ -3,61 +3,55 @@ import SwiftUI
 
 
 
-struct Viewport {
-    
-    let center: CGPoint
-    let rotation: Angle
-    let zoom: CGFloat
-}
-
-
-
 class Renderer {
     
     var context: GraphicsContext
     let canvasSize: CGSize
     
-    let viewport: Viewport
+    let viewportTransform: ViewportTransform
     let gridSnapSize: CGFloat
     
-    let mouse: CGPoint
-    let mouseSnapped: CGPoint
+    let transformedMouse: CGPoint
+    let transformedMouseSnapped: CGPoint
     let hoveringLense: Lense?
     
-    private let viewportBounds: CGRect
+    private let visibleBounds: CGRect
     
     
     init(
         context: GraphicsContext,
         canvasSize: CGSize,
-        viewport: Viewport,
+        viewportTransform: ViewportTransform,
         gridSnapSize: CGFloat,
-        mouse: CGPoint,
-        mouseSnapped: CGPoint,
+        transformedMouse: CGPoint,
+        transformedMouseSnapped: CGPoint,
         hoveringLense: Lense?
     ) {
         self.context = context
         self.canvasSize = canvasSize
-        self.viewport = viewport
+        self.viewportTransform = viewportTransform
         self.gridSnapSize = gridSnapSize
         
-        self.mouse = mouse
-        self.mouseSnapped = mouseSnapped
+        self.transformedMouse = transformedMouse
+        self.transformedMouseSnapped = transformedMouseSnapped
         self.hoveringLense = hoveringLense
         
-        let center = viewport.center.applying(.init(
-            rotationAngle: -viewport.rotation.radians
+        let center = CGPoint(
+            x: viewportTransform.translation.dx,
+            y: viewportTransform.translation.dy
+        ).applying(.init(
+            rotationAngle: -viewportTransform.rotation.radians
         ))
         
         let dim = max(canvasSize.width, canvasSize.height)
         
-        let minX: CGFloat = (-dim-center.x)/viewport.zoom
-        let maxX: CGFloat = (dim-center.x)/viewport.zoom
+        let minX: CGFloat = (-dim-center.x)/viewportTransform.scale
+        let maxX: CGFloat = (dim-center.x)/viewportTransform.scale
         
-        let minY: CGFloat = (-dim-center.y)/viewport.zoom
-        let maxY: CGFloat = (dim-center.y)/viewport.zoom
+        let minY: CGFloat = (-dim-center.y)/viewportTransform.scale
+        let maxY: CGFloat = (dim-center.y)/viewportTransform.scale
         
-        self.viewportBounds = CGRect(
+        self.visibleBounds = CGRect(
             origin: CGPoint(x: minX, y: minY),
             size: CGSize(width: maxX-minX, height: maxY-minY)
         )
@@ -66,7 +60,7 @@ class Renderer {
     
     func lineWidth(_ width: CGFloat) -> CGFloat {
         
-        return width/viewport.zoom
+        return width/viewportTransform.scale
     }
     
     
@@ -74,17 +68,26 @@ class Renderer {
         
         context.scaleBy(x: 1, y: -1)
         context.translateBy(x: 0, y: -canvasSize.height)
+        drawDebugAxis() // <--- view mouse
         context.translateBy(x: canvasSize.width/2, y: canvasSize.height/2)
+        drawDebugAxis()
         
-        context.translateBy(x: viewport.center.x, y: viewport.center.y)
-        context.rotate(by: viewport.rotation)
-        context.scaleBy(x: viewport.zoom, y: viewport.zoom)
+        context.translateBy(
+            x: viewportTransform.translation.dx,
+            y: viewportTransform.translation.dy
+        )
+        drawDebugAxis()
+        context.rotate(by: viewportTransform.rotation)
+        drawDebugAxis()
+        context.scaleBy(x: viewportTransform.scale, y: viewportTransform.scale)
+        drawDebugAxis() // <--- transformed
+        
         drawGrid()
 
         let lense = scene.lenses.first!
         draw(lense, highlighted: self.hoveringLense != nil)
         
-        drawCursor()
+//        drawCursor()
     }
     
     
@@ -93,12 +96,12 @@ class Renderer {
         var path = Path()
         let color: Color = .white
         
-        let r: CGFloat = 0.1/viewport.zoom
+        let r: CGFloat = 0.1/viewportTransform.scale
         
-        let minX = viewportBounds.minX
-        let maxX = viewportBounds.maxX
-        let minY = viewportBounds.minY
-        let maxY = viewportBounds.maxY
+        let minX = visibleBounds.minX
+        let maxX = visibleBounds.maxX
+        let minY = visibleBounds.minY
+        let maxY = visibleBounds.maxY
         
         let span = max(maxX - minX, maxY - minY)
         let n = span/gridSnapSize
@@ -131,16 +134,16 @@ class Renderer {
     
     func drawCursor() {
         
-        let mouse = mouseSnapped
+        let mouse = transformedMouseSnapped
         
         var path = Path()
         let color: Color = .white
         
-        path.move(to: CGPoint(x: viewportBounds.minX, y: mouse.y))
-        path.addLine(to: CGPoint(x: viewportBounds.maxX, y: mouse.y))
+        path.move(to: CGPoint(x: visibleBounds.minX, y: mouse.y))
+        path.addLine(to: CGPoint(x: visibleBounds.maxX, y: mouse.y))
         
-        path.move(to: CGPoint(x: mouse.x, y: viewportBounds.minY))
-        path.addLine(to: CGPoint(x: mouse.x, y: viewportBounds.maxY))
+        path.move(to: CGPoint(x: mouse.x, y: visibleBounds.minY))
+        path.addLine(to: CGPoint(x: mouse.x, y: visibleBounds.maxY))
         
         context.stroke(path, with: .color(color), lineWidth: lineWidth(1))
     }
@@ -188,5 +191,34 @@ class Renderer {
             lineWidth: lineWidth(1),
             dash: [4, 4]
         ))
+    }
+    
+    
+    func drawDebugAxis() {
+        
+        let size: CGFloat = 100
+        let a: CGFloat = 5
+                
+        // X
+        var path = Path()
+        
+        path.move(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: size, y: 0))
+        path.addLine(to: CGPoint(x: size-a, y: a))
+        path.addLine(to: CGPoint(x: size-a, y: -a))
+        path.addLine(to: CGPoint(x: size, y: 0))
+        
+        context.stroke(path, with: .color(.green), lineWidth: 2)
+        
+        // Y
+        path = Path()
+        
+        path.move(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: 0, y: size))
+        path.addLine(to: CGPoint(x: a, y: size-a))
+        path.addLine(to: CGPoint(x: -a, y: size-a))
+        path.addLine(to: CGPoint(x: 0, y: size))
+        
+        context.stroke(path, with: .color(.blue), lineWidth: 2)
     }
 }

@@ -65,14 +65,14 @@ class OpticsScene {
     }
     
     
-    func setMouse(_ mouse: CGPoint, zoom: CGFloat) {
+    func setMouse(_ mouse: CGPoint, viewportTransform: ViewportTransform) {
         
         hoveringLense = nil
         
         for lense in lenses {
             
             if let distance = distance(between: mouse, and: lense.mainSegment),
-               distance < 5/zoom {
+               distance < 5/viewportTransform.scale {
                 
                 hoveringLense = lense
                 break
