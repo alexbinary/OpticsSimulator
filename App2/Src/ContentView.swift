@@ -154,16 +154,19 @@ struct ContentView: View {
         let oldScale = viewportTransform.scale
         let newScale = oldScale * (1 + delta)
         
-        let offset = Vector(
-            dx: (oldScale - newScale)*transformedMouse.x,
-            dy: (oldScale - newScale)*transformedMouse.y
+        let xw = transformedMouse.x
+        let yw = transformedMouse.y
+        
+        let cosa = cos(viewportTransform.rotation.radians)
+        let sina = sin(viewportTransform.rotation.radians)
+        
+        let offset = (oldScale-newScale)*Vector(
+            dx: xw*cosa - yw*sina,
+            dy: yw*cosa + xw*sina
         )
         
         viewportTransform.scale = newScale
-        viewportTransform.translation = Vector(
-            dx: viewportTransform.translation.dx + offset.dx,
-            dy: viewportTransform.translation.dy + offset.dy
-        )
+        viewportTransform.translation += offset
     }
     
     func rotateViewport(by delta: Angle) {
