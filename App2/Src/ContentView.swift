@@ -198,12 +198,25 @@ struct ContentView: View {
         let size = max(rect.width, rect.height)
         let window = min(canvasSize.width, canvasSize.height)*0.6
         
-        viewportTransform.scale = window/size
+        let scale = window/size
+        
+        let xw = (rect.minX + rect.maxX)/2
+        let yw = (rect.minY + rect.maxY)/2
+        
+        viewportTransform.rotation = .zero
+        
+        let cosa = cos(viewportTransform.rotation.radians)
+        let sina = sin(viewportTransform.rotation.radians)
+        
+        let x0: CGFloat = 0
+        let y0: CGFloat = 0
         
         viewportTransform.translation = Vector(
-            dx: -(rect.minX + rect.maxX)/2*viewportTransform.scale,
-            dy: -(rect.minY + rect.maxY)/2*viewportTransform.scale
+            dx: x0 - scale*(xw*cosa - yw*sina),
+            dy: y0 - scale*(yw*cosa + xw*sina)
         )
+        
+        viewportTransform.scale = scale
     }
 }
 
