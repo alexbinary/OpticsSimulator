@@ -50,7 +50,7 @@ class Lense {
         .applying(transformFromLocal)
     }
     
-    var boundingRect: CGRect {
+    var bounds: Bounds {
         
         let points = [
                 
@@ -75,31 +75,60 @@ class Lense {
             ).applying(transformFromLocal)
         ]
         
-        var minX: CGFloat = position.x
-        var maxX: CGFloat = position.y
-        var minY: CGFloat = position.x
-        var maxY: CGFloat = position.y
-        
-        for p in points {
-            if p.x < minX {
-                minX = p.x
-            }
-            if p.x > maxX {
-                maxX = p.x
-            }
-            if p.y < minY {
-                minY = p.y
-            }
-            if p.y > maxY {
-                maxY = p.y
-            }
+        let bounds = points.reduce(Bounds()) { bounds, p in
+            bounds.including(p)
         }
         
-        return CGRect(
-            x: minX,
-            y: minY,
-            width: maxX - minX,
-            height: maxY - minY
+        return bounds
+    }
+}
+
+
+
+struct Bounds {
+    
+    let minX: CGFloat?
+    let maxX: CGFloat?
+    let minY: CGFloat?
+    let maxY: CGFloat?
+    
+    init(
+        minX: CGFloat? = nil,
+        maxX: CGFloat? = nil,
+        minY: CGFloat? = nil,
+        maxY: CGFloat? = nil
+    ) {
+        self.minX = minX
+        self.maxX = maxX
+        self.minY = minY
+        self.maxY = maxY
+    }
+    
+    func including(_ p: CGPoint) -> Bounds {
+        
+        var minX: CGFloat? = minX
+        var maxX: CGFloat? = maxX
+        var minY: CGFloat? = minY
+        var maxY: CGFloat? = maxY
+        
+        if minX == nil || p.x < minX! {
+            minX = p.x
+        }
+        if maxX == nil || p.x > maxX! {
+            maxX = p.x
+        }
+        if minY == nil || p.y < minY! {
+            minY = p.y
+        }
+        if maxY == nil || p.y > maxY! {
+            maxY = p.y
+        }
+        
+        return Bounds(
+            minX: minX,
+            maxX: maxX,
+            minY: minY,
+            maxY: maxY
         )
     }
 }
@@ -138,8 +167,8 @@ class OpticsScene {
     }
     
     
-    var boundingRect: CGRect {
+    var bounds: Bounds {
         
-        return lenses.first!.boundingRect
+        return lenses.first!.bounds
     }
 }

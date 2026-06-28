@@ -86,7 +86,7 @@ class Renderer {
 
         let lense = scene.lenses.first!
         draw(lense, highlighted: self.hoveringLense != nil)
-        drawDebugRect(lense.boundingRect)
+        drawDebugRect(lense.bounds)
         
 //        drawCursor()
     }
@@ -224,15 +224,41 @@ class Renderer {
     }
     
     
-    func drawDebugRect(_ rect: CGRect) {
+    func drawDebugRect(_ bounds: Bounds) {
         
         var path = Path()
         
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        if let minX = bounds.minX,
+           let maxX = bounds.maxX,
+           let minY = bounds.minY
+        {
+            path.move(to: CGPoint(x: minX, y: minY))
+            path.addLine(to: CGPoint(x: maxX, y: minY))
+        }
+        
+        if let maxX = bounds.maxX,
+           let minY = bounds.minY,
+           let maxY = bounds.maxY
+        {
+            path.move(to: CGPoint(x: maxX, y: minY))
+            path.addLine(to: CGPoint(x: maxX, y: maxY))
+        }
+        
+        if let minX = bounds.minX,
+           let maxX = bounds.maxX,
+           let maxY = bounds.maxY
+        {
+            path.move(to: CGPoint(x: maxX, y: maxY))
+            path.addLine(to: CGPoint(x: minX, y: maxY))
+        }
+        
+        if let minX = bounds.minX,
+           let minY = bounds.minY,
+           let maxY = bounds.maxY
+        {
+            path.move(to: CGPoint(x: minX, y: maxY))
+            path.addLine(to: CGPoint(x: minX, y: minY))
+        }
         
         context.stroke(path, with: .color(.yellow), lineWidth: 2)
     }

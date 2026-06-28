@@ -223,30 +223,33 @@ struct ContentView: View {
     
     func fitViewport() {
         
-        let rect = scene.boundingRect
+        let bounds = scene.bounds
         
-        let size = max(rect.width, rect.height)
-        let window = min(canvasSize.width, canvasSize.height)*0.6
-        
-        let scale = window/size
-        
-        let xw = (rect.minX + rect.maxX)/2
-        let yw = (rect.minY + rect.maxY)/2
-        
-        viewportTransform.rotation = .zero
-        
-        let cosa = cos(viewportTransform.rotation.radians)
-        let sina = sin(viewportTransform.rotation.radians)
-        
-        let x0: CGFloat = 0
-        let y0: CGFloat = 0
-        
-        viewportTransform.translation = Vector(
-            dx: x0 - scale*(xw*cosa - yw*sina),
-            dy: y0 - scale*(yw*cosa + xw*sina)
-        )
-        
-        viewportTransform.scale = scale
+        if let maxX = bounds.maxX, let minX = bounds.minX,
+           let maxY = bounds.maxY, let minY = bounds.minY{
+            
+            let boundsWidth = maxX - minX
+            let boundsHeight = maxY - minY
+            let boundsSize = max(boundsWidth, boundsHeight)
+            
+            let windowSize = min(canvasSize.width, canvasSize.height)*0.6
+            
+            let a: Angle = .zero
+            let s = windowSize/boundsSize
+            
+            let cosa = cos(a.radians)
+            let sina = sin(a.radians)
+            
+            let xc = (minX + maxX)/2
+            let yc = (minY + maxY)/2
+            
+            viewportTransform.translation = -s*Vector(
+                dx: xc*cosa - yc*sina,
+                dy: yc*cosa + xc*sina
+            )
+            viewportTransform.rotation = a
+            viewportTransform.scale = s
+        }
     }
 }
 
