@@ -47,6 +47,59 @@ class Lense {
         )
         .applying(transformFromLocal)
     }
+    
+    var boundingRect: CGRect {
+        
+        let points = [
+                
+            CGPoint(
+                x: 0,
+                y: diameter/2
+            ).applying(transformFromLocal),
+            
+            CGPoint(
+                x: 0,
+                y: -diameter/2
+            ).applying(transformFromLocal),
+            
+            CGPoint(
+                x: -focalLength,
+                y: 0
+            ).applying(transformFromLocal),
+            
+            CGPoint(
+                x: focalLength,
+                y: 0
+            ).applying(transformFromLocal)
+        ]
+        
+        var minX: CGFloat = position.x
+        var maxX: CGFloat = position.y
+        var minY: CGFloat = position.x
+        var maxY: CGFloat = position.y
+        
+        for p in points {
+            if p.x < minX {
+                minX = p.x
+            }
+            if p.x > maxX {
+                maxX = p.x
+            }
+            if p.y < minY {
+                minY = p.y
+            }
+            if p.y > maxY {
+                maxY = p.y
+            }
+        }
+        
+        return CGRect(
+            x: minX,
+            y: minY,
+            width: maxX - minX,
+            height: maxY - minY
+        )
+    }
 }
 
 
@@ -83,60 +136,6 @@ class OpticsScene {
     
     var boundingRect: CGRect {
         
-        let points = lenses.map { lense in
-            
-            let transform = lense.transformFromLocal
-            
-            return [
-                
-                CGPoint(
-                    x: 0,
-                    y: lense.diameter/2
-                ).applying(transform),
-                
-                CGPoint(
-                    x: 0,
-                    y: -lense.diameter/2
-                ).applying(transform),
-                
-                CGPoint(
-                    x: -lense.focalLength,
-                    y: 0
-                ).applying(transform),
-                
-                CGPoint(
-                    x: lense.focalLength,
-                    y: 0
-                ).applying(transform)
-            ]
-        }
-        .flatMap { $0 }
-        
-        var minX: CGFloat = 0
-        var maxX: CGFloat = 0
-        var minY: CGFloat = 0
-        var maxY: CGFloat = 0
-        
-        for p in points {
-            if p.x < minX {
-                minX = p.x
-            }
-            if p.x > maxX {
-                maxX = p.x
-            }
-            if p.y < minY {
-                minY = p.y
-            }
-            if p.y > maxY {
-                maxY = p.y
-            }
-        }
-        
-        return CGRect(
-            x: minX,
-            y: minY,
-            width: maxX - minX,
-            height: maxY - minY
-        )
+        return lenses.first!.boundingRect
     }
 }

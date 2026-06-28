@@ -195,15 +195,15 @@ struct ContentView: View {
         
         let rect = scene.boundingRect
         
-        viewportTransform.translation = Vector(
-            dx: (rect.maxX + rect.minX)/2,
-            dy: (rect.maxY + rect.minY)/2
-        )
-        
         let size = max(rect.width, rect.height)
         let window = min(canvasSize.width, canvasSize.height)*0.6
         
         viewportTransform.scale = window/size
+        
+        viewportTransform.translation = Vector(
+            dx: -(rect.minX + rect.maxX)/2*viewportTransform.scale,
+            dy: -(rect.minY + rect.maxY)/2*viewportTransform.scale
+        )
     }
 }
 

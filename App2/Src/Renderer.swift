@@ -86,6 +86,7 @@ class Renderer {
 
         let lense = scene.lenses.first!
         draw(lense, highlighted: self.hoveringLense != nil)
+        drawDebugRect(lense.boundingRect)
         
 //        drawCursor()
     }
@@ -220,5 +221,19 @@ class Renderer {
         path.addLine(to: CGPoint(x: 0, y: size))
         
         context.stroke(path, with: .color(.blue), lineWidth: 2)
+    }
+    
+    
+    func drawDebugRect(_ rect: CGRect) {
+        
+        var path = Path()
+        
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        
+        context.stroke(path, with: .color(.yellow), lineWidth: 2)
     }
 }
