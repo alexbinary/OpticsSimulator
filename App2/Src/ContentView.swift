@@ -151,27 +151,46 @@ struct ContentView: View {
     
     func zoomViewport(by delta: CGFloat) {
         
-        let oldScale = viewportTransform.scale
-        let newScale = oldScale * (1 + delta)
+        let a = viewportTransform.rotation
         
-        let xw = transformedMouse.x
-        let yw = transformedMouse.y
+        let s1 = viewportTransform.scale
+        let s2 = s1 * (1 + delta)
         
-        let cosa = cos(viewportTransform.rotation.radians)
-        let sina = sin(viewportTransform.rotation.radians)
+        let cosa = cos(a.radians)
+        let sina = sin(a.radians)
         
-        let offset = (oldScale-newScale)*Vector(
-            dx: xw*cosa - yw*sina,
-            dy: yw*cosa + xw*sina
+        let xc = transformedMouse.x
+        let yc = transformedMouse.y
+        
+        let offset = (s1-s2)*Vector(
+            dx: xc*cosa - yc*sina,
+            dy: yc*cosa + xc*sina
         )
         
-        viewportTransform.scale = newScale
+        viewportTransform.scale = s2
         viewportTransform.translation += offset
     }
     
     func rotateViewport(by delta: Angle) {
         
-        viewportTransform.rotation += delta
+        let a1 = viewportTransform.rotation
+        let a2 = a1 + delta
+        
+        let s = viewportTransform.scale
+        
+        let cosa = cos(a1.radians)-cos(a2.radians)
+        let sina = sin(a1.radians)-sin(a2.radians)
+        
+        let xc = transformedMouse.x
+        let yc = transformedMouse.y
+        
+        let offset = s*Vector(
+            dx: xc*cosa - yc*sina,
+            dy: yc*cosa + xc*sina
+        )
+        
+        viewportTransform.rotation = a2
+        viewportTransform.translation += offset
     }
     
     func panViewport(by v: Vector) {
