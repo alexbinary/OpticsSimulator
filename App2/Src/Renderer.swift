@@ -66,12 +66,9 @@ class Renderer {
     
     func render(_ scene: OpticsScene) {
         
-        context.scaleBy(x: 1, y: -1)
-        context.translateBy(x: 0, y: -canvasSize.height)
-        drawDebugAxis() // <--- view mouse
-        context.translateBy(x: canvasSize.width/2, y: canvasSize.height/2)
-        drawDebugAxis()
+        drawDebugAxis() // <--- view coordinates
         
+        // viewport transform
         context.translateBy(
             x: viewportTransform.translation.dx,
             y: viewportTransform.translation.dy
@@ -80,7 +77,7 @@ class Renderer {
         context.rotate(by: viewportTransform.rotation)
         drawDebugAxis()
         context.scaleBy(x: viewportTransform.scale, y: viewportTransform.scale)
-        drawDebugAxis() // <--- transformed
+        drawDebugAxis() // <--- transformed coordinates
         
         drawGrid()
 

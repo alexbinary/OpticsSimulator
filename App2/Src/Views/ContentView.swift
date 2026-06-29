@@ -39,6 +39,15 @@ struct ContentView: View {
                 
                 Canvas { context, size in
                     
+                    print("Canvas", self.canvasSize)
+                    
+                    // origin bottom left, Y+ up
+                    context.scaleBy(x: 1, y: -1)
+                    context.translateBy(x: 0, y: -canvasSize.height)
+                    
+                    // origin at center of the screen
+                    context.translateBy(x: viewportBaseOffset.dx, y: viewportBaseOffset.dy)
+                    
                     let renderer = Renderer(
                         context: context,
                         canvasSize: size,
@@ -46,7 +55,7 @@ struct ContentView: View {
                         gridSnapSize: gridSnapSize,
                         transformedMouse: transformedMouse,
                         transformedMouseSnapped: transformedMouseSnapped,
-                                                hoveringObject: scene.hoverObject
+                        hoveringObject: scene.hoverObject
                     )
                     renderer.render(scene)
                 }
@@ -55,6 +64,7 @@ struct ContentView: View {
                         Color.clear
                             .onChange(of: proxy.size, initial: true) { _, newSize in
                                 self.canvasSize = newSize
+                                print("onChange", self.canvasSize)
                             }
                     }
                 )
@@ -73,7 +83,6 @@ struct ContentView: View {
                         updateMouse(newPosition: point, dragging: true)
                     },
                     onScroll: { dx, dy, modifiers, phase, momentumPhase in
-                        
                         if phase == .began {
                             scrollZooms = modifiers.contains(.option)
                         }
@@ -121,12 +130,18 @@ struct ContentView: View {
     }
     
     
+    var viewportBaseOffset: Vector {
+     
+        return Vector(
+            dx: canvasSize.width/2,
+            dy: canvasSize.height/2
+        )
+    }
+    
+    
     var inverseViewportTransform: CGAffineTransform {
         
         CGAffineTransform.identity
-            .concatenating(.init(
-                translationX: -canvasSize.width/2, y: -canvasSize.height/2)
-            )
             .concatenating(.init(
                 translationX: -viewportTransform.translation.dx, y: -viewportTransform.translation.dy)
             )
@@ -141,7 +156,10 @@ struct ContentView: View {
     
     func updateMouse(newPosition point: CGPoint, dragging: Bool = false) {
         
-        viewMouse = point
+        viewMouse = CGPoint(
+            x: point.x - viewportBaseOffset.dx,
+            y: point.y - viewportBaseOffset.dy
+        )
         
         scene.updateMouse(
             newTransformedPosition: transformedMouse,
@@ -201,6 +219,7 @@ struct ContentView: View {
         viewportTransform.translation += offset
     }
     
+    
     func rotateViewport(by delta: Angle) {
         
         let a1 = viewportTransform.rotation
@@ -222,6 +241,7 @@ struct ContentView: View {
         viewportTransform.rotation = a2
         viewportTransform.translation += offset
     }
+    
     
     func panViewport(by v: Vector) {
         
@@ -245,7 +265,7 @@ struct ContentView: View {
         let bounds = scene.bounds
         
         if let maxX = bounds.maxX, let minX = bounds.minX,
-           let maxY = bounds.maxY, let minY = bounds.minY{
+           let maxY = bounds.maxY, let minY = bounds.minY {
             
             let boundsWidth = maxX - minX
             let boundsHeight = maxY - minY
