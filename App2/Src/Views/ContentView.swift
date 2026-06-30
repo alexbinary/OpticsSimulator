@@ -22,8 +22,11 @@ struct ContentView: View {
     @State private var viewportTransform = ViewportTransform(
         translation: .zero, rotation: .zero, scale: 1
     )
+    @State private var viewportTransformOnLastMouseDown: ViewportTransform? = nil
     
     @State private var viewMouse: CGPoint = .zero
+    @State private var viewMouseLastDown: CGPoint = .zero
+    @State private var viewMouseLastUp: CGPoint = .zero
     
     @State private var draggingObject: Lense? = nil
     @State private var draggingObjectOffset: Vector? = nil
@@ -75,9 +78,12 @@ struct ContentView: View {
                     onMouseDown: { point in
                         draggingObject = scene.hoverObject
                         draggingObjectOffset = scene.hoverObjectOffset
+                        viewMouseLastDown = viewMouse
+                        viewportTransformOnLastMouseDown = viewportTransform
                     },
                     onMouseUp: { point in
                         draggingObject = nil
+                        viewMouseLastUp = viewMouse
                     },
                     onMouseDrag: { point in
                         updateMouse(newPosition: point, dragging: true)
@@ -166,15 +172,30 @@ struct ContentView: View {
             viewportTransform: viewportTransform
         )
         
-        if let object = draggingObject,
-           let offset = draggingObjectOffset {
+        if dragging {
             
-            let target = transformedMouseSnapped
-            
-            object.position = CGPoint(
-                x: target.x - offset.dx,
-                y: target.y - offset.dy
-            )
+            if let object = draggingObject,
+               let offset = draggingObjectOffset {
+                
+                let target = transformedMouseSnapped
+                
+                object.position = CGPoint(
+                    x: target.x - offset.dx,
+                    y: target.y - offset.dy
+                )
+                
+            } else if let base = viewportTransformOnLastMouseDown?.translation {
+                
+                let offset = Vector(
+                    dx: viewMouse.x - viewMouseLastDown.x,
+                    dy: viewMouse.y - viewMouseLastDown.y
+                )
+                
+                viewportTransform.translation = Vector(
+                    dx: base.dx + offset.dx,
+                    dy: base.dy + offset.dy
+                )
+            }
         }
     }
     
@@ -280,6 +301,13 @@ struct ContentView: View {
             panViewport(toHave: boundsCenter, appearAt: .zero)
         }
     }
+    
+    
+    
+    
+    
+    
+    
 }
 
 #Preview {
