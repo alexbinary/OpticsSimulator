@@ -214,11 +214,11 @@ struct ContentView: View {
     }
     
     
-    func setTransform(
-        rotation a: Angle, scale s: CGFloat,
-        makingWorldPoint worldPoint: CGPoint,
-        atScreenPosition screenPoint: CGPoint
-    ) {
+    func panViewport(toHave worldPoint: CGPoint, appearAt screenPoint: CGPoint) {
+        
+        let a = viewportTransform.rotation
+        let s = viewportTransform.scale
+        
         let cosa = cos(a.radians)
         let sina = sin(a.radians)
         
@@ -232,37 +232,28 @@ struct ContentView: View {
             dx: xs - s*(xc*cosa - yc*sina),
             dy: ys - s*(yc*cosa + xc*sina)
         )
-        viewportTransform.rotation = a
-        viewportTransform.scale = s
-    }
-    
-    
-    func setTransformAroundMouse(
-        rotation a: Angle, scale s: CGFloat
-    ) {
-        setTransform(
-            rotation: a, scale: s,
-            makingWorldPoint: transformedMouse,
-            atScreenPosition: viewMouse
-        )
     }
 
     
     func rotateViewport(by delta: Angle) {
         
-        setTransformAroundMouse(
-            rotation: viewportTransform.rotation + delta,
-            scale: viewportTransform.scale
-        )
+        let worldPoint = transformedMouse
+        let screenPoint = viewMouse
+        
+        viewportTransform.rotation += delta
+        
+        panViewport(toHave: worldPoint, appearAt: screenPoint)
     }
     
 
     func zoomViewport(by delta: CGFloat) {
         
-        setTransformAroundMouse(
-            rotation: viewportTransform.rotation,
-            scale: viewportTransform.scale * (1 + delta)
-        )
+        let worldPoint = transformedMouse
+        let screenPoint = viewMouse
+        
+        viewportTransform.scale *= (1 + delta)
+        
+        panViewport(toHave: worldPoint, appearAt: screenPoint)
     }
     
     
@@ -278,16 +269,15 @@ struct ContentView: View {
             
             let boundsSize = max(boundsWidth, boundsHeight)
             let windowSize = min(canvasSize.width, canvasSize.height)*0.6
+            
             let fitScale = windowSize/boundsSize
             
             let boundsCenter = CGPoint(x: (minX + maxX)/2, y: (minY + maxY)/2)
             
-            setTransform(
-                rotation: .zero,
-                scale: fitScale,
-                makingWorldPoint: boundsCenter,
-                atScreenPosition: .zero
-            )
+            viewportTransform.rotation = .zero
+            viewportTransform.scale = fitScale
+            
+            panViewport(toHave: boundsCenter, appearAt: .zero)
         }
     }
 }
