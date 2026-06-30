@@ -66,24 +66,24 @@ class Renderer {
     
     func render(_ scene: OpticsScene) {
         
-        drawDebugAxis() // <--- view coordinates
+//        drawDebugAxis() // <--- view coordinates
         
         // viewport transform
         context.translateBy(
             x: viewportTransform.translation.dx,
             y: viewportTransform.translation.dy
         )
-        drawDebugAxis()
+//        drawDebugAxis()
         context.rotate(by: viewportTransform.rotation)
-        drawDebugAxis()
+//        drawDebugAxis()
         context.scaleBy(x: viewportTransform.scale, y: viewportTransform.scale)
-        drawDebugAxis() // <--- transformed coordinates
+//        drawDebugAxis() // <--- transformed coordinates
         
         drawGrid()
 
         let lense = scene.lenses.first!
         draw(lense, highlighted: self.hoveringObject != nil)
-        drawDebugRect(lense.bounds)
+//        drawDebugRect(lense.bounds)
         
 //        drawCursor()
     }
@@ -178,6 +178,8 @@ class Renderer {
         
         context.stroke(path, with: .color(color), lineWidth: lineWidth(highlighted ? 4 : 2))
         
+        path = Path()
+        
         // connect focal points
         path.move(to: CGPoint(x: 0, y: h))
         path.addLine(to: CGPoint(x: -f, y: 0))
@@ -188,6 +190,16 @@ class Renderer {
         context.stroke(path, with: .color(color), style: StrokeStyle(
             lineWidth: lineWidth(1),
             dash: [4, 4]
+        ))
+        
+        path = Path()
+        
+        // debug
+        let p = transformedMouse.applying(lense.transformToLocal)
+        path.addArc(center: p, radius: 10, startAngle: .zero, endAngle: .degrees(360), clockwise: true)
+            
+        context.stroke(path, with: .color(.green), style: StrokeStyle(
+            lineWidth: 1
         ))
     }
     

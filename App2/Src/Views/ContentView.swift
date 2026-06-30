@@ -42,8 +42,6 @@ struct ContentView: View {
                 
                 Canvas { context, size in
                     
-                    print("Canvas", self.canvasSize)
-                    
                     // origin bottom left, Y+ up
                     context.scaleBy(x: 1, y: -1)
                     context.translateBy(x: 0, y: -canvasSize.height)
@@ -67,7 +65,6 @@ struct ContentView: View {
                         Color.clear
                             .onChange(of: proxy.size, initial: true) { _, newSize in
                                 self.canvasSize = newSize
-                                print("onChange", self.canvasSize)
                             }
                     }
                 )
@@ -301,13 +298,6 @@ struct ContentView: View {
             panViewport(toHave: boundsCenter, appearAt: .zero)
         }
     }
-    
-    
-    
-    
-    
-    
-    
 }
 
 #Preview {

@@ -25,10 +25,28 @@ class Lense {
     var transformFromLocal: CGAffineTransform {
         
         CGAffineTransform.identity
-            .concatenating(.init(rotationAngle: rotation.radians))
+            .concatenating(.init(
+                rotationAngle: rotation.radians
+            ))
             .concatenating(.init(
                 translationX: position.x, y: position.y
             ))
+    }
+    
+    var transformToLocal: CGAffineTransform {
+        
+        CGAffineTransform.identity
+            .concatenating(.init(
+                translationX: -position.x, y: -position.y
+            ))
+            .concatenating(.init(
+                rotationAngle: -rotation.radians
+            ))
+    }
+    
+    func distance(toLocalPoint localPoint: CGPoint) -> CGFloat {
+        
+        return App2.distance(between: localPoint, and: mainSegment)
     }
     
     var mainSegment: Segment {
@@ -43,39 +61,29 @@ class Lense {
                 y: -diameter/2
             )
         )
-        .applying(transformFromLocal)
     }
     
-    var bounds: Bounds {
+    var pointsForBounds: [CGPoint] {
         
-        let points = [
+        return [
                 
             CGPoint(
                 x: 0,
                 y: diameter/2
-            ).applying(transformFromLocal),
-            
+            ),
             CGPoint(
                 x: 0,
                 y: -diameter/2
-            ).applying(transformFromLocal),
-            
+            ),
             CGPoint(
                 x: -focalLength,
                 y: 0
-            ).applying(transformFromLocal),
-            
+            ),
             CGPoint(
                 x: focalLength,
                 y: 0
-            ).applying(transformFromLocal)
+            ),
         ]
-        
-        let bounds = points.reduce(Bounds()) { bounds, p in
-            bounds.expanded(to: p)
-        }
-        
-        return bounds
     }
 }
 

@@ -28,8 +28,8 @@ class OpticsScene {
         
         for lense in lenses {
             
-            if let distance = distance(between: mouse, and: lense.mainSegment),
-               distance < 5/viewportTransform.scale {
+            let distance = lense.distance(toLocalPoint: mouse.applying(lense.transformToLocal))
+            if distance < 5/viewportTransform.scale {
                 
                 hoverObject = lense
                 hoverObjectOffset = Vector(from: lense.position, to: mouse)
@@ -41,6 +41,14 @@ class OpticsScene {
     
     var bounds: Bounds {
         
-        return lenses.first!.bounds
+        let points = lenses.flatMap { lense in
+            lense.pointsForBounds.map { $0.applying(lense.transformFromLocal) }
+        }
+        
+        let bounds = points.reduce(Bounds()) { bounds, p in
+            bounds.expanded(to: p)
+        }
+        
+        return bounds
     }
 }
