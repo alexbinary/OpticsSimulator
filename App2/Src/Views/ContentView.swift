@@ -197,49 +197,11 @@ struct ContentView: View {
     }
     
     
-    func zoomViewport(by delta: CGFloat) {
+    func resetViewport() {
         
-        let a = viewportTransform.rotation
-        
-        let s1 = viewportTransform.scale
-        let s2 = s1 * (1 + delta)
-        
-        let cosa = cos(a.radians)
-        let sina = sin(a.radians)
-        
-        let xc = transformedMouse.x
-        let yc = transformedMouse.y
-        
-        let offset = (s1-s2)*Vector(
-            dx: xc*cosa - yc*sina,
-            dy: yc*cosa + xc*sina
-        )
-        
-        viewportTransform.scale = s2
-        viewportTransform.translation += offset
-    }
-    
-    
-    func rotateViewport(by delta: Angle) {
-        
-        let a1 = viewportTransform.rotation
-        let a2 = a1 + delta
-        
-        let s = viewportTransform.scale
-        
-        let cosa = cos(a1.radians)-cos(a2.radians)
-        let sina = sin(a1.radians)-sin(a2.radians)
-        
-        let xc = transformedMouse.x
-        let yc = transformedMouse.y
-        
-        let offset = s*Vector(
-            dx: xc*cosa - yc*sina,
-            dy: yc*cosa + xc*sina
-        )
-        
-        viewportTransform.rotation = a2
-        viewportTransform.translation += offset
+        viewportTransform.translation = .zero
+        viewportTransform.rotation = .zero
+        viewportTransform.scale = 1
     }
     
     
@@ -252,11 +214,55 @@ struct ContentView: View {
     }
     
     
-    func resetViewport() {
+    func setTransform(
+        rotation a: Angle, scale s: CGFloat,
+        makingWorldPoint worldPoint: CGPoint,
+        atScreenPosition screenPoint: CGPoint
+    ) {
+        let cosa = cos(a.radians)
+        let sina = sin(a.radians)
         
-        viewportTransform.translation = .zero
-        viewportTransform.rotation = .zero
-        viewportTransform.scale = 1
+        let xc = worldPoint.x
+        let yc = worldPoint.y
+        
+        let xs = screenPoint.x
+        let ys = screenPoint.y
+        
+        viewportTransform.translation = Vector(
+            dx: xs - s*(xc*cosa - yc*sina),
+            dy: ys - s*(yc*cosa + xc*sina)
+        )
+        viewportTransform.rotation = a
+        viewportTransform.scale = s
+    }
+    
+    
+    func setTransformAroundMouse(
+        rotation a: Angle, scale s: CGFloat
+    ) {
+        setTransform(
+            rotation: a, scale: s,
+            makingWorldPoint: transformedMouse,
+            atScreenPosition: viewMouse
+        )
+    }
+
+    
+    func rotateViewport(by delta: Angle) {
+        
+        setTransformAroundMouse(
+            rotation: viewportTransform.rotation + delta,
+            scale: viewportTransform.scale
+        )
+    }
+    
+
+    func zoomViewport(by delta: CGFloat) {
+        
+        setTransformAroundMouse(
+            rotation: viewportTransform.rotation,
+            scale: viewportTransform.scale * (1 + delta)
+        )
     }
     
     
@@ -269,25 +275,19 @@ struct ContentView: View {
             
             let boundsWidth = maxX - minX
             let boundsHeight = maxY - minY
+            
             let boundsSize = max(boundsWidth, boundsHeight)
-            
             let windowSize = min(canvasSize.width, canvasSize.height)*0.6
+            let fitScale = windowSize/boundsSize
             
-            let a: Angle = .zero
-            let s = windowSize/boundsSize
+            let boundsCenter = CGPoint(x: (minX + maxX)/2, y: (minY + maxY)/2)
             
-            let cosa = cos(a.radians)
-            let sina = sin(a.radians)
-            
-            let xc = (minX + maxX)/2
-            let yc = (minY + maxY)/2
-            
-            viewportTransform.translation = -s*Vector(
-                dx: xc*cosa - yc*sina,
-                dy: yc*cosa + xc*sina
+            setTransform(
+                rotation: .zero,
+                scale: fitScale,
+                makingWorldPoint: boundsCenter,
+                atScreenPosition: .zero
             )
-            viewportTransform.rotation = a
-            viewportTransform.scale = s
         }
     }
 }
