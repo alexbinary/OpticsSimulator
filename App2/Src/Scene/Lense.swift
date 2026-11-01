@@ -3,6 +3,11 @@ import SwiftUI
 
 
 
+enum LenseType {
+    case convergent, divergent
+}
+
+
 @Observable
 class Lense {
     
@@ -13,7 +18,13 @@ class Lense {
     var rotation: Angle
    
     
-    init(type: LenseType, diameter: CGFloat, focalLength: CGFloat, position: CGPoint, rotation: Angle) {
+    init(
+        type: LenseType,
+        diameter: CGFloat,
+        focalLength: CGFloat,
+        position: CGPoint,
+        rotation: Angle
+    ) {
         self.type = type
         self.diameter = diameter
         self.focalLength = focalLength
@@ -62,11 +73,4 @@ class Lense {
         
         return shortestDistance(between: worldPoint, and: toWorld(localMainSegment))
     }
-}
-
-
-
-enum LenseType {
-    
-    case convergent, divergent
 }

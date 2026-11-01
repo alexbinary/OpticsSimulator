@@ -25,6 +25,9 @@ struct Vector {
     
     var lengthSq: CGFloat { dot(self, self) }
     var length: CGFloat { sqrt(lengthSq) }
+    
+    
+    var point: CGPoint { .init(x: dx, y: dy) }
 }
 
 

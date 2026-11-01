@@ -11,6 +11,13 @@ struct ViewportTransform {
     static var `default`: ViewportTransform {
         .init(translation: .zero, rotation: .zero, scale: 1)
     }
+    
+    var inverseTransform: CGAffineTransform {
+        .identity
+        .concatenating(.init(translationX: -translation.dx, y: -translation.dy))
+        .concatenating(.init(rotationAngle: -rotation.radians))
+        .concatenating(.init(scaleX: 1/scale, y: 1/scale))
+    }
 }
 
 
@@ -45,15 +52,8 @@ struct ContentView: View {
         .init(dx: canvasSize.width/2, dy: canvasSize.height/2)
     }
     
-    var inverseViewportTransform: CGAffineTransform {
-        .identity
-        .concatenating(.init(translationX: -viewportTransform.translation.dx, y: -viewportTransform.translation.dy))
-        .concatenating(.init(rotationAngle: -viewportTransform.rotation.radians))
-        .concatenating(.init(scaleX: 1/viewportTransform.scale, y: 1/viewportTransform.scale))
-    }
-    
     var worldMouse: CGPoint {
-        screenMouse.applying(inverseViewportTransform)
+        screenMouse.applying(viewportTransform.inverseTransform)
     }
 
     var worldMouseSnapped: CGPoint {
