@@ -5,7 +5,7 @@ import SwiftUI
 
 func distance(between p1: CGPoint, and p2: CGPoint) -> CGFloat {
     
-    return length(Vector(from: p1, to: p2))
+    return Vector(from: p1, to: p2).length
 }
 
 

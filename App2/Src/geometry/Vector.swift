@@ -23,11 +23,8 @@ struct Vector {
     static let zero = Vector(dx: 0, dy: 0)
     
     
-    func applying(_ transform: CGAffineTransform) -> Vector {
-        
-        let p = CGPoint(x: dx, y: dy).applying(transform)
-        return Vector(dx: p.x, dy: p.y)
-    }
+    var lengthSq: CGFloat { dot(self, self) }
+    var length: CGFloat { sqrt(lengthSq) }
 }
 
 
@@ -71,16 +68,4 @@ func -(_ p1: CGPoint, _ p2: CGPoint) -> Vector {
 func dot(_ v1: Vector, _ v2: Vector) -> CGFloat {
     
     return v1.dx*v2.dx + v1.dy*v2.dy
-}
-
-
-func lengthSq(_ v: Vector) -> CGFloat {
-    
-    return dot(v,v)
-}
-
-
-func length(_ v: Vector) -> CGFloat {
-    
-    return sqrt(lengthSq(v))
 }
