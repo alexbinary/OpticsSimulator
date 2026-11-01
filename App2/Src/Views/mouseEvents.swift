@@ -5,13 +5,13 @@ import SwiftUI
 
 struct MouseEventsArea: NSViewRepresentable {
 
-    var onMouseMove: (CGPoint) -> Void
-    var onMouseDown: (CGPoint) -> Void
-    var onMouseUp: (CGPoint) -> Void
-    var onMouseDrag: (CGPoint) -> Void
-    var onScroll: (CGFloat, CGFloat, NSEvent.ModifierFlags, NSEvent.Phase, NSEvent.Phase) -> Void
-    var onRotate: (Angle, CGPoint) -> Void
-    var onPinch: (CGFloat, CGPoint) -> Void
+    var onMouseMove: ((CGPoint) -> Void)?
+    var onMouseDown: ((CGPoint) -> Void)?
+    var onMouseUp: ((CGPoint) -> Void)?
+    var onMouseDrag: ((CGPoint) -> Void)?
+    var onScroll: ((CGFloat, CGFloat, NSEvent.ModifierFlags, NSEvent.Phase, NSEvent.Phase) -> Void)?
+    var onRotate: ((Angle, CGPoint) -> Void)?
+    var onPinch: ((CGFloat, CGPoint) -> Void)?
     
 
     func makeNSView(context: Context) -> NSView {
@@ -50,20 +50,12 @@ final class MouseEventView: NSView {
         if let trackingArea = trackingArea {
             removeTrackingArea(trackingArea)
         }
-
-        let options: NSTrackingArea.Options = [
-            .mouseMoved,
-            .activeInKeyWindow,
-            .inVisibleRect
-        ]
-
         trackingArea = NSTrackingArea(
             rect: .zero,
-            options: options,
+            options: [.mouseMoved, .activeInKeyWindow, .inVisibleRect],
             owner: self,
             userInfo: nil
         )
-
         addTrackingArea(trackingArea!)
     }
 
@@ -90,10 +82,7 @@ final class MouseEventView: NSView {
     override func scrollWheel(with event: NSEvent) {
         let dx = event.scrollingDeltaX
         let dy = event.scrollingDeltaY
-        onScroll?(
-            dx, dy, event.modifierFlags,
-            event.phase, event.momentumPhase
-        )
+        onScroll?(dx, dy, event.modifierFlags, event.phase, event.momentumPhase)
     }
     
     override func rotate(with event: NSEvent) {

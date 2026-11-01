@@ -100,7 +100,7 @@ struct ContentView: View {
                     },
                     onMouseDown: { point in
                         draggingObject = scene.hoveringObject
-                        draggingObjectOffset = scene.hoverObjectOffset
+                        draggingObjectOffset = scene.hoveringObjectOffsetFromMouse
                         screenMouseOnLastDown = screenMouse
                         viewportTransformOnLastMouseDown = viewportTransform
                     },

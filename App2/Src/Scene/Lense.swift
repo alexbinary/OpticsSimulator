@@ -22,68 +22,45 @@ class Lense {
     }
     
     
+    var localMainSegment: Segment { .init(
+        p1: CGPoint(x: 0, y: diameter/2),
+        p2: CGPoint(x: 0, y: -diameter/2)
+    )}
+    
+    var localPointsForBounds: [CGPoint] {[
+        CGPoint(x: 0, y: diameter/2),
+        CGPoint(x: 0, y: -diameter/2),
+        CGPoint(x: -focalLength, y: 0),
+        CGPoint(x: focalLength, y: 0),
+    ]}
+    
+    var worldPointsForBounds: [CGPoint] {
+        localPointsForBounds.map { toWorld($0) }
+    }
+    
+    
     var transformFromLocal: CGAffineTransform {
-        
-        CGAffineTransform.identity
-            .concatenating(.init(
-                rotationAngle: rotation.radians
-            ))
-            .concatenating(.init(
-                translationX: position.x, y: position.y
-            ))
+        .identity
+        .concatenating(.init(rotationAngle: rotation.radians))
+        .concatenating(.init(translationX: position.x, y: position.y))
     }
     
-    var transformToLocal: CGAffineTransform {
+    func toWorld(_ localPoint: CGPoint) -> CGPoint {
         
-        CGAffineTransform.identity
-            .concatenating(.init(
-                translationX: -position.x, y: -position.y
-            ))
-            .concatenating(.init(
-                rotationAngle: -rotation.radians
-            ))
+        return localPoint.applying(transformFromLocal)
     }
     
-    func distance(toLocalPoint localPoint: CGPoint) -> CGFloat {
+    func toWorld(_ localSegment: Segment) -> Segment {
         
-        return App2.distance(between: localPoint, and: mainSegment)
-    }
-    
-    var mainSegment: Segment {
-        
-        Segment(
-            p1: CGPoint(
-                x: 0,
-                y: diameter/2
-            ),
-            p2: CGPoint(
-                x: 0,
-                y: -diameter/2
-            )
+        return Segment(
+            p1: toWorld(localSegment.p1),
+            p2: toWorld(localSegment.p2)
         )
     }
     
-    var pointsForBounds: [CGPoint] {
+    func distance(to worldPoint: CGPoint) -> CGFloat {
         
-        return [
-                
-            CGPoint(
-                x: 0,
-                y: diameter/2
-            ),
-            CGPoint(
-                x: 0,
-                y: -diameter/2
-            ),
-            CGPoint(
-                x: -focalLength,
-                y: 0
-            ),
-            CGPoint(
-                x: focalLength,
-                y: 0
-            ),
-        ]
+        return shortestDistance(between: worldPoint, and: toWorld(localMainSegment))
     }
 }
 

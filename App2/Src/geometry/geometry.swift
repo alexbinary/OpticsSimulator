@@ -9,7 +9,7 @@ func distance(between p1: CGPoint, and p2: CGPoint) -> CGFloat {
 }
 
 
-func distance(between point: CGPoint, and segment: Segment) -> CGFloat {
+func shortestDistance(between point: CGPoint, and segment: Segment) -> CGFloat {
     
     let p1p2 = Vector(from: segment.p1, to: segment.p2)
     let p1p = Vector(from: segment.p1, to: point)

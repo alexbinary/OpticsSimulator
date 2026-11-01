@@ -10,7 +10,14 @@ class OpticsScene {
     var lenses: [Lense] = []
     
     var hoveringObject: Lense? = nil
-    var hoverObjectOffset: Vector? = nil
+    var hoveringObjectOffsetFromMouse: Vector? = nil
+    
+    
+    let screenHoverDistanceLimit: CGFloat = 5.0
+    
+    func worldHoverDistanceLimit(given viewportTransform: ViewportTransform) -> CGFloat {
+        screenHoverDistanceLimit/viewportTransform.scale
+    }
     
     
     func add(_ lense: Lense) {
@@ -19,20 +26,19 @@ class OpticsScene {
     }
     
     
-    func moveMouse(
-        toNewWorldPosition mouse: CGPoint,
-        viewportTransform: ViewportTransform
-    ) {
+    func moveMouse(toNewWorldPosition worldMouse: CGPoint, viewportTransform: ViewportTransform) {
+        
         hoveringObject = nil
-        hoverObjectOffset = nil
+        hoveringObjectOffsetFromMouse = nil
+        
+        let d = worldHoverDistanceLimit(given: viewportTransform)
         
         for lense in lenses {
             
-            let distance = lense.distance(toLocalPoint: mouse.applying(lense.transformToLocal))
-            if distance < 5/viewportTransform.scale {
+            if lense.distance(to: worldMouse) < d {
                 
                 hoveringObject = lense
-                hoverObjectOffset = Vector(from: mouse, to: lense.position)
+                hoveringObjectOffsetFromMouse = Vector(from: worldMouse, to: lense.position)
                 break
             }
         }
@@ -41,13 +47,9 @@ class OpticsScene {
     
     var bounds: Bounds {
         
-        let points = lenses.flatMap { lense in
-            lense.pointsForBounds.map { $0.applying(lense.transformFromLocal) }
-        }
+        let points = lenses.flatMap { $0.worldPointsForBounds }
         
-        let bounds = points.reduce(Bounds()) { bounds, p in
-            bounds.expanded(to: p)
-        }
+        let bounds = points.reduce(Bounds()) { bounds, p in bounds.expanded(to: p) }
         
         return bounds
     }
@@ -60,6 +62,7 @@ extension OpticsScene {
     static var testScene: OpticsScene {
         
         let scene = OpticsScene()
+        
         scene.add(Lense(
             type: .convergent,
             diameter: 100,
@@ -67,6 +70,7 @@ extension OpticsScene {
             position: CGPoint(x: 300, y: 300),
             rotation: .degrees(45)
         ))
+        
         return scene
     }
 }
