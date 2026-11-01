@@ -23,8 +23,8 @@ class Renderer {
         canvasSize: CGSize,
         viewportTransform: ViewportTransform,
         gridSnapSize: CGFloat,
-        transformedMouse: CGPoint,
-        transformedMouseSnapped: CGPoint,
+        worldMouse: CGPoint,
+        worldMouseSnapped: CGPoint,
         hoveringObject: Lense?
     ) {
         self.context = context
@@ -32,8 +32,8 @@ class Renderer {
         self.viewportTransform = viewportTransform
         self.gridSnapSize = gridSnapSize
         
-        self.transformedMouse = transformedMouse
-        self.transformedMouseSnapped = transformedMouseSnapped
+        self.transformedMouse = worldMouse
+        self.transformedMouseSnapped = worldMouseSnapped
         self.hoveringObject = hoveringObject
         
         let center = CGPoint(
@@ -66,18 +66,18 @@ class Renderer {
     
     func render(_ scene: OpticsScene) {
         
-//        drawDebugAxis() // <--- view coordinates
+        drawDebugAxis() // <--- view coordinates
         
         // viewport transform
         context.translateBy(
             x: viewportTransform.translation.dx,
             y: viewportTransform.translation.dy
         )
-//        drawDebugAxis()
+        drawDebugAxis()
         context.rotate(by: viewportTransform.rotation)
-//        drawDebugAxis()
+        drawDebugAxis()
         context.scaleBy(x: viewportTransform.scale, y: viewportTransform.scale)
-//        drawDebugAxis() // <--- transformed coordinates
+        drawDebugAxis() // <--- transformed coordinates
         
         drawGrid()
 
@@ -106,11 +106,11 @@ class Renderer {
         
         let startX = snap(
             -n/2*gridSnapSize + minX + (maxX-minX)/2,
-            onMultipleOf: gridSnapSize
+            onClosestMultipleOf: gridSnapSize
         )
         let startY = snap(
             -n/2*gridSnapSize + minY + (maxY-minY)/2,
-             onMultipleOf: gridSnapSize
+             onClosestMultipleOf: gridSnapSize
         )
         
         for ix in 1...Int(n) {
@@ -194,13 +194,13 @@ class Renderer {
         
         path = Path()
         
-        // debug
-        let p = transformedMouse.applying(lense.transformToLocal)
-        path.addArc(center: p, radius: 10, startAngle: .zero, endAngle: .degrees(360), clockwise: true)
-            
-        context.stroke(path, with: .color(.green), style: StrokeStyle(
-            lineWidth: 1
-        ))
+//        // debug
+//        let p = transformedMouse.applying(lense.transformToLocal)
+//        path.addArc(center: p, radius: 10, startAngle: .zero, endAngle: .degrees(360), clockwise: true)
+//            
+//        context.stroke(path, with: .color(.green), style: StrokeStyle(
+//            lineWidth: 1
+//        ))
     }
     
     

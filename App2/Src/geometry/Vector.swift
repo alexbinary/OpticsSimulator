@@ -52,7 +52,19 @@ func *(_ t: CGFloat, _ v: Vector) -> Vector {
 
 func +(_ p: CGPoint, _ v: Vector) -> CGPoint {
     
-    return CGPoint(x: p.x+v.dx, y: p.y+v.dy)
+    return CGPoint(x: p.x + v.dx, y: p.y + v.dy)
+}
+
+
+func +(_ v: Vector, _ p: CGPoint) -> CGPoint {
+    
+    return p + v
+}
+
+
+func -(_ p1: CGPoint, _ p2: CGPoint) -> Vector {
+    
+    return Vector(dx: p1.x - p2.x, dy: p1.y - p2.y)
 }
 
 

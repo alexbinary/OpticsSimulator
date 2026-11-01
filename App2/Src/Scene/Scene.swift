@@ -9,7 +9,7 @@ class OpticsScene {
     
     var lenses: [Lense] = []
     
-    var hoverObject: Lense? = nil
+    var hoveringObject: Lense? = nil
     var hoverObjectOffset: Vector? = nil
     
     
@@ -19,11 +19,11 @@ class OpticsScene {
     }
     
     
-    func updateMouse(
-        newTransformedPosition mouse: CGPoint,
+    func moveMouse(
+        toNewWorldPosition mouse: CGPoint,
         viewportTransform: ViewportTransform
     ) {
-        hoverObject = nil
+        hoveringObject = nil
         hoverObjectOffset = nil
         
         for lense in lenses {
@@ -31,8 +31,8 @@ class OpticsScene {
             let distance = lense.distance(toLocalPoint: mouse.applying(lense.transformToLocal))
             if distance < 5/viewportTransform.scale {
                 
-                hoverObject = lense
-                hoverObjectOffset = Vector(from: lense.position, to: mouse)
+                hoveringObject = lense
+                hoverObjectOffset = Vector(from: mouse, to: lense.position)
                 break
             }
         }
@@ -50,5 +50,23 @@ class OpticsScene {
         }
         
         return bounds
+    }
+}
+
+
+
+extension OpticsScene {
+ 
+    static var testScene: OpticsScene {
+        
+        let scene = OpticsScene()
+        scene.add(Lense(
+            type: .convergent,
+            diameter: 100,
+            focalLength: 10,
+            position: CGPoint(x: 300, y: 300),
+            rotation: .degrees(45)
+        ))
+        return scene
     }
 }

@@ -3,24 +3,24 @@ import SwiftUI
 
 
 
-func snap(_ n: CGFloat, onMultipleOf ref: CGFloat) -> CGFloat {
+func snap(_ n: CGFloat, onClosestMultipleOf s: CGFloat) -> CGFloat {
     
-    return ceil(n/ref)*ref
+    return round(n/s)*s
 }
 
 
-func snap(_ p: CGPoint, onMultipleOf ref: CGFloat) -> CGPoint {
+func snap(_ p: CGPoint, onClosestMultipleOf s: CGFloat) -> CGPoint {
     
     return CGPoint(
-        x: snap(p.x, onMultipleOf: ref),
-        y: snap(p.y, onMultipleOf: ref)
+        x: snap(p.x, onClosestMultipleOf: s),
+        y: snap(p.y, onClosestMultipleOf: s)
     )
 }
 
 
-func snap(_ n: CGFloat, onPowerOf ref: CGFloat) -> CGFloat {
+func snap(_ n: CGFloat, onClosestPowerOf s: CGFloat) -> CGFloat {
     
-    return pow(ref, ceil(log(n)/log(ref)))
+    return pow(s, ceil(log(n)/log(s)))
 }
 
 
@@ -28,6 +28,6 @@ extension CGFloat {
     
     func isIn(_ range: ClosedRange<CGFloat>) -> Bool {
         
-        return self >= range.lowerBound && self <= range.upperBound
+        return range.contains(self)
     }
 }

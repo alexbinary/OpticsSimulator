@@ -2,36 +2,67 @@ import SwiftUI
 
 
 
+struct ViewportTransform {
+    
+    var translation: Vector
+    var rotation: Angle
+    var scale: CGFloat
+    
+    static var `default`: ViewportTransform {
+        .init(translation: .zero, rotation: .zero, scale: 1)
+    }
+}
+
+
 struct ContentView: View {
     
     
-    @State private var scene: OpticsScene = {
-        let scene = OpticsScene()
-        scene.add(Lense(
-            type: .convergent,
-            diameter: 100,
-            focalLength: 10,
-            position: CGPoint(x: 300, y: 300),
-            rotation: .degrees(45)
-        ))
-        return scene
-    }()
+    @State private var scene: OpticsScene = .testScene
     
     @State private var canvasSize: CGSize = .zero
     
-    @State private var viewportTransform = ViewportTransform(
-        translation: .zero, rotation: .zero, scale: 1
-    )
+    @State private var viewportTransform: ViewportTransform = .default
     @State private var viewportTransformOnLastMouseDown: ViewportTransform? = nil
     
-    @State private var viewMouse: CGPoint = .zero
-    @State private var viewMouseLastDown: CGPoint = .zero
-    @State private var viewMouseLastUp: CGPoint = .zero
+    @State private var screenMouse: CGPoint = .zero
+    @State private var screenMouseOnLastDown: CGPoint = .zero
+    @State private var screenMouseOnLastUp: CGPoint = .zero
     
     @State private var draggingObject: Lense? = nil
     @State private var draggingObjectOffset: Vector? = nil
     
-    @State private var scrollZooms: Bool = false
+    @State private var zoomOnScroll: Bool = false
+    
+    
+    private let zoomScrollCoeff: CGFloat = 0.01
+    private let zoomPinchCoeff: CGFloat = 0.5
+    private let rotateCoeff: CGFloat = 1.0
+    
+    private let fitCoeff: CGFloat = 0.6
+    
+    
+    var viewportBaseOffset: Vector { // origin at center of the screen
+        .init(dx: canvasSize.width/2, dy: canvasSize.height/2)
+    }
+    
+    var inverseViewportTransform: CGAffineTransform {
+        .identity
+        .concatenating(.init(translationX: -viewportTransform.translation.dx, y: -viewportTransform.translation.dy))
+        .concatenating(.init(rotationAngle: -viewportTransform.rotation.radians))
+        .concatenating(.init(scaleX: 1/viewportTransform.scale, y: 1/viewportTransform.scale))
+    }
+    
+    var worldMouse: CGPoint {
+        screenMouse.applying(inverseViewportTransform)
+    }
+
+    var worldMouseSnapped: CGPoint {
+        snap(worldMouse, onClosestMultipleOf: gridSnapSize)
+    }
+    
+    var gridSnapSize: CGFloat {
+        snap(20/viewportTransform.scale, onClosestPowerOf: 10)
+    }
     
     
     var body: some View {
@@ -40,68 +71,63 @@ struct ContentView: View {
             
             ZStack {
                 
-                Canvas { context, size in
+                Canvas { context, canvasSize in
                     
-                    // origin bottom left, Y+ up
                     context.scaleBy(x: 1, y: -1)
                     context.translateBy(x: 0, y: -canvasSize.height)
-                    
-                    // origin at center of the screen
                     context.translateBy(x: viewportBaseOffset.dx, y: viewportBaseOffset.dy)
                     
                     let renderer = Renderer(
                         context: context,
-                        canvasSize: size,
+                        canvasSize: canvasSize,
                         viewportTransform: viewportTransform,
                         gridSnapSize: gridSnapSize,
-                        transformedMouse: transformedMouse,
-                        transformedMouseSnapped: transformedMouseSnapped,
-                        hoveringObject: scene.hoverObject
+                        worldMouse: worldMouse,
+                        worldMouseSnapped: worldMouseSnapped,
+                        hoveringObject: scene.hoveringObject
                     )
                     renderer.render(scene)
                 }
-                .background(
-                    GeometryReader { proxy in
-                        Color.clear
-                            .onChange(of: proxy.size, initial: true) { _, newSize in
-                                self.canvasSize = newSize
-                            }
+                .background(GeometryReader { proxy in
+                    Color.clear.onChange(of: proxy.size, initial: true) { _, newSize in
+                        self.canvasSize = newSize
                     }
-                )
+                })
+                
                 MouseEventsArea(
                     onMouseMove: { point in
-                        updateMouse(newPosition: point)
+                        moveMouse(toNewScreenPosition: point)
                     },
                     onMouseDown: { point in
-                        draggingObject = scene.hoverObject
+                        draggingObject = scene.hoveringObject
                         draggingObjectOffset = scene.hoverObjectOffset
-                        viewMouseLastDown = viewMouse
+                        screenMouseOnLastDown = screenMouse
                         viewportTransformOnLastMouseDown = viewportTransform
                     },
                     onMouseUp: { point in
                         draggingObject = nil
-                        viewMouseLastUp = viewMouse
+                        screenMouseOnLastUp = screenMouse
                     },
                     onMouseDrag: { point in
-                        updateMouse(newPosition: point, dragging: true)
+                        moveMouse(toNewScreenPosition: point, dragging: true)
                     },
                     onScroll: { dx, dy, modifiers, phase, momentumPhase in
                         if phase == .began {
-                            scrollZooms = modifiers.contains(.option)
+                            zoomOnScroll = modifiers.contains(.option)
                         }
-                        if scrollZooms {
+                        if zoomOnScroll {
                             if momentumPhase == [] {
-                                zoomViewport(by: dy*0.01)
+                                zoomViewport(by: dy*zoomScrollCoeff)
                             }
                         } else {
                             panViewport(by: Vector(dx: dx, dy: -dy))
                         }
                     },
                     onRotate: { delta, point in
-                        rotateViewport(by: delta)
+                        rotateViewport(by: delta*rotateCoeff)
                     },
                     onPinch: { delta, point in
-                        zoomViewport(by: delta*0.5)
+                        zoomViewport(by: delta*zoomPinchCoeff)
                     },
                 )
             }
@@ -110,168 +136,86 @@ struct ContentView: View {
                 Text("Translation: \(viewportTransform.translation.dx); \(viewportTransform.translation.dy)")
                 Text("Rotation: \(viewportTransform.rotation.degrees)°")
                 Text("Scale: \(viewportTransform.scale)")
-                Text("View: \(viewMouse.x); \(viewMouse.y)")
-                Text("Transformed: \(transformedMouseSnapped.x); \(transformedMouseSnapped.y)")
+                Text("-")
+                Text("View: \(screenMouse.x); \(screenMouse.y)")
+                Text("Transformed: \(worldMouse.x); \(worldMouse.y)")
+                Text("Snapped: \(worldMouseSnapped.x); \(worldMouseSnapped.y)")
             }
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
+            .monospacedDigit()
+            .foregroundStyle(.secondary)
+            .padding(.horizontal)
         }
         .frame(minWidth: 1600, minHeight: 800)
         .toolbar {
-            ToolbarItem {
-                Button("􀐩") {
-                    fitViewport()
-                }
-            }
-            ToolbarItem {
-                Button("􂣾") {
-                    resetViewport()
-                }
-            }
+            ToolbarItem { Button("􀐩") { fitViewport() }}
+            ToolbarItem { Button("􂣾") { resetViewport() }}
         }
     }
     
     
-    var viewportBaseOffset: Vector {
-     
-        return Vector(
-            dx: canvasSize.width/2,
-            dy: canvasSize.height/2
-        )
-    }
-    
-    
-    var inverseViewportTransform: CGAffineTransform {
+    func moveMouse(toNewScreenPosition sp: CGPoint, dragging: Bool = false) {
         
-        CGAffineTransform.identity
-            .concatenating(.init(
-                translationX: -viewportTransform.translation.dx, y: -viewportTransform.translation.dy)
-            )
-            .concatenating(.init(
-                rotationAngle: -viewportTransform.rotation.radians)
-            )
-            .concatenating(.init(
-                scaleX: 1/viewportTransform.scale, y: 1/viewportTransform.scale)
-            )
-    }
-    
-    
-    func updateMouse(newPosition point: CGPoint, dragging: Bool = false) {
+        screenMouse = sp.applying(.init(translationX: -viewportBaseOffset.dx, y: -viewportBaseOffset.dy))
         
-        viewMouse = CGPoint(
-            x: point.x - viewportBaseOffset.dx,
-            y: point.y - viewportBaseOffset.dy
-        )
-        
-        scene.updateMouse(
-            newTransformedPosition: transformedMouse,
+        scene.moveMouse(
+            toNewWorldPosition: worldMouse,
             viewportTransform: viewportTransform
         )
         
         if dragging {
             
-            if let object = draggingObject,
-               let offset = draggingObjectOffset {
+            if let object = draggingObject, let offset = draggingObjectOffset {
                 
-                let target = transformedMouseSnapped
+                object.position = worldMouseSnapped + offset
                 
-                object.position = CGPoint(
-                    x: target.x - offset.dx,
-                    y: target.y - offset.dy
-                )
+            } else if let base = viewportTransformOnLastMouseDown {
                 
-            } else if let base = viewportTransformOnLastMouseDown?.translation {
-                
-                let offset = Vector(
-                    dx: viewMouse.x - viewMouseLastDown.x,
-                    dy: viewMouse.y - viewMouseLastDown.y
-                )
-                
-                viewportTransform.translation = Vector(
-                    dx: base.dx + offset.dx,
-                    dy: base.dy + offset.dy
-                )
+                viewportTransform.translation = base.translation + screenMouse - screenMouseOnLastDown
             }
         }
     }
     
     
-    var transformedMouse: CGPoint {
-        
-        viewMouse.applying(inverseViewportTransform)
-    }
-    
-    
-    var transformedMouseSnapped: CGPoint {
-        
-        return snap(transformedMouse, onMultipleOf: gridSnapSize/10)
-    }
-    
-    
-    var gridSnapSize: CGFloat {
-        
-        return snap(20/viewportTransform.scale, onPowerOf: 10)
-    }
-    
-    
     func resetViewport() {
         
-        viewportTransform.translation = .zero
-        viewportTransform.rotation = .zero
-        viewportTransform.scale = 1
+        viewportTransform = .default
     }
     
     
     func panViewport(by v: Vector) {
         
-        viewportTransform.translation = Vector(
-            dx: viewportTransform.translation.dx + v.dx,
-            dy: viewportTransform.translation.dy + v.dy
-        )
+        viewportTransform.translation += v
     }
     
     
-    func panViewport(toHave worldPoint: CGPoint, appearAt screenPoint: CGPoint) {
+    func panViewport(toHaveWorldPoint wp: CGPoint, appearOnScreenAt sp: CGPoint) {
         
-        let a = viewportTransform.rotation
+        let r = viewportTransform.rotation
         let s = viewportTransform.scale
         
-        let cosa = cos(a.radians)
-        let sina = sin(a.radians)
-        
-        let xc = worldPoint.x
-        let yc = worldPoint.y
-        
-        let xs = screenPoint.x
-        let ys = screenPoint.y
+        let cosr = cos(r.radians)
+        let sinr = sin(r.radians)
         
         viewportTransform.translation = Vector(
-            dx: xs - s*(xc*cosa - yc*sina),
-            dy: ys - s*(yc*cosa + xc*sina)
+            dx: sp.x - s*(wp.x*cosr - wp.y*sinr),
+            dy: sp.y - s*(wp.y*cosr + wp.x*sinr)
         )
     }
 
     
     func rotateViewport(by delta: Angle) {
         
-        let worldPoint = transformedMouse
-        let screenPoint = viewMouse
-        
+        let (wp, sp) = (worldMouse, screenMouse)
         viewportTransform.rotation += delta
-        
-        panViewport(toHave: worldPoint, appearAt: screenPoint)
+        panViewport(toHaveWorldPoint: wp, appearOnScreenAt: sp)
     }
     
 
     func zoomViewport(by delta: CGFloat) {
         
-        let worldPoint = transformedMouse
-        let screenPoint = viewMouse
-        
+        let (wp, sp) = (worldMouse, screenMouse)
         viewportTransform.scale *= (1 + delta)
-        
-        panViewport(toHave: worldPoint, appearAt: screenPoint)
+        panViewport(toHaveWorldPoint: wp, appearOnScreenAt: sp)
     }
     
     
@@ -286,29 +230,20 @@ struct ContentView: View {
             let boundsHeight = maxY - minY
             
             let boundsSize = max(boundsWidth, boundsHeight)
-            let windowSize = min(canvasSize.width, canvasSize.height)*0.6
+            let windowSize = min(canvasSize.width, canvasSize.height)
             
             let fitScale = windowSize/boundsSize
             
             let boundsCenter = CGPoint(x: (minX + maxX)/2, y: (minY + maxY)/2)
             
             viewportTransform.rotation = .zero
-            viewportTransform.scale = fitScale
+            viewportTransform.scale = fitScale*fitCoeff
             
-            panViewport(toHave: boundsCenter, appearAt: .zero)
+            panViewport(toHaveWorldPoint: boundsCenter, appearOnScreenAt: .zero)
         }
     }
 }
 
 #Preview {
     ContentView()
-}
-
-
-
-struct ViewportTransform {
-    
-    var translation: Vector
-    var rotation: Angle
-    var scale: CGFloat
 }
