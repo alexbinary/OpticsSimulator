@@ -45,11 +45,11 @@ class OpticsScene {
     }
     
     
-    var bounds: Bounds {
+    var bounds: Bounds? {
         
         let points = lenses.flatMap { $0.worldPointsForBounds }
         
-        let bounds = points.reduce(Bounds()) { bounds, p in bounds.expanded(to: p) }
+        let bounds = points.reduce(nil as Bounds?, { bounds, p in .expand(bounds, toInclude: p) })
         
         return bounds
     }

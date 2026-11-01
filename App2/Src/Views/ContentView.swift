@@ -221,25 +221,17 @@ struct ContentView: View {
     
     func fitViewport() {
         
-        let bounds = scene.bounds
-        
-        if let maxX = bounds.maxX, let minX = bounds.minX,
-           let maxY = bounds.maxY, let minY = bounds.minY {
+        if let bounds = scene.bounds {
             
-            let boundsWidth = maxX - minX
-            let boundsHeight = maxY - minY
-            
-            let boundsSize = max(boundsWidth, boundsHeight)
+            let boundsSize = max(bounds.width, bounds.height)
             let windowSize = min(canvasSize.width, canvasSize.height)
             
             let fitScale = windowSize/boundsSize
             
-            let boundsCenter = CGPoint(x: (minX + maxX)/2, y: (minY + maxY)/2)
-            
             viewportTransform.rotation = .zero
             viewportTransform.scale = fitScale*fitCoeff
             
-            panViewport(toHaveWorldPoint: boundsCenter, appearOnScreenAt: .zero)
+            panViewport(toHaveWorldPoint: bounds.center, appearOnScreenAt: .zero)
         }
     }
 }

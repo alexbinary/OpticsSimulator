@@ -237,37 +237,17 @@ class Renderer {
         
         var path = Path()
         
-        if let minX = bounds.minX,
-           let maxX = bounds.maxX,
-           let minY = bounds.minY
-        {
-            path.move(to: CGPoint(x: minX, y: minY))
-            path.addLine(to: CGPoint(x: maxX, y: minY))
-        }
-        
-        if let maxX = bounds.maxX,
-           let minY = bounds.minY,
-           let maxY = bounds.maxY
-        {
-            path.move(to: CGPoint(x: maxX, y: minY))
-            path.addLine(to: CGPoint(x: maxX, y: maxY))
-        }
-        
-        if let minX = bounds.minX,
-           let maxX = bounds.maxX,
-           let maxY = bounds.maxY
-        {
-            path.move(to: CGPoint(x: maxX, y: maxY))
-            path.addLine(to: CGPoint(x: minX, y: maxY))
-        }
-        
-        if let minX = bounds.minX,
-           let minY = bounds.minY,
-           let maxY = bounds.maxY
-        {
-            path.move(to: CGPoint(x: minX, y: maxY))
-            path.addLine(to: CGPoint(x: minX, y: minY))
-        }
+        path.move(to: CGPoint(x: bounds.minX, y: bounds.minY))
+        path.addLine(to: CGPoint(x: bounds.maxX, y: bounds.minY))
+    
+        path.move(to: CGPoint(x: bounds.maxX, y: bounds.minY))
+        path.addLine(to: CGPoint(x: bounds.maxX, y: bounds.maxY))
+    
+        path.move(to: CGPoint(x: bounds.maxX, y: bounds.maxY))
+        path.addLine(to: CGPoint(x: bounds.minX, y: bounds.maxY))
+    
+        path.move(to: CGPoint(x: bounds.minX, y: bounds.maxY))
+        path.addLine(to: CGPoint(x: bounds.minX, y: bounds.minY))
         
         context.stroke(path, with: .color(.yellow), lineWidth: 2)
     }
