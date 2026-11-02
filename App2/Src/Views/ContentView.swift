@@ -48,6 +48,13 @@ struct ContentView: View {
     private let fitCoeff: CGFloat = 0.6
     
     
+    let gridBaseScreenSize: CGFloat = 20
+    
+    var gridSnapSize: CGFloat {
+        snap(gridBaseScreenSize/viewportTransform.scale, onClosestPowerOf: 10)
+    }
+    
+    
     var viewportBaseOffset: Vector { // origin at center of the screen
         .init(dx: canvasSize.width/2, dy: canvasSize.height/2)
     }
@@ -58,10 +65,6 @@ struct ContentView: View {
 
     var worldMouseSnapped: CGPoint {
         snap(worldMouse, onClosestMultipleOf: gridSnapSize)
-    }
-    
-    var gridSnapSize: CGFloat {
-        snap(20/viewportTransform.scale, onClosestPowerOf: 10)
     }
     
     
