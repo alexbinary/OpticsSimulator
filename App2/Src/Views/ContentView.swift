@@ -133,6 +133,7 @@ struct ContentView: View {
             }
             
             HStack {
+                Text("Size: \(canvasSize.width); \(canvasSize.height)")
                 Text("Translation: \(viewportTransform.translation.dx); \(viewportTransform.translation.dy)")
                 Text("Rotation: \(viewportTransform.rotation.degrees)°")
                 Text("Scale: \(viewportTransform.scale)")
@@ -224,7 +225,7 @@ struct ContentView: View {
         if let bounds = scene.bounds {
             
             let boundsSize = max(bounds.width, bounds.height)
-            let windowSize = min(canvasSize.width, canvasSize.height)
+            let windowSize = min(self.canvasSize.width, self.canvasSize.height)
             
             let fitScale = windowSize/boundsSize
             
